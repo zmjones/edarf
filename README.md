@@ -1,4 +1,4 @@
-Convenience functions useful for exploratory data analysis using random forests. Developed by [Zachary M. Jones](http://zmjones.com) and [Fridolin Linder](http://polisci.la.psu.edu/people/fjl128) in support of "[Data Mining as Exploratory Data Analysis](https://github.com/zmjones/datamining)."
+Convenience functions useful for exploratory data analysis using random forests. Developed by [Zachary M. Jones](http://zmjones.com) in support of "[Data Mining as Exploratory Data Analysis](https://github.com/zmjones/datamining)."
 
 This package allows you to easily calculate the partial dependence of an arbitrarily large set of explanatory variables on the response given a fitted random forest from [party](http://cran.r-project.org/web/packages/party/index.html), [randomForestSRC](http://cran.r-project.org/web/packages/randomForestSRC/index.html), and [randomForest](http://cran.r-project.org/web/packages/randomForest/index.html).
 
@@ -42,4 +42,12 @@ pd_rfsrc <- partial_dependence(fit_rfsrc, swiss, "Education", CORES)
 pd_int_rf <- partial_dependence(fit_rf, swiss, c("Education", "Catholic"), CORES)
 pd_int_pt <- partial_dependence(fit_pt, swiss, c("Education", "Catholic"), CORES)
 pd_int_rfsrc <- partial_dependence(fit_rfsrc, swiss, c("Education", "Catholic"), CORES)
+```
+
+### Survival
+
+```{r}
+
+
+
 ```
