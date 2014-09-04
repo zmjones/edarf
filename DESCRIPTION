@@ -11,4 +11,5 @@ License: MIT + file LICENSE
 Imports:
     party,
     randomForest,
+    randomForestSRC,
     parallel
