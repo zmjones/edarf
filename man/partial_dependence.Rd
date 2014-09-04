@@ -68,6 +68,17 @@ pd_rfsrc <- partial_dependence(fit_rfsrc, swiss, "Education", CORES)
 pd_int_rf <- partial_dependence(fit_rf, swiss, c("Education", "Catholic"), CORES)
 pd_int_pt <- partial_dependence(fit_pt, swiss, c("Education", "Catholic"), CORES)
 pd_int_rfsrc <- partial_dependence(fit_rfsrc, swiss, c("Education", "Catholic"), CORES)
+
+
+## Survival
+
+data(veteran, package = "randomForestSRC")
+
+fit_rfsrc <- rfsrc(Surv(time, status) ~ ., veteran)
+
+pd_rfsrc <- partial_dependence(fit_rfsrc, veteran, "age", CORES)
+
+pd_int_rfsrc <- partial_dependence(fit_rfsrc, veteran, c("age", "diagtime"), CORES)
 }
 \author{
 Zachary M. Jones, \email{zmj@zmjones.com}

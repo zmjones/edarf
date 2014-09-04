@@ -63,6 +63,17 @@
 #' pd_int_rf <- partial_dependence(fit_rf, swiss, c("Education", "Catholic"), CORES)
 #' pd_int_pt <- partial_dependence(fit_pt, swiss, c("Education", "Catholic"), CORES)
 #' pd_int_rfsrc <- partial_dependence(fit_rfsrc, swiss, c("Education", "Catholic"), CORES)
+#'
+#'
+#' ## Survival
+#'
+#' data(veteran, package = "randomForestSRC")
+#'
+#' fit_rfsrc <- rfsrc(Surv(time, status) ~ ., veteran)
+#'
+#' pd_rfsrc <- partial_dependence(fit_rfsrc, veteran, "age", CORES)
+#'
+#' pd_int_rfsrc <- partial_dependence(fit_rfsrc, veteran, c("age", "diagtime"), CORES)
 #' 
 #' @export
 partial_dependence <- function(fit, df, var, cores = 1, ...) {
@@ -77,7 +88,10 @@ partial_dependence <- function(fit, df, var, cores = 1, ...) {
     }
     if (any(class(fit) == "rfsrc")) {
         y <- fit$yvar.names
-        type <- class(df[ ,y])
+        if (length(y) > 1)
+            type <- "survival"
+        else
+            type <- class(df[ ,y])
     }
     
     rng <- lapply(var, function(x) ivar_points(df, x))
@@ -90,10 +104,14 @@ partial_dependence <- function(fit, df, var, cores = 1, ...) {
             else
                 pred <- predict(fit, newdata = df)
             c(rng[i, 1:ncol(rng)], mean(pred))
-        } else if (type == "Surv") {
-            pred <- predict(fit, type = "prob")
-            df[, ncol(df)] <- get("response", fit@data@env)[[1]][, 1]
-            pred <- sapply(weights(fit), function(w) median(df[, ncol(df)][rep(1:nrow(df), w)]))
+        } else if (type == "survival") {
+            if (any(class(fit) == "rfsrc"))
+                pred <- predict(fit, newdata = df, outcome = "test")$predicted.oob
+            else {
+                pred <- predict(fit, type = "prob")
+                df[, ncol(df)] <- get("response", fit@data@env)[[1]][, 1]
+                pred <- sapply(weights(fit), function(w) median(df[, ncol(df)][rep(1:nrow(df), w)]))
+            }
             c(rng[i, 1:ncol(rng)], mean(pred))
         } else if (type == "factor") {
             if (any(class(fit) == "rfsrc"))

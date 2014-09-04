@@ -47,7 +47,11 @@ pd_int_rfsrc <- partial_dependence(fit_rfsrc, swiss, c("Education", "Catholic"),
 ### Survival
 
 ```{r}
+data(veteran, package = "randomForestSRC")
 
+fit_rfsrc <- rfsrc(Surv(time, status) ~ ., veteran)
 
+pd_rfsrc <- partial_dependence(fit_rfsrc, veteran, "age", CORES)
 
+pd_int_rfsrc <- partial_dependence(fit_rfsrc, veteran, c("age", "diagtime"), CORES)
 ```
