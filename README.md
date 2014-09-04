@@ -2,6 +2,8 @@ Convenience functions useful for exploratory data analysis using random forests.
 
 This package allows you to easily calculate the partial dependence of an arbitrarily large set of explanatory variables on the response given a fitted random forest from [party](http://cran.r-project.org/web/packages/party/index.html), [randomForestSRC](http://cran.r-project.org/web/packages/randomForestSRC/index.html), and [randomForest](http://cran.r-project.org/web/packages/randomForest/index.html).
 
+It is not yet on CRAN, but you can install it from Github using [devtools](http://cran.r-project.org/web/packages/devtools/index.html). Pull requests, bug reports, feature requests, etc. are welcome.
+
 ### Classification
 
 ```{r}
