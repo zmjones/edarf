@@ -107,11 +107,12 @@ partial_dependence <- function(fit, df, var, cores = 1, ...) {
         } else if (type == "survival") {
             if (any(class(fit) == "rfsrc"))
                 pred <- predict(fit, newdata = df, outcome = "test")$predicted.oob
-            else {
-                pred <- predict(fit, type = "prob")
-                df[, ncol(df)] <- get("response", fit@data@env)[[1]][, 1]
-                pred <- sapply(weights(fit), function(w) median(df[, ncol(df)][rep(1:nrow(df), w)]))
-            }
+            ## not messing with party survival for now
+            ## else {
+            ##     pred <- predict(fit, type = "prob")
+            ##     df[, ncol(df)] <- get("response", fit@data@env)[[1]][, 1]
+            ##     pred <- sapply(weights(fit), function(w) median(df[, ncol(df)][rep(1:nrow(df), w)]))
+            ## }
             c(rng[i, 1:ncol(rng)], mean(pred))
         } else if (type == "factor") {
             if (any(class(fit) == "rfsrc"))
