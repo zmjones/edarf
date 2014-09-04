@@ -1,14 +1,18 @@
-#' Partial dependence using Party random forests
+#' Partial dependence using random forests
 #'
 #' Calculates the partial dependence of the response on an arbitrary dimensional set of predictors
-#' from a fitted random forest object from the Party package
+#' from a fitted random forest object from the Party or randomForest packages
 #'
 #' @author Zachary M. Jones, \email{zmj@@zmjones.com}
 #'
 #' @importFrom parallel mclapply
-#' @import party
+#' @importFrom party cforest cforest_control
+#' @importFrom randomForest randomForest
 #' 
-#' @param fit an object of class 'RandomForest-class' returned from \code{cforest}
+#' @param fit an object of class 'RandomForest-class' returned from \code{cforest}, or an object
+#' of class 'randomForest' returned from \code{randomForest}
+#' @param df the dataframe used to fit the model, if the model is a party object of class 'RandomForest'
+#' this option can be omitted and the dataframe will be extracted from the object
 #' @param var a character vector of the predictors of interest, which must match the input
 #' matrix in the call to \code{cforest}
 #' @param surv logical, indicates whether or not the response is right-censored
@@ -21,14 +25,25 @@
 #' in the model but not in `var`
 #'
 #' @examples
+#' require(randomForest)
+#' require(party)
+#' require(parallel)
 #' data(iris)
-#' 
-#' fit <- party::cforest(Species ~ ., data = iris)
-#' pd <- party_partial_dependence(fit, "Petal.Width", parallel::detectCores())
-#' pd_int <- party_partial_dependence(fit, c("Petal.Width", "Sepal.Length"), parallel::detectCores())
+
+#' fit_rf <- randomForest(Species ~ ., iris)
+#' fit_pt <- cforest(Species ~ ., iris, controls = cforest_control(mtry = 2))
+
+#' fit_rf <- randomForest(Species ~ ., iris)
+#' fit_pt <- cforest(Species ~ ., iris, controls = cforest_control(mtry = 2))
+
+#' pd_rf <- partial_dependence(fit_rf, iris, "Petal.Width", detectCores())
+#' pd_pt <- partial_dependence(fit_pt, iris, "Petal.Width", detectCores())
+
+#' pd_int_rf <- partial_dependence(fit_rf, iris, c("Petal.Width", "Sepal.Length"), detectCores())
+#' pd_int_pt <- partial_dependence(fit_pt, iris, c("Petal.Width", "Sepal.Length"), detectCores())
 #'
 #' @export
-party_partial_dependence <- function(fit, var, surv = FALSE, cores = 1, ...) {
+partial_dependence <- function(fit, var, surv = FALSE, cores = 1, ...) {
     df <- data.frame(get("input", fit@data@env), get("response", fit@data@env))
     rng <- lapply(var, function(x) ivar_points(df, x))
     rng <- expand.grid(rng)

@@ -10,4 +10,5 @@ Maintainer: Zachary M. Jones <zmj@zmjones.com>
 License: MIT + file LICENSE
 Imports:
     party,
+    randomForest,
     parallel
