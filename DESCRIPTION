@@ -1,8 +1,13 @@
 Package: edarf
 Version: 0.1
 Date: 9/3/2014
-Title: Exploratory Data Analysis using Random Forests 
-Description: Convenience functions useful for exploratory data analysis using random forests
-Author: Zachary M. Jones <zmj@zmjones.com> and Fridolin Linder <fridolin.linder@gmail.com>
+Title: Exploratory Data Analysis using Random Forests
+Description: Convenience functions useful for exploratory data analysis using
+    random forests
+Author: Zachary M. Jones <zmj@zmjones.com> and Fridolin Linder
+    <fridolin.linder@gmail.com>
 Maintainer: Zachary M. Jones <zmj@zmjones.com>
 License: MIT + file LICENSE
+Imports:
+    party,
+    parallel

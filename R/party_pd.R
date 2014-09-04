@@ -6,6 +6,7 @@
 #' @author Zachary M. Jones, \email{zmj@@zmjones.com}
 #'
 #' @importFrom parallel mclapply
+#' @import party
 #' 
 #' @param fit an object of class 'RandomForest-class' returned from \code{cforest}
 #' @param var a character vector of the predictors of interest, which must match the input
@@ -13,6 +14,7 @@
 #' @param surv logical, indicates whether or not the response is right-censored
 #' @param cores indicates the number of cores to use. parallelization occurs in the prediction
 #' on the grid of possible values taken by all combinations of `var`
+#' @param ... arguments to be passed to 'ivar_points'
 #'
 #' @return a dataframe with columns for each predictor in `var` and the fitted value for
 #' each set of values taken by the values of 'var' averaged within the values of predictors
@@ -20,9 +22,10 @@
 #'
 #' @examples
 #' data(iris)
-#' fit <- cforest(Species ~ ., data = iris, control = cforest_unbiased(mtry = 2))
-#' pd <- partial_dependence(fit, "Petal.Width", detectCores())
-#' pd_int <- partial_dependence(fit, c("Petal.Width", "Sepal.Length"), detectCores())
+#' 
+#' fit <- party::cforest(Species ~ ., data = iris)
+#' pd <- party_partial_dependence(fit, "Petal.Width", parallel::detectCores())
+#' pd_int <- party_partial_dependence(fit, c("Petal.Width", "Sepal.Length"), parallel::detectCores())
 #'
 #' @export
 party_partial_dependence <- function(fit, var, surv = FALSE, cores = 1, ...) {
