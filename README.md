@@ -17,13 +17,13 @@ fit_rf <- randomForest(Species ~ ., iris)
 fit_pt <- cforest(Species ~ ., iris, controls = cforest_control(mtry = 2))
 fit_rfsrc <- rfsrc(Species ~ ., iris)
 
-pd_rf <- partial_dependence(fit_rf, iris, "Petal.Width", "Species", FALSE, CORES)
-pd_pt <- partial_dependence(fit_pt, iris, "Petal.Width", "Species", FALSE, CORES)
-pd_rfsrc <- partial_dependence(fit_rfsrc, iris, "Petal.Width", "Species", FALSE, CORES)
+pd_rf <- partial_dependence(fit_rf, iris, "Petal.Width", CORES)
+pd_pt <- partial_dependence(fit_pt, iris, "Petal.Width", CORES)
+pd_rfsrc <- partial_dependence(fit_rfsrc, iris, "Petal.Width", CORES)
 
-pd_int_rf <- partial_dependence(fit_rf, iris, c("Petal.Width", "Sepal.Length"), "Species", FALSE, CORES)
-pd_int_pt <- partial_dependence(fit_pt, iris, c("Petal.Width", "Sepal.Length"), "Species", FALSE, CORES)
-pd_int_rfsrc <- partial_dependence(fit_rfsrc, iris, c("Petal.Width", "Sepal.Length"), "Species", FALSE, CORES)
+pd_int_rf <- partial_dependence(fit_rf, iris, c("Petal.Width", "Sepal.Length"), CORES)
+pd_int_pt <- partial_dependence(fit_pt, iris, c("Petal.Width", "Sepal.Length"), CORES)
+pd_int_rfsrc <- partial_dependence(fit_rfsrc, iris, c("Petal.Width", "Sepal.Length"), CORES)
 ```
 
 ### Regression
@@ -35,11 +35,11 @@ fit_rf <- randomForest(Fertility ~ ., swiss)
 fit_pt <- cforest(Fertility ~ ., swiss, controls = cforest_control(mtry = 2))
 fit_rfsrc <- rfsrc(Fertility ~ ., swiss)
 
-pd_rf <- partial_dependence(fit_rf, swiss, "Education", "Fertility", FALSE, CORES)
-pd_pt <- partial_dependence(fit_pt, swiss, "Education", "Fertility", FALSE, CORES)
-pd_rfsrc <- partial_dependence(fit_rfsrc, swiss, "Education", "Fertility", FALSE, CORES)
+pd_rf <- partial_dependence(fit_rf, swiss, "Education", CORES)
+pd_pt <- partial_dependence(fit_pt, swiss, "Education", CORES)
+pd_rfsrc <- partial_dependence(fit_rfsrc, swiss, "Education", CORES)
 
-pd_int_rf <- partial_dependence(fit_rf, swiss, c("Education", "Catholic"), "Fertility", FALSE, CORES)
-pd_int_pt <- partial_dependence(fit_pt, swiss, c("Education", "Catholic"), "Fertility", FALSE, CORES)
-pd_int_rfsrc <- partial_dependence(fit_rfsrc, swiss, c("Education", "Catholic"), "Fertility", FALSE, CORES)
+pd_int_rf <- partial_dependence(fit_rf, swiss, c("Education", "Catholic"), CORES)
+pd_int_pt <- partial_dependence(fit_pt, swiss, c("Education", "Catholic"), CORES)
+pd_int_rfsrc <- partial_dependence(fit_rfsrc, swiss, c("Education", "Catholic"), CORES)
 ```

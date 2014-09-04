@@ -3,19 +3,18 @@
 \alias{partial_dependence}
 \title{Partial dependence using random forests}
 \usage{
-partial_dependence(fit, df, var, surv = FALSE, cores = 1, ...)
+partial_dependence(fit, df, var, cores = 1, ...)
 }
 \arguments{
-\item{fit}{an object of class 'RandomForest-class' returned from \code{cforest}, or an object
-of class 'randomForest' returned from \code{randomForest}}
+\item{fit}{an object of class 'RandomForest-class' returned from \code{cforest}, an object
+of class 'randomForest' returned from \code{randomForest}, or an object of class 'rfsrc'
+returned from \code{rfsrc}}
 
 \item{df}{the dataframe used to fit the model, if the model is a party object of class 'RandomForest'
 this option can be omitted and the dataframe will be extracted from the object}
 
 \item{var}{a character vector of the predictors of interest, which must match the input
 matrix in the call to \code{cforest}, \code{randomForest}, or \code{randomForestSRC}}
-
-\item{surv}{logical, indicates whether or not the response is right-censored}
 
 \item{cores}{indicates the number of cores to use. parallelization occurs in the prediction
 on the grid of possible values taken by all combinations of `var`}
@@ -36,18 +35,39 @@ require(randomForest)
 require(party)
 require(randomForestSRC)
 require(parallel)
+CORES <- detectCores()
+
+## Classification
+
 data(iris)
+
 fit_rf <- randomForest(Species ~ ., iris)
 fit_pt <- cforest(Species ~ ., iris, controls = cforest_control(mtry = 2))
 fit_rfsrc <- rfsrc(Species ~ ., iris)
 
-pd_rf <- partial_dependence(fit_rf, iris, "Petal.Width", detectCores())
-pd_pt <- partial_dependence(fit_pt, iris, "Petal.Width", detectCores())
-pd_rfsrc <- partial_dependence(fit_rfsrc, iris, "Petal.Width", detectCores())
+pd_rf <- partial_dependence(fit_rf, iris, "Petal.Width", CORES)
+pd_pt <- partial_dependence(fit_pt, iris, "Petal.Width", CORES)
+pd_rfsrc <- partial_dependence(fit_rfsrc, iris, "Petal.Width", CORES)
 
-pd_int_rf <- partial_dependence(fit_rf, iris, c("Petal.Width", "Sepal.Length"), detectCores())
-pd_int_pt <- partial_dependence(fit_pt, iris, c("Petal.Width", "Sepal.Length"), detectCores())
-pd_int_rfsrc <- partial_dependence(fit_rfsrc, iris, c("Petal.Width", "Sepal.Length"), detectCores())
+pd_int_rf <- partial_dependence(fit_rf, iris, c("Petal.Width", "Sepal.Length"), CORES)
+pd_int_pt <- partial_dependence(fit_pt, iris, c("Petal.Width", "Sepal.Length"), CORES)
+pd_int_rfsrc <- partial_dependence(fit_rfsrc, iris, c("Petal.Width", "Sepal.Length"), CORES)
+
+## Regression
+
+data(swiss)
+
+fit_rf <- randomForest(Fertility ~ ., swiss)
+fit_pt <- cforest(Fertility ~ ., swiss, controls = cforest_control(mtry = 2))
+fit_rfsrc <- rfsrc(Fertility ~ ., swiss)
+
+pd_rf <- partial_dependence(fit_rf, swiss, "Education", CORES)
+pd_pt <- partial_dependence(fit_pt, swiss, "Education", CORES)
+pd_rfsrc <- partial_dependence(fit_rfsrc, swiss, "Education", CORES)
+
+pd_int_rf <- partial_dependence(fit_rf, swiss, c("Education", "Catholic"), CORES)
+pd_int_pt <- partial_dependence(fit_pt, swiss, c("Education", "Catholic"), CORES)
+pd_int_rfsrc <- partial_dependence(fit_rfsrc, swiss, c("Education", "Catholic"), CORES)
 }
 \author{
 Zachary M. Jones, \email{zmj@zmjones.com}
