@@ -45,15 +45,19 @@
 #' pd_int_rfsrc <- partial_dependence(fit_rfsrc, iris, c("Petal.Width", "Sepal.Length"), detectCores())
 #'
 #' @export
-partial_dependence <- function(fit, df, var, surv = FALSE, cores = 1, ...) {
+partial_dependence <- function(fit, df, var, y, surv = FALSE, cores = 1, ...) {
     if (any(class(fit) == "RandomForest"))
         df <- data.frame(get("input", fit@data@env), get("response", fit@data@env))
     rng <- lapply(var, function(x) ivar_points(df, x))
     rng <- expand.grid(rng)
     pred <- mclapply(1:nrow(rng), function(i) {
         df[, var] <- rng[i, 1:ncol(rng)]
-        if (is.numeric(df[, ncol(df)]) & surv == FALSE) {
-            c(rng[i, 1:ncol(rng)], mean(predict(fit, newdata = df)))
+        if (is.numeric(df[, y]) & surv == FALSE) {
+            if (any(class(fit) == "rfsrc"))
+                pred <- predict(fit, newdata = df, outcome = "test")$predicted.oob
+            else
+                pred <- predict(fit, newdata = df)
+            c(rng[i, 1:ncol(rng)], mean(pred))
         } else if (surv == TRUE) {
             pred <- predict(fit, type = "prob")
             df[, ncol(df)] <- get("response", fit@data@env)[[1]][, 1]
