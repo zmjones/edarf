@@ -30,8 +30,6 @@
 #' require(randomForest)
 #' require(party)
 #' require(randomForestSRC)
-#' require(parallel)
-#' CORES <- detectCores()
 #'
 #' ## Classification
 #' 
@@ -41,13 +39,13 @@
 #' fit_pt <- cforest(Species ~ ., iris, controls = cforest_control(mtry = 2))
 #' fit_rfsrc <- rfsrc(Species ~ ., iris)
 #'
-#' pd_rf <- partial_dependence(fit_rf, iris, "Petal.Width", CORES)
-#' pd_pt <- partial_dependence(fit_pt, iris, "Petal.Width", CORES)
-#' pd_rfsrc <- partial_dependence(fit_rfsrc, iris, "Petal.Width", CORES)
+#' pd_rf <- partial_dependence(fit_rf, iris, "Petal.Width", 1)
+#' pd_pt <- partial_dependence(fit_pt, iris, "Petal.Width", 1)
+#' pd_rfsrc <- partial_dependence(fit_rfsrc, iris, "Petal.Width", 1)
 #'
-#' pd_int_rf <- partial_dependence(fit_rf, iris, c("Petal.Width", "Sepal.Length"), CORES)
-#' pd_int_pt <- partial_dependence(fit_pt, iris, c("Petal.Width", "Sepal.Length"), CORES)
-#' pd_int_rfsrc <- partial_dependence(fit_rfsrc, iris, c("Petal.Width", "Sepal.Length"), CORES)
+#' pd_int_rf <- partial_dependence(fit_rf, iris, c("Petal.Width", "Sepal.Length"), 1)
+#' pd_int_pt <- partial_dependence(fit_pt, iris, c("Petal.Width", "Sepal.Length"), 1)
+#' pd_int_rfsrc <- partial_dependence(fit_rfsrc, iris, c("Petal.Width", "Sepal.Length"), 1)
 #'
 #' ## Regression
 #'
@@ -57,13 +55,13 @@
 #' fit_pt <- cforest(Fertility ~ ., swiss, controls = cforest_control(mtry = 2))
 #' fit_rfsrc <- rfsrc(Fertility ~ ., swiss)
 #'
-#' pd_rf <- partial_dependence(fit_rf, swiss, "Education", CORES)
-#' pd_pt <- partial_dependence(fit_pt, swiss, "Education", CORES)
-#' pd_rfsrc <- partial_dependence(fit_rfsrc, swiss, "Education", CORES)
+#' pd_rf <- partial_dependence(fit_rf, swiss, "Education", 1)
+#' pd_pt <- partial_dependence(fit_pt, swiss, "Education", 1)
+#' pd_rfsrc <- partial_dependence(fit_rfsrc, swiss, "Education", 1)
 #'
-#' pd_int_rf <- partial_dependence(fit_rf, swiss, c("Education", "Catholic"), CORES)
-#' pd_int_pt <- partial_dependence(fit_pt, swiss, c("Education", "Catholic"), CORES)
-#' pd_int_rfsrc <- partial_dependence(fit_rfsrc, swiss, c("Education", "Catholic"), CORES)
+#' pd_int_rf <- partial_dependence(fit_rf, swiss, c("Education", "Catholic"), 1)
+#' pd_int_pt <- partial_dependence(fit_pt, swiss, c("Education", "Catholic"), 1)
+#' pd_int_rfsrc <- partial_dependence(fit_rfsrc, swiss, c("Education", "Catholic"), 1)
 #'
 #'
 #' ## Survival
@@ -72,9 +70,9 @@
 #'
 #' fit_rfsrc <- rfsrc(Surv(time, status) ~ ., veteran)
 #'
-#' pd_rfsrc <- partial_dependence(fit_rfsrc, veteran, "age", CORES)
+#' pd_rfsrc <- partial_dependence(fit_rfsrc, veteran, "age", 1)
 #'
-#' pd_int_rfsrc <- partial_dependence(fit_rfsrc, veteran, c("age", "diagtime"), CORES)
+#' pd_int_rfsrc <- partial_dependence(fit_rfsrc, veteran, c("age", "diagtime"), 1)
 #' 
 #' @export
 partial_dependence <- function(fit, df, var, cores = 1, cutoff = 10) {
@@ -97,7 +95,9 @@ partial_dependence <- function(fit, df, var, cores = 1, cutoff = 10) {
     rng <- lapply(var, function(x) ivar_points(df, x, cutoff))
     rng <- expand.grid(rng)
 
-    if (.Platform$OS.type == "windows") {
+    if (cores == 1)
+        pred <- lapply(1:nrow(rng), function(i) pd_inner(fit, df, var, rng, type, i))
+    else if (.Platform$OS.type == "windows") {
         cl <- makePSOCKcluster(cores)
         pred <- parLapply(cl, 1:nrow(rng), function(i) pd_inner(fit, df, var, rng, type, i))
     } else
