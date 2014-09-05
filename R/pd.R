@@ -94,7 +94,7 @@ partial_dependence <- function(fit, df, var, cores = 1, cutoff = 10) {
             type <- class(df[ ,y])
     } else stop("Unsupported fit object class")
     
-    rng <- lapply(var, function(x) ivar_points(df, x))
+    rng <- lapply(var, function(x) ivar_points(df, x, cutoff))
     rng <- expand.grid(rng)
 
     if (.Platform$OS.type == "windows") {
