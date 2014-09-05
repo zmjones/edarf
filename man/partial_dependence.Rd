@@ -3,7 +3,7 @@
 \alias{partial_dependence}
 \title{Partial dependence using random forests}
 \usage{
-partial_dependence(fit, df, var, cores = 1, ...)
+partial_dependence(fit, df, var, cores = 1, cutoff = 10)
 }
 \arguments{
 \item{fit}{an object of class 'RandomForest-class' returned from \code{cforest}, an object
@@ -19,7 +19,8 @@ matrix in the call to \code{cforest}, \code{randomForest}, or \code{randomForest
 \item{cores}{indicates the number of cores to use. parallelization occurs in the prediction
 on the grid of possible values taken by all combinations of `var`}
 
-\item{...}{arguments to be passed to 'ivar_points'}
+\item{cutoff}{the maximal number of unique points in each element of 'var' used in the
+partial dependence calculation}
 }
 \value{
 a dataframe with columns for each predictor in `var` and the fitted value for

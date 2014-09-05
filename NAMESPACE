@@ -2,7 +2,10 @@
 
 export(ivar_points)
 export(partial_dependence)
+export(pd_inner)
+importFrom(parallel,makePSOCKcluster)
 importFrom(parallel,mclapply)
+importFrom(parallel,parLapply)
 importFrom(party,cforest)
 importFrom(party,cforest_control)
 importFrom(randomForest,randomForest)
