@@ -2,6 +2,8 @@ Functions useful for exploratory data analysis using random forests. Developed b
 
 This package allows you to easily calculate the partial dependence of an arbitrarily large set of explanatory variables on the response given a fitted random forest from [party](http://cran.r-project.org/web/packages/party/index.html), [randomForestSRC](http://cran.r-project.org/web/packages/randomForestSRC/index.html), and [randomForest](http://cran.r-project.org/web/packages/randomForest/index.html).
 
+![](http://zmjones.com/static/images/bivariate_example.png)
+
 It is not yet on CRAN, but you can install it from Github using [devtools](http://cran.r-project.org/web/packages/devtools/index.html). Pull requests, bug reports, feature requests, etc. are welcome.
 
 ### Classification
@@ -56,4 +58,16 @@ fit_rfsrc <- rfsrc(Surv(time, status) ~ ., veteran)
 pd_rfsrc <- partial_dependence(fit_rfsrc, veteran, "age", CORES)
 
 pd_int_rfsrc <- partial_dependence(fit_rfsrc, veteran, c("age", "diagtime"), CORES)
+```
+
+Code to create the plot at the top is below.
+
+```{r}
+require(ggplot2)
+
+p <- ggplot(pd_rf, aes(Education, pred))
+p <- p + geom_point()
+p <- p + stat_smooth()
+p <- p + labs(x = "Years of Education", y = "Mean Prediction",
+              title = "Partial Depndence of Fertility on Education")
 ```

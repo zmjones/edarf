@@ -108,6 +108,7 @@ partial_dependence <- function(fit, df, var, cores = 1, cutoff = 10) {
     colnames(pred)[ncol(pred)] <- "pred"
     return(pred)
 }
+#' Calculates the partial dependence of 'var' on the response for a particular value of 'var'
 #'
 #' Calculates the fitted values of observations with one or more variables set to a particular value
 #' and returns a summary of these fitted values: means for regression and survival analysis and
