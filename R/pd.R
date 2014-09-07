@@ -100,7 +100,7 @@ partial_dependence <- function(fit, df, var, cores = 1, cutoff = 10) {
     else if (.Platform$OS.type == "windows") {
         cl <- parallel::makePSOCKcluster(cores)
         parallel::clusterEvalQ(cl, library(edarf))
-        parallel::clusterExport(cl, "pd_inner")
+        parallel::clusterExport(cl, c("pd_inner","mclapply"))
         pred <- parallel::parLapply(cl, 1:nrow(rng), function(i) pd_inner(fit, df, var, rng, type, i))
         stopCluster(cl)
     } else
