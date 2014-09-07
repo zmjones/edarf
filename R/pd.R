@@ -98,13 +98,13 @@ partial_dependence <- function(fit, df, var, cores = 1, cutoff = 10) {
     if (cores == 1)
         pred <- lapply(1:nrow(rng), function(i) pd_inner(fit, df, var, rng, type, i))
     else if (.Platform$OS.type == "windows") {
-        cl <- makePSOCKcluster(cores)
-        clusterEvalQ(cl, library(edarf))
-        clusterExport(cl, "pd_inner")
-        pred <- parLapply(cl, 1:nrow(rng), function(i) pd_inner(fit, df, var, rng, type, i))
+        cl <- parallel::makePSOCKcluster(cores)
+        parallel::clusterEvalQ(cl, library(edarf))
+        parallel::clusterExport(cl, "pd_inner")
+        pred <- parallel::parLapply(cl, 1:nrow(rng), function(i) pd_inner(fit, df, var, rng, type, i))
         stopCluster(cl)
     } else
-        pred <- mclapply(1:nrow(rng), function(i) pd_inner(fit, df, var, rng, type, i), mc.cores = cores)
+        pred <- parallel::mclapply(1:nrow(rng), function(i) pd_inner(fit, df, var, rng, type, i), mc.cores = cores)
     
     pred <- as.data.frame(do.call("rbind", pred))
     colnames(pred)[1:length(var)] <- var
