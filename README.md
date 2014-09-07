@@ -12,10 +12,9 @@ It is not yet on CRAN, but you can install it from Github using [devtools](http:
 require(randomForest)
 require(party)
 require(randomForestSRC)
-require(parallel)
 require(edarf)
 data(iris)
-CORES <- detectCores()
+CORES <- parallel::detectCores()
 
 fit_rf <- randomForest(Species ~ ., iris)
 fit_pt <- cforest(Species ~ ., iris, controls = cforest_control(mtry = 2))
