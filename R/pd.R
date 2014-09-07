@@ -99,6 +99,8 @@ partial_dependence <- function(fit, df, var, cores = 1, cutoff = 10) {
         pred <- lapply(1:nrow(rng), function(i) pd_inner(fit, df, var, rng, type, i))
     else if (.Platform$OS.type == "windows") {
         cl <- makePSOCKcluster(cores)
+        clusterEvalQ(cl, library(edarf))
+        clusterExport(cl, "pd_inner")
         pred <- parLapply(cl, 1:nrow(rng), function(i) pd_inner(fit, df, var, rng, type, i))
     } else
         pred <- mclapply(1:nrow(rng), function(i) pd_inner(fit, df, var, rng, type, i), mc.cores = cores)
