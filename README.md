@@ -69,5 +69,5 @@ p <- ggplot(pd_rf, aes(Education, pred))
 p <- p + geom_point()
 p <- p + stat_smooth()
 p <- p + labs(x = "Years of Education", y = "Mean Prediction",
-              title = "Partial Depndence of Fertility on Education")
+              title = "Partial Dependence of Fertility on Education")
 ```
