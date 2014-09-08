@@ -84,6 +84,7 @@ partial_dependence <- function(fit, df, var, cores = 1, cutoff = 10) {
     else if (any(class(fit) == "randomForest")) {
         type <- attr(fit$terms, "dataClasses")[1]
         y <- attr(attr(fit$terms, "dataClasses"), "names")[1]
+        if (is.null(type)) stop("You must use the formula interface for now.")
     } else if (any(class(fit) == "rfsrc")) {
         y <- fit$yvar.names
         if (length(y) > 1)
