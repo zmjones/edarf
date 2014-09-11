@@ -138,13 +138,13 @@ pd_inner <- function(fit, df, var, rng, type, i) {
         df[, var] <- rng[i, 1:ncol(rng)]
         if (type == "numeric") {
             if (any(class(fit) == "rfsrc"))
-                pred <- predict(fit, newdata = df, outcome = "train")$predicted.oob
+                pred <- predict(fit, newdata = df, outcome = "train")$predicted
             else
                 pred <- predict(fit, newdata = df)
             c(rng[i, 1:ncol(rng)], mean(pred))
         } else if (type == "survival") {
             if (any(class(fit) == "rfsrc"))
-                pred <- predict(fit, newdata = df, outcome = "train")$predicted.oob
+                pred <- predict(fit, newdata = df, outcome = "train")$predicted
             ## not messing with party survival for now
             ## else {
             ##     pred <- predict(fit, type = "prob")
