@@ -6,13 +6,19 @@ This package allows you to easily calculate the partial dependence of an arbitra
 
 It is not yet on CRAN, but you can install it from Github using [devtools](http://cran.r-project.org/web/packages/devtools/index.html). Pull requests, bug reports, feature requests, etc. are welcome.
 
+```{r}
+library(devtools)
+install_github("zmjones", "edarf")
+```
+
+
 ### Classification
 
 ```{r}
-require(randomForest)
-require(party)
-require(randomForestSRC)
-require(edarf)
+library(randomForest)
+library(party)
+library(randomForestSRC)
+library(edarf)
 data(iris)
 CORES <- parallel::detectCores()
 

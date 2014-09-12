@@ -27,9 +27,9 @@
 #' in the model but not in `var`
 #'
 #' @examples
-#' require(randomForest)
-#' require(party)
-#' require(randomForestSRC)
+#' library(randomForest)
+#' library(party)
+#' library(randomForestSRC)
 #'
 #' ## Classification
 #' 
