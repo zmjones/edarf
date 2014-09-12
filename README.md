@@ -2,15 +2,16 @@ Functions useful for exploratory data analysis using random forests. Developed b
 
 This package allows you to easily calculate the partial dependence of an arbitrarily large set of explanatory variables on the response given a fitted random forest from [party](http://cran.r-project.org/web/packages/party/index.html), [randomForestSRC](http://cran.r-project.org/web/packages/randomForestSRC/index.html), and [randomForest](http://cran.r-project.org/web/packages/randomForest/index.html).
 
-![](http://zmjones.com/static/images/bivariate_example.png)
+Pull requests, bug reports, feature requests, etc. are welcome!
 
-It is not yet on CRAN, but you can install it from Github using [devtools](http://cran.r-project.org/web/packages/devtools/index.html). Pull requests, bug reports, feature requests, etc. are welcome.
+### Installation
+
+It is not yet on CRAN, but you can install it from Github using [devtools](http://cran.r-project.org/web/packages/devtools/index.html). 
 
 ```{r}
 library(devtools)
 install_github("zmjones", "edarf")
 ```
-
 
 ### Classification
 
@@ -65,14 +66,21 @@ pd_rfsrc <- partial_dependence(fit_rfsrc, veteran, "age", CORES)
 pd_int_rfsrc <- partial_dependence(fit_rfsrc, veteran, c("age", "diagtime"), CORES)
 ```
 
-Code to create the plot at the top is below.
+### Plotting
 
 ```{r}
-require(ggplot2)
+fit_class <- randomForest(Species ~ ., iris)
+fit_reg <- randomForest(Fertility ~ ., swiss)
 
-p <- ggplot(pd_rf, aes(Education, pred))
-p <- p + geom_point()
-p <- p + stat_smooth()
-p <- p + labs(x = "Years of Education", y = "Mean Prediction",
-              title = "Partial Dependence of Fertility on Education")
+imp <- fit_class$importance[, 1]
+plot_imp(names(imp), imp)
+
+pd_class <- partial_dependence(fit_class, iris, "Petal.Width", CORES)
+pd_reg <- partial_dependence(fit_reg, swiss, "Education", CORES)
+
+plot_twoway_partial(pd_reg$Education, pd_reg$pred, smooth = TRUE)
+
+pd_class$Petal.Width <- as.numeric(pd_class$Petal.Width)
+pd_class$pred <- as.factor(pd_class$pred)
+plot_twoway_partial(pd_class$Petal.Width, pd_class$pred)
 ```

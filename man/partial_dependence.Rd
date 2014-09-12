@@ -32,9 +32,10 @@ Calculates the partial dependence of the response on an arbitrary dimensional se
 from a fitted random forest object from the Party, randomForest, or randomForestSRC packages
 }
 \examples{
-require(randomForest)
-require(party)
-require(randomForestSRC)
+library(randomForest)
+library(party)
+library(randomForestSRC)
+CORES <- detectCores()
 
 ## Classification
 
@@ -44,13 +45,13 @@ fit_rf <- randomForest(Species ~ ., iris)
 fit_pt <- cforest(Species ~ ., iris, controls = cforest_control(mtry = 2))
 fit_rfsrc <- rfsrc(Species ~ ., iris)
 
-pd_rf <- partial_dependence(fit_rf, iris, "Petal.Width", 1)
-pd_pt <- partial_dependence(fit_pt, iris, "Petal.Width", 1)
-pd_rfsrc <- partial_dependence(fit_rfsrc, iris, "Petal.Width", 1)
+pd_rf <- partial_dependence(fit_rf, iris, "Petal.Width", CORES)
+pd_pt <- partial_dependence(fit_pt, iris, "Petal.Width", CORES)
+pd_rfsrc <- partial_dependence(fit_rfsrc, iris, "Petal.Width", CORES)
 
-pd_int_rf <- partial_dependence(fit_rf, iris, c("Petal.Width", "Sepal.Length"), 1)
-pd_int_pt <- partial_dependence(fit_pt, iris, c("Petal.Width", "Sepal.Length"), 1)
-pd_int_rfsrc <- partial_dependence(fit_rfsrc, iris, c("Petal.Width", "Sepal.Length"), 1)
+pd_int_rf <- partial_dependence(fit_rf, iris, c("Petal.Width", "Sepal.Length"), CORES)
+pd_int_pt <- partial_dependence(fit_pt, iris, c("Petal.Width", "Sepal.Length"), CORES)
+pd_int_rfsrc <- partial_dependence(fit_rfsrc, iris, c("Petal.Width", "Sepal.Length"), CORES)
 
 ## Regression
 
@@ -60,13 +61,13 @@ fit_rf <- randomForest(Fertility ~ ., swiss)
 fit_pt <- cforest(Fertility ~ ., swiss, controls = cforest_control(mtry = 2))
 fit_rfsrc <- rfsrc(Fertility ~ ., swiss)
 
-pd_rf <- partial_dependence(fit_rf, swiss, "Education", 1)
-pd_pt <- partial_dependence(fit_pt, swiss, "Education", 1)
-pd_rfsrc <- partial_dependence(fit_rfsrc, swiss, "Education", 1)
+pd_rf <- partial_dependence(fit_rf, swiss, "Education", CORES)
+pd_pt <- partial_dependence(fit_pt, swiss, "Education", CORES)
+pd_rfsrc <- partial_dependence(fit_rfsrc, swiss, "Education", CORES)
 
-pd_int_rf <- partial_dependence(fit_rf, swiss, c("Education", "Catholic"), 1)
-pd_int_pt <- partial_dependence(fit_pt, swiss, c("Education", "Catholic"), 1)
-pd_int_rfsrc <- partial_dependence(fit_rfsrc, swiss, c("Education", "Catholic"), 1)
+pd_int_rf <- partial_dependence(fit_rf, swiss, c("Education", "Catholic"), CORES)
+pd_int_pt <- partial_dependence(fit_pt, swiss, c("Education", "Catholic"), CORES)
+pd_int_rfsrc <- partial_dependence(fit_rfsrc, swiss, c("Education", "Catholic"), CORES)
 
 
 ## Survival
@@ -75,11 +76,8 @@ data(veteran, package = "randomForestSRC")
 
 fit_rfsrc <- rfsrc(Surv(time, status) ~ ., veteran)
 
-pd_rfsrc <- partial_dependence(fit_rfsrc, veteran, "age", 1)
+pd_rfsrc <- partial_dependence(fit_rfsrc, veteran, "age", CORES)
 
-pd_int_rfsrc <- partial_dependence(fit_rfsrc, veteran, c("age", "diagtime"), 1)
-}
-\author{
-Zachary M. Jones, \email{zmj@zmjones.com}
+pd_int_rfsrc <- partial_dependence(fit_rfsrc, veteran, c("age", "diagtime"), CORES)
 }
 

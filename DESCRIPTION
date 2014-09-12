@@ -11,4 +11,8 @@ Imports:
     party,
     randomForest,
     randomForestSRC,
-    parallel
+    parallel,
+    ggplot2,
+    assertthat
+Suggests:
+    scales

@@ -3,8 +3,6 @@
 #' Calculates the partial dependence of the response on an arbitrary dimensional set of predictors
 #' from a fitted random forest object from the Party, randomForest, or randomForestSRC packages
 #'
-#' @author Zachary M. Jones, \email{zmj@@zmjones.com}
-#'
 #' @importFrom parallel mclapply parLapply makePSOCKcluster
 #' @importFrom party cforest cforest_control
 #' @importFrom randomForest randomForest
@@ -30,6 +28,7 @@
 #' library(randomForest)
 #' library(party)
 #' library(randomForestSRC)
+#' CORES <- detectCores()
 #'
 #' ## Classification
 #' 
@@ -39,13 +38,13 @@
 #' fit_pt <- cforest(Species ~ ., iris, controls = cforest_control(mtry = 2))
 #' fit_rfsrc <- rfsrc(Species ~ ., iris)
 #'
-#' pd_rf <- partial_dependence(fit_rf, iris, "Petal.Width", 1)
-#' pd_pt <- partial_dependence(fit_pt, iris, "Petal.Width", 1)
-#' pd_rfsrc <- partial_dependence(fit_rfsrc, iris, "Petal.Width", 1)
+#' pd_rf <- partial_dependence(fit_rf, iris, "Petal.Width", CORES)
+#' pd_pt <- partial_dependence(fit_pt, iris, "Petal.Width", CORES)
+#' pd_rfsrc <- partial_dependence(fit_rfsrc, iris, "Petal.Width", CORES)
 #'
-#' pd_int_rf <- partial_dependence(fit_rf, iris, c("Petal.Width", "Sepal.Length"), 1)
-#' pd_int_pt <- partial_dependence(fit_pt, iris, c("Petal.Width", "Sepal.Length"), 1)
-#' pd_int_rfsrc <- partial_dependence(fit_rfsrc, iris, c("Petal.Width", "Sepal.Length"), 1)
+#' pd_int_rf <- partial_dependence(fit_rf, iris, c("Petal.Width", "Sepal.Length"), CORES)
+#' pd_int_pt <- partial_dependence(fit_pt, iris, c("Petal.Width", "Sepal.Length"), CORES)
+#' pd_int_rfsrc <- partial_dependence(fit_rfsrc, iris, c("Petal.Width", "Sepal.Length"), CORES)
 #'
 #' ## Regression
 #'
@@ -55,13 +54,13 @@
 #' fit_pt <- cforest(Fertility ~ ., swiss, controls = cforest_control(mtry = 2))
 #' fit_rfsrc <- rfsrc(Fertility ~ ., swiss)
 #'
-#' pd_rf <- partial_dependence(fit_rf, swiss, "Education", 1)
-#' pd_pt <- partial_dependence(fit_pt, swiss, "Education", 1)
-#' pd_rfsrc <- partial_dependence(fit_rfsrc, swiss, "Education", 1)
+#' pd_rf <- partial_dependence(fit_rf, swiss, "Education", CORES)
+#' pd_pt <- partial_dependence(fit_pt, swiss, "Education", CORES)
+#' pd_rfsrc <- partial_dependence(fit_rfsrc, swiss, "Education", CORES)
 #'
-#' pd_int_rf <- partial_dependence(fit_rf, swiss, c("Education", "Catholic"), 1)
-#' pd_int_pt <- partial_dependence(fit_pt, swiss, c("Education", "Catholic"), 1)
-#' pd_int_rfsrc <- partial_dependence(fit_rfsrc, swiss, c("Education", "Catholic"), 1)
+#' pd_int_rf <- partial_dependence(fit_rf, swiss, c("Education", "Catholic"), CORES)
+#' pd_int_pt <- partial_dependence(fit_pt, swiss, c("Education", "Catholic"), CORES)
+#' pd_int_rfsrc <- partial_dependence(fit_rfsrc, swiss, c("Education", "Catholic"), CORES)
 #'
 #'
 #' ## Survival
@@ -70,9 +69,9 @@
 #'
 #' fit_rfsrc <- rfsrc(Surv(time, status) ~ ., veteran)
 #'
-#' pd_rfsrc <- partial_dependence(fit_rfsrc, veteran, "age", 1)
+#' pd_rfsrc <- partial_dependence(fit_rfsrc, veteran, "age", CORES)
 #'
-#' pd_int_rfsrc <- partial_dependence(fit_rfsrc, veteran, c("age", "diagtime"), 1)
+#' pd_int_rfsrc <- partial_dependence(fit_rfsrc, veteran, c("age", "diagtime"), CORES)
 #' 
 #' @export
 partial_dependence <- function(fit, df, var, cores = 1, cutoff = 10) {
@@ -103,7 +102,7 @@ partial_dependence <- function(fit, df, var, cores = 1, cutoff = 10) {
         parallel::clusterEvalQ(cl, library(edarf))
         parallel::clusterExport(cl, c("pd_inner","mclapply"))
         pred <- parallel::parLapply(cl, 1:nrow(rng), function(i) pd_inner(fit, df, var, rng, type, i))
-        stopCluster(cl)
+        parallel::stopCluster(cl)
     } else
         pred <- parallel::mclapply(1:nrow(rng), function(i) pd_inner(fit, df, var, rng, type, i), mc.cores = cores)
     
@@ -135,33 +134,33 @@ partial_dependence <- function(fit, df, var, cores = 1, cutoff = 10) {
 #' 
 #' @export
 pd_inner <- function(fit, df, var, rng, type, i) {
-        df[, var] <- rng[i, 1:ncol(rng)]
-        if (type == "numeric") {
-            if (any(class(fit) == "rfsrc"))
-                pred <- predict(fit, newdata = df, outcome = "train")$predicted
-            else
-                pred <- predict(fit, newdata = df)
-            c(rng[i, 1:ncol(rng)], mean(pred))
-        } else if (type == "survival") {
-            if (any(class(fit) == "rfsrc"))
-                pred <- predict(fit, newdata = df, outcome = "train")$predicted.oob
-            ## not messing with party survival for now
-            ## else {
-            ##     pred <- predict(fit, type = "prob")
-            ##     df[, ncol(df)] <- get("response", fit@data@env)[[1]][, 1]
-            ##     pred <- sapply(weights(fit), function(w) median(df[, ncol(df)][rep(1:nrow(df), w)]))
-            ## }
-            c(rng[i, 1:ncol(rng)], mean(pred))
-        } else if (type == "factor") {
-            if (any(class(fit) == "rfsrc"))
-                pred <- table(predict(fit, newdata = df, outcome = "train")$class)
-            else
-                pred <- table(predict(fit, newdata = df))
-            pred <- names(pred)[pred == max(pred)]
-            if (length(pred) > 1)
-                pred <- sample(pred, 1) ## guess if class proportions are all equal
-            c(rng[i, 1:ncol(rng)], pred)
-        }
+    df[, var] <- rng[i, 1:ncol(rng)]
+    if (type == "numeric") {
+        if (any(class(fit) == "rfsrc"))
+            pred <- predict(fit, newdata = df, outcome = "train")$predicted
+        else
+            pred <- predict(fit, newdata = df)
+        c(rng[i, 1:ncol(rng)], mean(pred))
+    } else if (type == "survival") {
+        if (any(class(fit) == "rfsrc"))
+            pred <- predict(fit, newdata = df, outcome = "train")$predicted
+        ## not messing with party survival for now
+        ## else {
+        ##     pred <- predict(fit, type = "prob")
+        ##     df[, ncol(df)] <- get("response", fit@data@env)[[1]][, 1]
+        ##     pred <- sapply(weights(fit), function(w) median(df[, ncol(df)][rep(1:nrow(df), w)]))
+        ## }
+        c(rng[i, 1:ncol(rng)], mean(pred))
+    } else if (type == "factor") {
+        if (any(class(fit) == "rfsrc"))
+            pred <- table(predict(fit, newdata = df, outcome = "train")$class)
+        else
+            pred <- table(predict(fit, newdata = df))
+        pred <- names(pred)[pred == max(pred)]
+        if (length(pred) > 1)
+            pred <- sample(pred, 1) ## guess if class proportions are all equal
+        c(rng[i, 1:ncol(rng)], pred)
+    }
 }
 #'
 #' Creates a prediction vector for variables to decrease computation time
