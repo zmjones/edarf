@@ -19,6 +19,7 @@
 #' on the grid of possible values taken by all combinations of `var`
 #' @param cutoff the maximal number of unique points in each element of 'var' used in the
 #' partial dependence calculation
+#' @param empirical logical indicator of whether or not only values in the data should be sampled
 #'
 #' @return a dataframe with columns for each predictor in `var` and the fitted value for
 #' each set of values taken by the values of 'var' averaged within the values of predictors
@@ -74,7 +75,7 @@
 #' pd_int_rfsrc <- partial_dependence(fit_rfsrc, veteran, c("age", "diagtime"), CORES)
 #' 
 #' @export
-partial_dependence <- function(fit, df, var, cores = 1, cutoff = 10) {
+partial_dependence <- function(fit, df, var, cores = 1, cutoff = 10, empirical = TRUE) {
     if (any(class(fit) == "RandomForest")) {
         df <- data.frame(get("input", fit@data@env), get("response", fit@data@env))
         type <- class(df[, ncol(df)])
@@ -92,7 +93,7 @@ partial_dependence <- function(fit, df, var, cores = 1, cutoff = 10) {
             type <- class(df[ ,y])
     } else stop("Unsupported fit object class")
     
-    rng <- lapply(var, function(x) ivar_points(df, x, cutoff))
+    rng <- lapply(var, function(x) ivar_points(df, x, cutoff, empirical))
     rng <- expand.grid(rng)
 
     if (cores == 1)
@@ -168,15 +169,20 @@ pd_inner <- function(fit, df, var, rng, type, i) {
 #' @param df the dataframe used to fit the random forest, extracted from the fitted object
 #' @param x a character vector of length 1 indicating the variable in `df` to be extracted
 #' @param cutoff an integer indicating the maximal length of the vector to be used for prediction
+#' @param empirical logical indicator of whether or not only values in the data should be sampled
 #' 
 #' @return a vector of unique values taken by `x` of length < `cutoff`
 #' 
 #' @export
-ivar_points <- function(df, x, cutoff = 10) {
+ivar_points <- function(df, x, cutoff = 10, empirical = TRUE) {
     rng <- unique(df[, x])
     rng <- rng[!is.na(rng)]
-    if (length(rng) > cutoff & !is.factor(df[, x]))
-        rng <- seq(min(rng), max(rng), length.out = cutoff)
+    if (length(rng) > cutoff & !is.factor(df[, x])) {
+        if (empirical == TRUE)
+            rng <- sample(rng, cutoff)
+        else
+            rng <- seq(min(rng), max(rng), length.out = cutoff)
+    }
     class(rng) <- class(df[, x])
     return(rng)
 }

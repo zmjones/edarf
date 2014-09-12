@@ -3,7 +3,7 @@
 \alias{ivar_points}
 \title{Creates a prediction vector for variables to decrease computation time}
 \usage{
-ivar_points(df, x, cutoff = 10)
+ivar_points(df, x, cutoff = 10, empirical = TRUE)
 }
 \arguments{
 \item{df}{the dataframe used to fit the random forest, extracted from the fitted object}
@@ -11,6 +11,8 @@ ivar_points(df, x, cutoff = 10)
 \item{x}{a character vector of length 1 indicating the variable in `df` to be extracted}
 
 \item{cutoff}{an integer indicating the maximal length of the vector to be used for prediction}
+
+\item{empirical}{logical indicator of whether or not only values in the data should be sampled}
 }
 \value{
 a vector of unique values taken by `x` of length < `cutoff`
