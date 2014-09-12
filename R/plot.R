@@ -50,6 +50,7 @@ plot_imp <- function(var, imp, ylab = NULL, xlab = NULL, title = NULL) {
 #' @param title title for the plot
 #' 
 #' @return a ggplot2 object
+#' @export
 plot_twoway_partial <- function(var, pred, var_lab, grid, smooth = FALSE,
                                 ylab = NULL, xlab = NULL, title = NULL) {
     assert_that(is.numeric(pred) | is.factor(pred) | is.integer(pred))
