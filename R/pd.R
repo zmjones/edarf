@@ -104,13 +104,17 @@ partial_dependence <- function(fit, df, var, cores = 1, cutoff = 10, empirical =
         parallel::clusterExport(cl, c("pd_inner","mclapply"))
         pred <- parallel::parLapply(cl, 1:nrow(rng), function(i) pd_inner(fit, df, var, rng, type, i))
         parallel::stopCluster(cl)
+
     } else
         pred <- parallel::mclapply(1:nrow(rng), function(i) pd_inner(fit, df, var, rng, type, i), mc.cores = cores)
-    
-    pred <- as.data.frame(do.call("rbind", pred))
+
+    if (length(var) == 1)
+        pred <- as.data.frame(do.call("rbind", pred))
+    else
+        pred <- as.data.frame(do.call("rbind", lapply(pred, unlist)))
     colnames(pred)[1:length(var)] <- var
     colnames(pred)[ncol(pred)] <- "pred"
-    return(pred)
+    pred
 }
 #' Calculates the partial dependence of 'var' on the response for a particular value of 'var'
 #'
