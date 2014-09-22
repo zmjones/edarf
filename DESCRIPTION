@@ -11,7 +11,7 @@ Imports:
     party,
     randomForest,
     randomForestSRC,
-    parallel,
+    foreach,
     ggplot2,
     assertthat
 Suggests:

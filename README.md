@@ -21,19 +21,21 @@ library(party)
 library(randomForestSRC)
 library(edarf)
 data(iris)
-CORES <- parallel::detectCores()
+
+library(doParallel)
+registerDoParallel(makeCluster(detectCores()))
 
 fit_rf <- randomForest(Species ~ ., iris)
 fit_pt <- cforest(Species ~ ., iris, controls = cforest_control(mtry = 2))
 fit_rfsrc <- rfsrc(Species ~ ., iris)
 
-pd_rf <- partial_dependence(fit_rf, iris, "Petal.Width", CORES)
-pd_pt <- partial_dependence(fit_pt, iris, "Petal.Width", CORES)
-pd_rfsrc <- partial_dependence(fit_rfsrc, iris, "Petal.Width", CORES)
+pd_rf <- partial_dependence(fit_rf, iris, "Petal.Width")
+pd_pt <- partial_dependence(fit_pt, iris, "Petal.Width")
+pd_rfsrc <- partial_dependence(fit_rfsrc, iris, "Petal.Width")
 
-pd_int_rf <- partial_dependence(fit_rf, iris, c("Petal.Width", "Sepal.Length"), CORES)
-pd_int_pt <- partial_dependence(fit_pt, iris, c("Petal.Width", "Sepal.Length"), CORES)
-pd_int_rfsrc <- partial_dependence(fit_rfsrc, iris, c("Petal.Width", "Sepal.Length"), CORES)
+pd_int_rf <- partial_dependence(fit_rf, iris, c("Petal.Width", "Sepal.Length"))
+pd_int_pt <- partial_dependence(fit_pt, iris, c("Petal.Width", "Sepal.Length"))
+pd_int_rfsrc <- partial_dependence(fit_rfsrc, iris, c("Petal.Width", "Sepal.Length"))
 ```
 
 ### Regression
@@ -45,13 +47,13 @@ fit_rf <- randomForest(Fertility ~ ., swiss)
 fit_pt <- cforest(Fertility ~ ., swiss, controls = cforest_control(mtry = 2))
 fit_rfsrc <- rfsrc(Fertility ~ ., swiss)
 
-pd_rf <- partial_dependence(fit_rf, swiss, "Education", CORES)
-pd_pt <- partial_dependence(fit_pt, swiss, "Education", CORES)
-pd_rfsrc <- partial_dependence(fit_rfsrc, swiss, "Education", CORES)
+pd_rf <- partial_dependence(fit_rf, swiss, "Education")
+pd_pt <- partial_dependence(fit_pt, swiss, "Education")
+pd_rfsrc <- partial_dependence(fit_rfsrc, swiss, "Education")
 
-pd_int_rf <- partial_dependence(fit_rf, swiss, c("Education", "Catholic"), CORES)
-pd_int_pt <- partial_dependence(fit_pt, swiss, c("Education", "Catholic"), CORES)
-pd_int_rfsrc <- partial_dependence(fit_rfsrc, swiss, c("Education", "Catholic"), CORES)
+pd_int_rf <- partial_dependence(fit_rf, swiss, c("Education", "Catholic"))
+pd_int_pt <- partial_dependence(fit_pt, swiss, c("Education", "Catholic"))
+pd_int_rfsrc <- partial_dependence(fit_rfsrc, swiss, c("Education", "Catholic"))
 ```
 
 ### Survival
@@ -61,26 +63,20 @@ data(veteran, package = "randomForestSRC")
 
 fit_rfsrc <- rfsrc(Surv(time, status) ~ ., veteran)
 
-pd_rfsrc <- partial_dependence(fit_rfsrc, veteran, "age", CORES)
+pd_rfsrc <- partial_dependence(fit_rfsrc, veteran, "age")
 
-pd_int_rfsrc <- partial_dependence(fit_rfsrc, veteran, c("age", "diagtime"), CORES)
+pd_int_rfsrc <- partial_dependence(fit_rfsrc, veteran, c("age", "diagtime"))
 ```
 
 ### Plotting
 
 ```{r}
-fit_class <- randomForest(Species ~ ., iris)
 fit_reg <- randomForest(Fertility ~ ., swiss)
 
-imp <- fit_class$importance[, 1]
+imp <- fit_reg$importance[, 1]
 plot_imp(names(imp), imp)
 
-pd_class <- partial_dependence(fit_class, iris, "Petal.Width", CORES)
-pd_reg <- partial_dependence(fit_reg, swiss, "Education", CORES)
+pd_reg <- partial_dependence(fit_reg, swiss, "Education", 50)
 
 plot_twoway_partial(pd_reg$Education, pd_reg$pred, smooth = TRUE)
-
-pd_class$Petal.Width <- as.numeric(pd_class$Petal.Width)
-pd_class$pred <- as.factor(pd_class$pred)
-plot_twoway_partial(pd_class$Petal.Width, pd_class$pred)
 ```
