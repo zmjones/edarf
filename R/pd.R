@@ -87,7 +87,10 @@ partial_dependence <- function(fit, df, var, cutoff = 10, empirical = TRUE) {
         type <- attr(fit$terms, "dataClasses")[1]
         y <- attr(attr(fit$terms, "dataClasses"), "names")[1]
         pkg <- "randomForest"
-        if (is.null(type)) stop("You must use the formula interface for now.")
+        if (is.null(type)) {
+            type <- ifelse(fit$type == "regression", "numeric", "factor")
+            y <- fit$y
+        }
     } else if (any(class(fit) == "rfsrc")) {
         y <- fit$yvar.names
         pkg <- "randomForestSRC"
