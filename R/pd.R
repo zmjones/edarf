@@ -3,10 +3,7 @@
 #' Calculates the partial dependence of the response on an arbitrary dimensional set of predictors
 #' from a fitted random forest object from the Party, randomForest, or randomForestSRC packages
 #'
-#' @importFrom foreach foreach %dopar%
-#' @importFrom party cforest cforest_control
-#' @importFrom randomForest randomForest
-#' @importFrom randomForestSRC rfsrc
+#' @importFrom foreach foreach %dopar% %do%
 #' 
 #' @param fit an object of class 'RandomForest-class' returned from \code{cforest}, an object
 #' of class 'randomForest' returned from \code{randomForest}, or an object of class 'rfsrc'
@@ -102,7 +99,9 @@ partial_dependence <- function(fit, df, var, cutoff = 10, empirical = TRUE) {
     
     rng <- expand.grid(lapply(var, function(x) ivar_points(df, x, cutoff, empirical)))
 
-    pred <- foreach(i = 1:nrow(rng), .inorder = FALSE, .packages = pkg) %dopar% {
+    `%op%` <- if (foreach::getDoParWorkers() > 1) `%dopar%` else `%do%`
+
+    pred <- foreach::foreach(i = 1:nrow(rng), .inorder = FALSE, .packages = pkg) %op% {
         df[, var] <- rng[i, 1:ncol(rng)]
         if (type == "numeric") {
             if (any(class(fit) == "rfsrc"))
