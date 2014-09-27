@@ -10,7 +10,7 @@ It is not yet on CRAN, but you can install it from Github using [devtools](http:
 
 ```{r}
 library(devtools)
-install_github("zmjones", "edarf")
+install_github("zmjones/edarf")
 ```
 
 ### Classification
