@@ -4,6 +4,7 @@
 #' from a fitted random forest object from the Party, randomForest, or randomForestSRC packages
 #'
 #' @importFrom foreach foreach %dopar% %do%
+#' @importFrom assertthat assert_that on_failure is.string is.count is.flag noNA
 #' 
 #' @param fit an object of class 'RandomForest-class' returned from \code{cforest}, an object
 #' of class 'randomForest' returned from \code{randomForest}, or an object of class 'rfsrc'
@@ -74,13 +75,20 @@
 #' }
 #' @export
 partial_dependence <- function(fit, df, var, cutoff = 10, empirical = TRUE) {
+    assert_that(any(class(fit) %in% c("RandomForest", "randomForest", "randomForestSRC")))
+    assert_that(is.data.frame(df))
+    assert_that(is.string(var))
+    assert_that(is.count(cutoff))
+    assert_that(is.flag(empirical))
+    assert_that(cutoff > nrow)
+    
     if (any(class(fit) == "RandomForest")) {
         df <- data.frame(get("input", fit@data@env), get("response", fit@data@env))
         type <- class(df[, ncol(df)])
         y <- colnames(df[, ncol(df)])
         pkg <- "party"
-    }
-    else if (any(class(fit) == "randomForest")) {
+    } else if (any(class(fit) == "randomForest")) {
+        assert_that(noNA(df))
         type <- attr(fit$terms, "dataClasses")[1]
         y <- attr(attr(fit$terms, "dataClasses"), "names")[1]
         pkg <- "randomForest"
@@ -95,7 +103,7 @@ partial_dependence <- function(fit, df, var, cutoff = 10, empirical = TRUE) {
             type <- "survival"
         else
             type <- class(df[, y])
-    } else stop("Unsupported fit object class")
+    }
     
     rng <- expand.grid(lapply(var, function(x) ivar_points(df, x, cutoff, empirical)))
 

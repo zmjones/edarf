@@ -1,7 +1,7 @@
-#' Plot permutation importance from random 
+#' Plot permutation importance from random forests
 #'
 #' @import ggplot2
-#' @importFrom assertthat assert_that
+#' @importFrom assertthat assert_that noNA
 #'
 #' @param var character or factor vector of variable labels
 #' @param imp numeric vector of variable permutation importance estimates
@@ -16,6 +16,8 @@ plot_imp <- function(var, imp, ylab = NULL, xlab = NULL, title = NULL) {
     assert_that(is.factor(var) | is.character(var))
     assert_that(length(var) == length(imp))
     assert_that(!(any(is.na(var) | any(is.na(imp)))))
+    assert_that(noNA(var))
+    assert_that(noNA(imp))
     
     df <- data.frame(imp, var)
     df$var <- factor(df$var, levels = df$var[order(df$imp)])
@@ -56,7 +58,12 @@ plot_twoway_partial <- function(var, pred, var_lab, grid, smooth = FALSE,
     assert_that(is.numeric(pred) | is.factor(pred) | is.integer(pred))
     assert_that(length(var) == length(pred))
     assert_that(!(any(is.na(var) | any(is.na(pred)))))
+    assert_that(noNA(var))
+    assert_that(noNA(pred))
+    assert_that(noNA(grid))
+    assert_that(is.flag(smooth))
     if (!missing(var_lab)) {
+        assert_that(noNA(var_lab))
         assert_that(is.factor(var_lab) | is.character(var_lab))
         assert_that(!missing(grid))
         assert_that(is.integer(grid) & length(grid == 2))
