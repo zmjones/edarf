@@ -75,12 +75,12 @@
 #' }
 #' @export
 partial_dependence <- function(fit, df, var, cutoff = 10, empirical = TRUE) {
-    assert_that(any(class(fit) %in% c("RandomForest", "randomForest", "randomForestSRC")))
+    assert_that(any(class(fit) %in% c("RandomForest", "randomForest", "rfsrc")))
     assert_that(is.data.frame(df))
-    assert_that(is.string(var))
+    assert_that(is.character(var))
     assert_that(is.count(cutoff))
     assert_that(is.flag(empirical))
-    assert_that(cutoff > nrow)
+    assert_that(cutoff <= nrow(df))
     
     if (any(class(fit) == "RandomForest")) {
         df <- data.frame(get("input", fit@data@env), get("response", fit@data@env))
