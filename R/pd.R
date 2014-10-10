@@ -4,7 +4,7 @@
 #' from a fitted random forest object from the Party, randomForest, or randomForestSRC packages
 #'
 #' @importFrom foreach foreach %dopar% %do%
-#' @importFrom assertthat assert_that on_failure is.string is.count is.flag noNA
+#' @importFrom assertthat assert_that is.count is.flag noNA
 #' 
 #' @param fit an object of class 'RandomForest-class' returned from \code{cforest}, an object
 #' of class 'randomForest' returned from \code{randomForest}, or an object of class 'rfsrc'
@@ -75,12 +75,12 @@
 #' }
 #' @export
 partial_dependence <- function(fit, df, var, cutoff = 10, empirical = TRUE) {
-    assert_that(any(class(fit) %in% c("RandomForest", "randomForest", "rfsrc")))
-    assert_that(is.data.frame(df))
-    assert_that(is.character(var))
-    assert_that(is.count(cutoff))
-    assert_that(is.flag(empirical))
-    assert_that(cutoff <= nrow(df))
+    ## assert_that(any(class(fit) %in% c("RandomForest", "randomForest", "rfsrc")))
+    ## assert_that(is.data.frame(df))
+    ## assert_that(is.character(var))
+    ## assert_that(is.count(cutoff))
+    ## assert_that(is.flag(empirical))
+    ## assert_that(cutoff <= nrow(df))
     
     if (any(class(fit) == "RandomForest")) {
         df <- data.frame(get("input", fit@data@env), get("response", fit@data@env))
