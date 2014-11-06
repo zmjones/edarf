@@ -16,6 +16,7 @@
 #' @param cutoff the maximal number of unique points in each element of 'var' used in the
 #' partial dependence calculation
 #' @param empirical logical indicator of whether or not only values in the data should be sampled
+#' @param parallel logical indicator of whether a parallel backend should be used if registered
 #'
 #' @return a dataframe with columns for each predictor in `var` and the fitted value for
 #' each set of values taken by the values of 'var' averaged within the values of predictors
@@ -74,7 +75,7 @@
 #' pd_int_rfsrc <- partial_dependence(fit_rfsrc, veteran, c("age", "diagtime"))
 #' }
 #' @export
-partial_dependence <- function(fit, df, var, cutoff = 10, empirical = TRUE) {
+partial_dependence <- function(fit, df, var, cutoff = 10, empirical = TRUE, parallel = FALSE) {
     ## assert_that(any(class(fit) %in% c("RandomForest", "randomForest", "rfsrc")))
     ## assert_that(is.data.frame(df))
     ## assert_that(is.character(var))
@@ -106,8 +107,8 @@ partial_dependence <- function(fit, df, var, cutoff = 10, empirical = TRUE) {
     }
     
     rng <- expand.grid(lapply(var, function(x) ivar_points(df, x, cutoff, empirical)))
-
-    `%op%` <- if (foreach::getDoParWorkers() > 1) `%dopar%` else `%do%`
+    
+    `%op%` <- if (foreach::getDoParWorkers() > 1 & parallel == TRUE) `%dopar%` else `%do%`
 
     pred <- foreach::foreach(i = 1:nrow(rng), .inorder = FALSE, .packages = pkg) %op% {
         df[, var] <- rng[i, 1:ncol(rng)]

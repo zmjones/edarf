@@ -3,7 +3,8 @@
 \alias{partial_dependence}
 \title{Partial dependence using random forests}
 \usage{
-partial_dependence(fit, df, var, cutoff = 10, empirical = TRUE)
+partial_dependence(fit, df, var, cutoff = 10, empirical = TRUE,
+  parallel = FALSE)
 }
 \arguments{
 \item{fit}{an object of class 'RandomForest-class' returned from \code{cforest}, an object
@@ -20,6 +21,8 @@ matrix in the call to \code{cforest}, \code{randomForest}, or \code{randomForest
 partial dependence calculation}
 
 \item{empirical}{logical indicator of whether or not only values in the data should be sampled}
+
+\item{parallel}{logical indicator of whether a parallel backend should be used if registered}
 }
 \value{
 a dataframe with columns for each predictor in `var` and the fitted value for
