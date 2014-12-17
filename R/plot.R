@@ -60,7 +60,6 @@ plot_twoway_partial <- function(var, pred, var_lab, grid, smooth = FALSE,
     assert_that(!(any(is.na(var) | any(is.na(pred)))))
     assert_that(noNA(var))
     assert_that(noNA(pred))
-    assert_that(noNA(grid))
     assert_that(is.flag(smooth))
     if (!missing(var_lab)) {
         assert_that(noNA(var_lab))
