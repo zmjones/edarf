@@ -1,4 +1,4 @@
-Functions useful for exploratory data analysis using random forests. Developed by [Zachary M. Jones](http://zmjones.com) in support of "[Data Mining as Exploratory Data Analysis](https://github.com/zmjones/datamining)."
+Functions useful for exploratory data analysis using random forests. Developed by [Zachary M. Jones](http://zmjones.com) in support of "[Data Mining as Exploratory Data Analysis](https://github.com/zmjones/rfss/)."
 
 This package allows you to easily calculate the partial dependence of an arbitrarily large set of explanatory variables on the response given a fitted random forest from [party](http://cran.r-project.org/web/packages/party/index.html), [randomForestSRC](http://cran.r-project.org/web/packages/randomForestSRC/index.html), and [randomForest](http://cran.r-project.org/web/packages/randomForest/index.html).
 
