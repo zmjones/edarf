@@ -75,14 +75,8 @@
 #' pd_int_rfsrc <- partial_dependence(fit_rfsrc, veteran, c("age", "diagtime"))
 #' }
 #' @export
-partial_dependence <- function(fit, df, var, cutoff = 10, empirical = TRUE, parallel = FALSE) {
-    ## assert_that(any(class(fit) %in% c("RandomForest", "randomForest", "rfsrc")))
-    ## assert_that(is.data.frame(df))
-    ## assert_that(is.character(var))
-    ## assert_that(is.count(cutoff))
-    ## assert_that(is.flag(empirical))
-    ## assert_that(cutoff <= nrow(df))
-    
+partial_dependence <- function (fit, df, var, cutoff = 10, empirical = TRUE, parallel = FALSE) 
+{
     if (any(class(fit) == "RandomForest")) {
         df <- data.frame(get("input", fit@data@env), get("response", fit@data@env))
         type <- class(df[, ncol(df)])
@@ -102,48 +96,35 @@ partial_dependence <- function(fit, df, var, cutoff = 10, empirical = TRUE, para
         pkg <- "randomForestSRC"
         if (length(y) > 1)
             type <- "survival"
-        else
-            type <- class(df[, y])
+        else type <- class(df[, y])
     }
-    
     rng <- expand.grid(lapply(var, function(x) ivar_points(df, x, cutoff, empirical)))
-    
-    `%op%` <- if (foreach::getDoParWorkers() > 1 & parallel == TRUE) `%dopar%` else `%do%`
-
+    `%op%` <- if (foreach::getDoParWorkers() > 1 & parallel == TRUE) 
+        `%dopar%` else `%do%`
     pred <- foreach::foreach(i = 1:nrow(rng), .inorder = FALSE, .packages = pkg) %op% {
         df[, var] <- rng[i, 1:ncol(rng)]
-        if (type == "numeric") {
+        if (type == "numeric" | type == "integer") {
             if (any(class(fit) == "rfsrc"))
                 pred <- predict(fit, newdata = df, outcome = "train")$predicted
-            else
-                pred <- predict(fit, newdata = df)
+            else pred <- predict(fit, newdata = df)
             c(rng[i, 1:ncol(rng)], mean(pred))
         } else if (type == "survival") {
             if (any(class(fit) == "rfsrc"))
                 pred <- predict(fit, newdata = df, outcome = "train")$predicted
-            ## not messing with party survival for now
-            ## else {
-            ##     pred <- predict(fit, type = "prob")
-            ##     df[, ncol(df)] <- get("response", fit@data@env)[[1]][, 1]
-            ##     pred <- sapply(weights(fit), function(w) median(df[, ncol(df)][rep(1:nrow(df), w)]))
-            ## }
             c(rng[i, 1:ncol(rng)], mean(pred))
         } else if (type == "factor") {
             if (any(class(fit) == "rfsrc"))
                 pred <- table(predict(fit, newdata = df, outcome = "train")$class)
-            else
-                pred <- table(predict(fit, newdata = df))
+            else pred <- table(predict(fit, newdata = df))
             pred <- names(pred)[pred == max(pred)]
             if (length(pred) > 1)
-                pred <- sample(pred, 1) ## guess if class proportions are all equal
+                pred <- sample(pred, 1)
             c(rng[i, 1:ncol(rng)], pred)
         }
     }
-
     if (length(var) == 1)
         pred <- as.data.frame(do.call("rbind", pred))
-    else
-        pred <- as.data.frame(do.call("rbind", lapply(pred, unlist)))
+    else pred <- as.data.frame(do.call("rbind", lapply(pred, unlist)))
     colnames(pred)[1:length(var)] <- var
     colnames(pred)[ncol(pred)] <- "pred"
     pred
