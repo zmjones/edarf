@@ -151,3 +151,59 @@ ivar_points <- function(df, x, cutoff = 10, empirical = TRUE) {
     class(rng) <- class(df[, x])
     return(rng)
 }
+
+
+
+
+partial_dependence <- function(x) UseMethod("partial_dependence")
+
+aggregate_predict_numeric <- function(fit, df) {
+    pred <- predict(fit, newdata = df)
+    mean(pred)
+}
+
+aggregate_predict_factor <- function(fit, df, type = "class") {
+    if (type == "prob") {
+        pred <- predict(fit, newdata = df, type = "prob")
+        pred <- do.call(rbind, pred)
+        pred <- colMeans(pred)
+    } else if (type == "class" | type == "") {
+        pred <- predict(fit, newdata = df)
+        pred <- table(pred)
+        pred <- names(pred)[pred == max(pred)]
+    } else stop("invalid type parameter passed to predict.RandomForest*")
+    pred
+}
+
+aggregate_predict_multivariate <- function(fit, df) {
+    pred <- predict(fit, newdata = df)
+    pred <- do.call(rbind, pred)
+    colMeans(pred)
+}
+
+partial_dependence.RandomForest <- function(fit, df, var, cutoff = 10, empirical = TRUE, parallel = FALSE, ...) {
+    args <- list(...)
+    y <- get("response", fit@data@env)
+    df <- data.frame(get("input", fit@data@env), y)
+    rng <- expand.grid(lapply(var, function(x) ivar_points(df, x, cutoff, empirical)))
+    '%op%' <- ifelse(foreach::getDoParWorkers() > 1 & parallel, foreach::'%dopar%', foreach::'%do%')
+    type <- ifelse(is.null(args[["type"]]), "", args[["type"]])
+    pred <- foreach::foreach(i = 1:nrow(rng), .inorder = FALSE, .packages = "party") %op% {
+        df[, var] <- rng[i, 1:ncol(rng)]
+        if (dim(y)[2] == 1) {
+            if (class(y[, 1] == "numeric" | class(y[, 1]) == "integer"))
+                pred <- aggregate_predict_numeric(fit, df)
+            else if (class(y[, 1]) == "factor")
+                pred <- aggregate_predict_factor(fit, df, type)
+            else stop("invalid response type")
+        } else pred <- aggregate_predict_multivariate(fit, df)
+        c(rng[i, 1:ncol(rng)], pred)
+    }
+    if (length(var) > 1)
+        pred <- as.data.frame(do.call(rbind, lapply(pred, unlist)))
+    else pred <- as.data.frame(do.call(rbind, pred))
+    colnames(pred)[1:length(var)] <- var
+    colnames(pred)[(length(var) + 1):ncol(pred)] <- colnames(y)
+    for (x in var) class(pred[, x]) <- class(df[, x])
+    df
+}
