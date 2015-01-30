@@ -142,7 +142,7 @@ partial_dependence.RandomForest <- function(fit, var, cutoff = 10,
     '%op%' <- ifelse(foreach::getDoParWorkers() > 1 & parallel, foreach::'%dopar%', foreach::'%do%')
     type <- ifelse(is.null(args[["type"]]), "", args[["type"]])
     pred <- foreach::foreach(i = 1:nrow(rng), .inorder = FALSE, .packages = "party") %op% {
-        df[, var] <- rng[i, 1:ncol(rng)]
+        df[, var] <- rng[i, ]
         if (dim(y)[2] == 1) {
             if (class(y[, 1]) == "numeric" | class(y[, 1]) == "integer") {
                     pred <- predict(fit, newdata = df)
@@ -163,7 +163,7 @@ partial_dependence.RandomForest <- function(fit, var, cutoff = 10,
             pred <- do.call(rbind, pred)
             pred <- colMeans(pred)
         }
-        c(rng[i, 1:ncol(rng)], pred)
+        c(rng[i, ], pred)
     }
     if (length(var) > 1)
         pred <- as.data.frame(do.call(rbind, lapply(pred, unlist)))
