@@ -1,32 +1,33 @@
 #' Partial dependence using random forests
 #'
 #' Calculates the partial dependence of the response on an arbitrary dimensional set of predictors
-#' from a fitted random forest object from the Party, randomForest, or randomForestSRC packages
+#' from a fitted random forest object from the party, randomForest, or randomForestSRC packages
 #'
 #' @importFrom foreach foreach %dopar% %do%
-#' @importFrom assertthat assert_that is.count is.flag noNA
-#' 
-#' @param fit an object of class 'RandomForest-class' returned from \code{cforest}, an object
-#' of class 'randomForest' returned from \code{randomForest}, or an object of class 'rfsrc'
-#' returned from \code{rfsrc}
-#' @param df the dataframe used to fit the model, if the model is a party object of class 'RandomForest'
-#' this option can be omitted and the dataframe will be extracted from the object
-#' @param var a character vector of the predictors of interest, which must match the input
-#' matrix in the call to \code{cforest}, \code{randomForest}, or \code{randomForestSRC}
+#'
+#' @export
+partial_dependence <- function(fit, ...) UseMethod("partial_dependence")
+#' Partial dependence for randomForest objects
+#'
+#' Calculates the partial dependence of the response on an arbitrary dimensional set of predictors
+#' from a fitted random forest object from the randomForest packages
+#'
+#' @param fit an object of class 'randomForest' returned from \code{randomForest}
+#' @param df the dataframe used to fit the model
+#' @param var a character vector of the predictors of interest, which must match the input matrix in the call to \code{randomForest}
 #' @param cutoff the maximal number of unique points in each element of 'var' used in the
 #' partial dependence calculation
 #' @param empirical logical indicator of whether or not only values in the data should be sampled
 #' @param parallel logical indicator of whether a parallel backend should be used if registered
+#' @param ... additional arguments to be passed to \code{predict.randomForest}
 #'
 #' @return a dataframe with columns for each predictor in `var` and the fitted value for
 #' each set of values taken by the values of 'var' averaged within the values of predictors
 #' in the model but not in `var`
 #'
-#' @examples
+#' #' @examples
 #' \dontrun{
 #' library(randomForest)
-#' library(party)
-#' library(randomForestSRC)
 #' ## library(doParallel)
 #' ## library(parallel)
 #' ## registerDoParallel(makeCluster(detectCores()))
@@ -35,84 +36,19 @@
 #' 
 #' data(iris)
 #' 
-#' fit_rf <- randomForest(Species ~ ., iris)
-#' fit_pt <- cforest(Species ~ ., iris, controls = cforest_control(mtry = 2))
-#' fit_rfsrc <- rfsrc(Species ~ ., iris)
-#'
-#' pd_rf <- partial_dependence(fit_rf, iris, "Petal.Width")
-#' pd_pt <- partial_dependence(fit_pt, "Petal.Width")
-#' pd_rfsrc <- partial_dependence(fit_rfsrc, "Petal.Width")
-#'
-#' pd_int_rf <- partial_dependence(fit_rf, iris, c("Petal.Width", "Sepal.Length"))
-#' pd_int_pt <- partial_dependence(fit_pt, c("Petal.Width", "Sepal.Length"))
-#' pd_int_rfsrc <- partial_dependence(fit_rfsrc, c("Petal.Width", "Sepal.Length"))
+#' fit <- randomForest(Species ~ ., iris)
+#' pd <- partial_dependence(fit, iris, "Petal.Width")
+#' pd_int <- partial_dependence(fit, iris, c("Petal.Width", "Sepal.Length"))
 #'
 #' ## Regression
 #'
 #' data(swiss)
 #'
-#' fit_rf <- randomForest(Fertility ~ ., swiss)
-#' fit_pt <- cforest(Fertility ~ ., swiss, controls = cforest_control(mtry = 2))
-#' fit_rfsrc <- rfsrc(Fertility ~ ., swiss)
-#'
-#' pd_rf <- partial_dependence(fit_rf, swiss, "Education")
-#' pd_pt <- partial_dependence(fit_pt, "Education")
-#' pd_rfsrc <- partial_dependence(fit_rfsrc, "Education")
-#'
-#' pd_int_rf <- partial_dependence(fit_rf, swiss, c("Education", "Catholic"))
-#' pd_int_pt <- partial_dependence(fit_pt, c("Education", "Catholic"))
-#' pd_int_rfsrc <- partial_dependence(fit_rfsrc, c("Education", "Catholic"))
-#'
-#' ## Survival
-#'
-#' data(veteran)
-#'
-#' fit_rfsrc <- rfsrc(Surv(time, status) ~ ., veteran)
-#'
-#' pd_rfsrc <- partial_dependence(fit_rfsrc, "age")
-#'
-#' pd_int_rfsrc <- partial_dependence(fit_rfsrc, c("age", "diagtime"))
+#' fit <- randomForest(Fertility ~ ., swiss)
+#' pd <- partial_dependence(fit, swiss, "Education")
+#' pd_int <- partial_dependence(fit, swiss, c("Education", "Catholic"))
 #' }
 #' @export
-#' Creates a prediction vector for variables to decrease computation time
-#'
-#' @param df the dataframe used to fit the random forest, extracted from the fitted object
-#' @param x a character vector of length 1 indicating the variable in `df` to be extracted
-#' @param cutoff an integer indicating the maximal length of the vector to be used for prediction
-#' @param empirical logical indicator of whether or not only values in the data should be sampled
-#'  
-#' @return a vector of unique values taken by `x` of length < `cutoff`
-#' 
-#' @export
-ivar_points <- function(df, x, cutoff = 10, empirical = TRUE) {
-    rng <- unique(df[, x])
-    rng <- rng[!is.na(rng)]
-    if (length(rng) > cutoff & !is.factor(df[, x])) {
-        if (empirical == TRUE & cutoff < length(rng))
-            rng <- sample(rng, cutoff)
-        else if (empirical == FALSE)
-            rng <- seq(min(rng), max(rng), length.out = cutoff)
-    }
-    class(rng) <- class(df[, x])
-    return(rng)
-}
-
-
-fix_classes <- function(var, df, pred) {
-    for (x in var) {
-        if (class(df[, x]) == "factor")
-            pred[, x] <- factor(pred[, x])
-        else if (class(df[, x]) == "numeric") {
-            if (any(df[, x] %% 1 != 0))
-                pred[, x] <- as.numeric(pred[, x])
-            else pred[, x] <- as.integer(pred[, x])
-        } 
-    }
-    pred
-}
-
-partial_dependence <- function(fit, ...) UseMethod("partial_dependence")
-
 partial_dependence.randomForest <- function(fit, df, var, cutoff = 10,
                                             empirical = TRUE, parallel = FALSE, ...) {
     args <- list(...)
@@ -146,7 +82,50 @@ partial_dependence.randomForest <- function(fit, df, var, cutoff = 10,
         colnames(pred)[(length(var) + 1):ncol(pred)] <- names(y_class)
     fix_classes(c(var, names(y_class)), df, pred)
 }
-
+#' Partial dependence for RandomForest objects from package \code{party}
+#'
+#' Calculates the partial dependence of the response on an arbitrary dimensional set of predictors
+#' from a fitted random forest object from the \code{party} package
+#'
+#' @param fit an object of class 'RandomForest' returned from \code{cforest}
+#' @param var a character vector of the predictors of interest, which must match the input matrix in the call to \code{randomForest}
+#' @param cutoff the maximal number of unique points in each element of 'var' used in the
+#' partial dependence calculation
+#' @param empirical logical indicator of whether or not only values in the data should be sampled
+#' @param parallel logical indicator of whether a parallel backend should be used if registered
+#' @param ... additional arguments to be passed to \code{predict.RandomForest}
+#'
+#' @return a dataframe with columns for each predictor in `var` and the fitted value for
+#' each set of values taken by the values of 'var' averaged within the values of predictors
+#' in the model but not in `var`
+#'
+#' #' @examples
+#' \dontrun{
+#' library(party)
+#' ## library(doParallel)
+#' ## library(parallel)
+#' ## registerDoParallel(makeCluster(detectCores()))
+#'
+#' ## Classification
+#' 
+#' data(iris)
+#' 
+#' fit <- cforest(Species ~ ., iris, controls = cforest_control(mtry = 2))
+#' pd <- partial_dependence(fit, "Petal.Width")
+#' pd_int <- partial_dependence(fit, c("Petal.Width", "Sepal.Length"))
+#'
+#' ## Regression
+#'
+#' data(swiss)
+#'
+#' fit <- cforest(Fertility ~ ., swiss, controls = cforest_control(mtry = 2))
+#' pd <- partial_dependence(fit, "Education")
+#' pd_int <- partial_dependence(fit, c("Education", "Catholic"))
+#'
+#' ## Multivariate
+#' ...
+#' }
+#' @export
 partial_dependence.RandomForest <- function(fit, var, cutoff = 10,
                                             empirical = TRUE, parallel = FALSE, ...) {
     args <- list(...)
@@ -187,7 +166,49 @@ partial_dependence.RandomForest <- function(fit, var, cutoff = 10,
     colnames(pred)[(length(var) + 1):ncol(pred)] <- colnames(y)
     fix_classes(c(var, colnames(y)), df, pred)
 }
-
+#' Partial dependence for RandomForest objects from package \code{party}
+#'
+#' Calculates the partial dependence of the response on an arbitrary dimensional set of predictors
+#' from a fitted random forest object from the \code{party} package
+#'
+#' @param fit an object of class 'RandomForest' returned from \code{cforest}
+#' @param var a character vector of the predictors of interest, which must match the input matrix in the call to \code{randomForest}
+#' @param cutoff the maximal number of unique points in each element of 'var' used in the
+#' partial dependence calculation
+#' @param empirical logical indicator of whether or not only values in the data should be sampled
+#' @param parallel logical indicator of whether a parallel backend should be used if registered
+#' @param ... additional arguments to be passed to \code{predict.rfsrc}
+#'
+#' @return a dataframe with columns for each predictor in `var` and the fitted value for
+#' each set of values taken by the values of 'var' averaged within the values of predictors
+#' in the model but not in `var`
+#'
+#' #' @examples
+#' \dontrun{
+#' library(randomForestSRC)
+#' ## library(doParallel)
+#' ## library(parallel)
+#' ## registerDoParallel(makeCluster(detectCores()))
+#'
+#' ## Classification
+#' data(iris)
+#' fit <- rfsrc(Species ~ ., iris)
+#' pd <- partial_dependence(fit, "Petal.Width")
+#' pd_int <- partial_dependence(fit, c("Petal.Width", "Sepal.Length"))
+#'
+#' ## Regression
+#' data(swiss)
+#' fit <- rfsrc(Fertility ~ ., swiss)
+#' pd <- partial_dependence(fit, "Education")
+#' pd_int <- partial_dependence(fit, c("Education", "Catholic"))
+#'
+#' ## Survival
+#' data(veteran)
+#' fit <- rfsrc(Surv(time, status) ~ ., veteran)
+#' pd <- partial_dependence(fit_rfsrc, "age")
+#' pd_int <- partial_dependence(fit_rfsrc, c("age", "diagtime"))
+#' }
+#' @export
 partial_dependence.rfsrc <- function(fit, var, cutoff = 10, empirical = TRUE, parallel = FALSE, ...) {
     args <- list(...)
     y <- fit$yvar
@@ -226,6 +247,45 @@ partial_dependence.rfsrc <- function(fit, var, cutoff = 10, empirical = TRUE, pa
     } else {
         colnames(pred)[(length(var) + 1):ncol(pred)] <- fit$yvar.names
         pred <- fix_classes(c(var, fit$yvar.names), df, pred)
+    }
+    pred
+}
+#' Creates a prediction vector for variables to decrease computation time
+#'
+#' @param df the dataframe used to fit the random forest, extracted from the fitted object
+#' @param x a character vector of length 1 indicating the variable in `df` to be extracted
+#' @param cutoff an integer indicating the maximal length of the vector to be used for prediction
+#' @param empirical logical indicator of whether or not only values in the data should be sampled
+#'  
+#' @return a vector of unique values taken by \code{x} of length < `cutoff`
+ivar_points <- function(df, x, cutoff = 10, empirical = TRUE) {
+    rng <- unique(df[, x])
+    rng <- rng[!is.na(rng)]
+    if (length(rng) > cutoff & !is.factor(df[, x])) {
+        if (empirical == TRUE & cutoff < length(rng))
+            rng <- sample(rng, cutoff)
+        else if (empirical == FALSE)
+            rng <- seq(min(rng), max(rng), length.out = cutoff)
+    }
+    class(rng) <- class(df[, x])
+    return(rng)
+}
+#' Matches column classes of the input data frame to the output
+#'
+#' @param var character vector of column names to match
+#' @param df imput dataframe
+#' @param pred output dataframe
+#'
+#' @return dataframe \code{pred} with \code{var} column classes matched to those in \code{df}
+fix_classes <- function(var, df, pred) {
+    for (x in var) {
+        if (class(df[, x]) == "factor")
+            pred[, x] <- factor(pred[, x])
+        else if (class(df[, x]) == "numeric") {
+            if (any(df[, x] %% 1 != 0))
+                pred[, x] <- as.numeric(pred[, x])
+            else pred[, x] <- as.integer(pred[, x])
+        } 
     }
     pred
 }
