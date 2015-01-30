@@ -75,60 +75,6 @@
 #' pd_int_rfsrc <- partial_dependence(fit_rfsrc, veteran, c("age", "diagtime"))
 #' }
 #' @export
-partial_dependence <- function (fit, df, var, cutoff = 10, empirical = TRUE, parallel = FALSE) 
-{
-    if (any(class(fit) == "RandomForest")) {
-        df <- data.frame(get("input", fit@data@env), get("response", fit@data@env))
-        type <- class(df[, ncol(df)])
-        y <- colnames(df[, ncol(df)])
-        pkg <- "party"
-    } else if (any(class(fit) == "randomForest")) {
-        assert_that(noNA(df))
-        type <- attr(fit$terms, "dataClasses")[1]
-        y <- attr(attr(fit$terms, "dataClasses"), "names")[1]
-        pkg <- "randomForest"
-        if (is.null(type)) {
-            type <- ifelse(fit$type == "regression", "numeric", "factor")
-            y <- fit$y
-        }
-    } else if (any(class(fit) == "rfsrc")) {
-        y <- fit$yvar.names
-        pkg <- "randomForestSRC"
-        if (length(y) > 1)
-            type <- "survival"
-        else type <- class(df[, y])
-    }
-    rng <- expand.grid(lapply(var, function(x) ivar_points(df, x, cutoff, empirical)))
-    `%op%` <- if (foreach::getDoParWorkers() > 1 & parallel == TRUE) 
-        `%dopar%` else `%do%`
-    pred <- foreach::foreach(i = 1:nrow(rng), .inorder = FALSE, .packages = pkg) %op% {
-        df[, var] <- rng[i, 1:ncol(rng)]
-        if (type == "numeric" | type == "integer") {
-            if (any(class(fit) == "rfsrc"))
-                pred <- predict(fit, newdata = df, outcome = "train")$predicted
-            else pred <- predict(fit, newdata = df)
-            c(rng[i, 1:ncol(rng)], mean(pred))
-        } else if (type == "survival") {
-            if (any(class(fit) == "rfsrc"))
-                pred <- predict(fit, newdata = df, outcome = "train")$predicted
-            c(rng[i, 1:ncol(rng)], mean(pred))
-        } else if (type == "factor") {
-            if (any(class(fit) == "rfsrc"))
-                pred <- table(predict(fit, newdata = df, outcome = "train")$class)
-            else pred <- table(predict(fit, newdata = df))
-            pred <- names(pred)[pred == max(pred)]
-            if (length(pred) > 1)
-                pred <- sample(pred, 1)
-            c(rng[i, 1:ncol(rng)], pred)
-        }
-    }
-    if (length(var) == 1)
-        pred <- as.data.frame(do.call("rbind", pred))
-    else pred <- as.data.frame(do.call("rbind", lapply(pred, unlist)))
-    colnames(pred)[1:length(var)] <- var
-    colnames(pred)[ncol(pred)] <- "pred"
-    pred
-}
 #' Creates a prediction vector for variables to decrease computation time
 #'
 #' @param df the dataframe used to fit the random forest, extracted from the fitted object
