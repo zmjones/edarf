@@ -182,3 +182,41 @@ partial_dependence.RandomForest <- function(fit, var, cutoff = 10,
     }
     pred
 }
+
+partial_dependence.rfsrc <- function(fit, var, cutoff = 10, empirical = TRUE, parallel = FALSE, ...) {
+    args <- list(...)
+    y <- fit$yvar
+    df <- data.frame(fit$xvar, y)
+    if (!is.data.frame(y))
+        colnames(df)[ncol(df)] <- fit$yvar.names
+    rng <- expand.grid(lapply(var, function(x) ivar_points(df, x, cutoff, empirical)))
+    '%op%' <- ifelse(foreach::getDoParWorkers() > 1 & parallel, foreach::'%dopar%', foreach::'%do%')
+    type <- ifelse(is.null(args[["type"]]), "", args[["type"]])
+    pred <- foreach::foreach(i = 1:nrow(rng), .inorder = FALSE, .packages = "party") %op% {
+        df[, var] <- rng[i, ]
+        pred <- predict(fit, newdata = df, outcome = "train")
+        if (class(y) == "factor") {
+            if (type == "prob") {
+                pred <- pred$predicted
+                pred <- colMeans(pred)
+            } else if (type == "class" | type == "") {
+                pred <- pred$class
+                pred <- table(pred)
+                pred <- names(pred)[pred == max(pred)]
+                if (length(pred) != 1) pred <- sample(pred, 1)
+            }
+        } else if (class(y) == "numeric" | class(y) == "data.frame") {
+            pred <- pred$predicted
+            pred <- mean(pred)
+        } else stop("invalid response type")
+        c(rng[i, ], pred)
+    }
+    if (length(var) > 1)
+        pred <- as.data.frame(do.call(rbind, lapply(pred, unlist)))
+    else pred <- as.data.frame(do.call(rbind, pred))
+    colnames(pred)[1:length(var)] <- var
+    if (is.data.frame(fit$yvar)) {
+        colnames(pred)[ncol(pred)] <- "chf"
+    else colnames(pred)[(length(var) + 1):ncol(pred)] <- fit$yvar.names
+    pred
+}
