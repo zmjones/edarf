@@ -100,8 +100,37 @@ ivar_points <- function(df, x, cutoff = 10, empirical = TRUE) {
 
 partial_dependence <- function(fit, ...) UseMethod("partial_dependence")
 
-
-
+partial_dependence.randomForest <- function(fit, df, var, cutoff = 10,
+                                            empirical = TRUE, parallel = FALSE, ...) {
+    args <- list(...)
+    y_class <- attr(fit$terms, "dataClasses")[1]
+    rng <- expand.grid(lapply(var, function(x) ivar_points(df, x, cutoff, empirical)))
+    '%op%' <- ifelse(foreach::getDoParWorkers() > 1 & parallel, foreach::'%dopar%', foreach::'%do%')
+    type <- ifelse(is.null(args[["type"]]), "", args[["type"]])
+    pred <- foreach::foreach(i = 1:nrow(rng), .inorder = FALSE, .packages = "randomForest") %op% {
+        df[, var] <- rng[i, ]
+        if (y_class == "numeric" | y_class == "integer") {
+            pred <- predict(fit, newdata = df)
+            pred <- mean(pred)
+        } else if (y_class == "factor") {
+            if (type == "prob") {
+                pred <- predict(fit, newdata = df, type = "prob")
+                pred <- colMeans(pred)
+            } else if (type == "class" | type == "") {
+                pred <- predict(fit, newdata = df)
+                pred <- table(pred)
+                pred <- names(pred)[pred == max(pred)]
+            } else stop("invalid type parameter passed to predict.randomForest*")
+        } else stop("invalid response type")
+        c(rng[i, ], pred)
+    }
+    if (length(var) > 1)
+        pred <- as.data.frame(do.call(rbind, lapply(pred, unlist)))
+    else pred <- as.data.frame(do.call(rbind, pred))
+    colnames(pred)[1:length(var)] <- var
+    if (type != "prob")
+        colnames(pred)[(length(var) + 1):ncol(pred)] <- names(y_class)
+    pred
 }
 
 partial_dependence.RandomForest <- function(fit, var, cutoff = 10,
