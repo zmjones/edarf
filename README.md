@@ -30,12 +30,12 @@ fit_pt <- cforest(Species ~ ., iris, controls = cforest_control(mtry = 2))
 fit_rfsrc <- rfsrc(Species ~ ., iris)
 
 pd_rf <- partial_dependence(fit_rf, iris, "Petal.Width")
-pd_pt <- partial_dependence(fit_pt, iris, "Petal.Width")
-pd_rfsrc <- partial_dependence(fit_rfsrc, iris, "Petal.Width")
+pd_pt <- partial_dependence(fit_pt, "Petal.Width")
+pd_rfsrc <- partial_dependence(fit_rfsrc, "Petal.Width")
 
 pd_int_rf <- partial_dependence(fit_rf, iris, c("Petal.Width", "Sepal.Length"))
-pd_int_pt <- partial_dependence(fit_pt, iris, c("Petal.Width", "Sepal.Length"))
-pd_int_rfsrc <- partial_dependence(fit_rfsrc, iris, c("Petal.Width", "Sepal.Length"))
+pd_int_pt <- partial_dependence(fit_pt, c("Petal.Width", "Sepal.Length"))
+pd_int_rfsrc <- partial_dependence(fit_rfsrc, c("Petal.Width", "Sepal.Length"))
 ```
 
 ### Regression
@@ -48,24 +48,22 @@ fit_pt <- cforest(Fertility ~ ., swiss, controls = cforest_control(mtry = 2))
 fit_rfsrc <- rfsrc(Fertility ~ ., swiss)
 
 pd_rf <- partial_dependence(fit_rf, swiss, "Education")
-pd_pt <- partial_dependence(fit_pt, swiss, "Education")
-pd_rfsrc <- partial_dependence(fit_rfsrc, swiss, "Education")
+pd_pt <- partial_dependence(fit_pt, "Education")
+pd_rfsrc <- partial_dependence(fit_rfsrc, "Education")
 
 pd_int_rf <- partial_dependence(fit_rf, swiss, c("Education", "Catholic"))
-pd_int_pt <- partial_dependence(fit_pt, swiss, c("Education", "Catholic"))
-pd_int_rfsrc <- partial_dependence(fit_rfsrc, swiss, c("Education", "Catholic"))
+pd_int_pt <- partial_dependence(fit_pt, c("Education", "Catholic"))
+pd_int_rfsrc <- partial_dependence(fit_rfsrc, c("Education", "Catholic"))
 ```
 
 ### Survival
 
 ```{r}
-data(veteran, package = "randomForestSRC")
+data(veteran)
 
 fit_rfsrc <- rfsrc(Surv(time, status) ~ ., veteran)
-
-pd_rfsrc <- partial_dependence(fit_rfsrc, veteran, "age")
-
-pd_int_rfsrc <- partial_dependence(fit_rfsrc, veteran, c("age", "diagtime"))
+pd_rfsrc <- partial_dependence(fit_rfsrc, "age")
+pd_int_rfsrc <- partial_dependence(fit_rfsrc, c("age", "diagtime"))
 ```
 
 ### Plotting
@@ -78,5 +76,5 @@ plot_imp(names(imp), imp)
 
 pd_reg <- partial_dependence(fit_reg, swiss, "Education", 50)
 
-plot_twoway_partial(pd_reg$Education, pd_reg$pred, smooth = TRUE)
+plot_twoway_partial(pd_reg$Education, pd_reg$Fertility, smooth = TRUE)
 ```
