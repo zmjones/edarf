@@ -40,12 +40,12 @@
 #' fit_rfsrc <- rfsrc(Species ~ ., iris)
 #'
 #' pd_rf <- partial_dependence(fit_rf, iris, "Petal.Width")
-#' pd_pt <- partial_dependence(fit_pt, iris, "Petal.Width")
-#' pd_rfsrc <- partial_dependence(fit_rfsrc, iris, "Petal.Width")
+#' pd_pt <- partial_dependence(fit_pt, "Petal.Width")
+#' pd_rfsrc <- partial_dependence(fit_rfsrc, "Petal.Width")
 #'
 #' pd_int_rf <- partial_dependence(fit_rf, iris, c("Petal.Width", "Sepal.Length"))
-#' pd_int_pt <- partial_dependence(fit_pt, iris, c("Petal.Width", "Sepal.Length"))
-#' pd_int_rfsrc <- partial_dependence(fit_rfsrc, iris, c("Petal.Width", "Sepal.Length"))
+#' pd_int_pt <- partial_dependence(fit_pt, c("Petal.Width", "Sepal.Length"))
+#' pd_int_rfsrc <- partial_dependence(fit_rfsrc, c("Petal.Width", "Sepal.Length"))
 #'
 #' ## Regression
 #'
@@ -56,23 +56,22 @@
 #' fit_rfsrc <- rfsrc(Fertility ~ ., swiss)
 #'
 #' pd_rf <- partial_dependence(fit_rf, swiss, "Education")
-#' pd_pt <- partial_dependence(fit_pt, swiss, "Education")
-#' pd_rfsrc <- partial_dependence(fit_rfsrc, swiss, "Education")
+#' pd_pt <- partial_dependence(fit_pt, "Education")
+#' pd_rfsrc <- partial_dependence(fit_rfsrc, "Education")
 #'
 #' pd_int_rf <- partial_dependence(fit_rf, swiss, c("Education", "Catholic"))
-#' pd_int_pt <- partial_dependence(fit_pt, swiss, c("Education", "Catholic"))
-#' pd_int_rfsrc <- partial_dependence(fit_rfsrc, swiss, c("Education", "Catholic"))
-#'
+#' pd_int_pt <- partial_dependence(fit_pt, c("Education", "Catholic"))
+#' pd_int_rfsrc <- partial_dependence(fit_rfsrc, c("Education", "Catholic"))
 #'
 #' ## Survival
 #'
-#' data(veteran, package = "randomForestSRC")
+#' data(veteran)
 #'
 #' fit_rfsrc <- rfsrc(Surv(time, status) ~ ., veteran)
 #'
-#' pd_rfsrc <- partial_dependence(fit_rfsrc, veteran, "age")
+#' pd_rfsrc <- partial_dependence(fit_rfsrc, "age")
 #'
-#' pd_int_rfsrc <- partial_dependence(fit_rfsrc, veteran, c("age", "diagtime"))
+#' pd_int_rfsrc <- partial_dependence(fit_rfsrc, c("age", "diagtime"))
 #' }
 #' @export
 #' Creates a prediction vector for variables to decrease computation time
