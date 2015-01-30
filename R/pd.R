@@ -119,6 +119,7 @@ partial_dependence.randomForest <- function(fit, df, var, cutoff = 10,
                 pred <- predict(fit, newdata = df)
                 pred <- table(pred)
                 pred <- names(pred)[pred == max(pred)]
+                if (length(pred) != 1) pred <- sample(pred, 1)
             } else stop("invalid type parameter passed to predict.randomForest*")
         } else stop("invalid response type")
         c(rng[i, ], pred)
@@ -155,6 +156,7 @@ partial_dependence.RandomForest <- function(fit, var, cutoff = 10,
                     pred <- predict(fit, newdata = df)
                     pred <- table(pred)
                     pred <- names(pred)[pred == max(pred)]
+                    if (length(pred) != 1) pred <- sample(pred, 1)
                 } else stop("invalid type parameter passed to predict.RandomForest*")
             } else stop("invalid response type")
         } else {
