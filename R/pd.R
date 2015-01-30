@@ -97,6 +97,20 @@ ivar_points <- function(df, x, cutoff = 10, empirical = TRUE) {
     return(rng)
 }
 
+
+fix_classes <- function(var, df, pred) {
+    for (x in var) {
+        if (class(df[, x]) == "factor")
+            pred[, x] <- factor(pred[, x])
+        else if (class(df[, x]) == "numeric") {
+            if (any(df[, x] %% 1 != 0))
+                pred[, x] <- as.numeric(pred[, x])
+            else pred[, x] <- as.integer(pred[, x])
+        } 
+    }
+    pred
+}
+
 partial_dependence <- function(fit, ...) UseMethod("partial_dependence")
 
 partial_dependence.randomForest <- function(fit, df, var, cutoff = 10,
@@ -130,7 +144,7 @@ partial_dependence.randomForest <- function(fit, df, var, cutoff = 10,
     colnames(pred)[1:length(var)] <- var
     if (type != "prob")
         colnames(pred)[(length(var) + 1):ncol(pred)] <- names(y_class)
-    pred
+    fix_classes(c(var, names(y_class)), df, pred)
 }
 
 partial_dependence.RandomForest <- function(fit, var, cutoff = 10,
@@ -171,16 +185,7 @@ partial_dependence.RandomForest <- function(fit, var, cutoff = 10,
     else pred <- as.data.frame(do.call(rbind, pred))
     colnames(pred)[1:length(var)] <- var
     colnames(pred)[(length(var) + 1):ncol(pred)] <- colnames(y)
-    for (x in c(var, colnames(y))) {
-        if (class(df[, x]) == "factor")
-            pred[, x] <- factor(pred[, x])
-        else if (class(df[, x]) == "numeric") {
-            if (any(df[, x] %% 1 != 0))
-                pred[, x] <- as.numeric(pred[, x])
-            else pred[, x] <- as.integer(pred[, x])
-        } 
-    }
-    pred
+    fix_classes(c(var, colnames(y)), df, pred)
 }
 
 partial_dependence.rfsrc <- function(fit, var, cutoff = 10, empirical = TRUE, parallel = FALSE, ...) {
@@ -217,6 +222,10 @@ partial_dependence.rfsrc <- function(fit, var, cutoff = 10, empirical = TRUE, pa
     colnames(pred)[1:length(var)] <- var
     if (is.data.frame(fit$yvar)) {
         colnames(pred)[ncol(pred)] <- "chf"
-    else colnames(pred)[(length(var) + 1):ncol(pred)] <- fit$yvar.names
+        pred[, -ncol(pred)] <- fix_classes(var, df, pred[, -ncol(pred)])
+    } else {
+        colnames(pred)[(length(var) + 1):ncol(pred)] <- fit$yvar.names
+        pred <- fix_classes(c(var, fit$yvar.names), df, pred)
+    }
     pred
 }
