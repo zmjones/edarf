@@ -123,7 +123,12 @@ partial_dependence.randomForest <- function(fit, df, var, cutoff = 10,
 #' pd_int <- partial_dependence(fit, c("Education", "Catholic"))
 #'
 #' ## Multivariate
-#' ...
+#' 
+#' data(mtcars)
+#'
+#' fit <- cforest(hp + qsec ~ ., mtcars, controls = cforest_control(mtry = 2))
+#' pd <- partial_dependence(fit, "mpg")
+#' pd_int <- partial_dependence(fit, c("mpg", "cyl"))
 #' }
 #' @export
 partial_dependence.RandomForest <- function(fit, var, cutoff = 10,

@@ -66,6 +66,17 @@ pd_rfsrc <- partial_dependence(fit_rfsrc, "age")
 pd_int_rfsrc <- partial_dependence(fit_rfsrc, c("age", "diagtime"))
 ```
 
+### Multivariate
+
+```{r}
+data(mtcars)
+
+fit <- cforest(hp + qsec ~ ., mtcars, controls = cforest_control(mtry = 2))
+pd <- partial_dependence(fit, "mpg")
+pd_int <- partial_dependence(fit, c("mpg", "cyl"))
+
+```
+
 ### Plotting
 
 ```{r}
