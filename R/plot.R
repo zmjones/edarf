@@ -1,7 +1,7 @@
 #' Plot permutation importance from random forests
 #'
 #' @import ggplot2
-#' @importFrom assertthat assert_that noNA
+#' @importFrom assertthat assert_that noNA is.flag
 #'
 #' @param var character or factor vector of variable labels
 #' @param imp numeric vector of variable permutation importance estimates
