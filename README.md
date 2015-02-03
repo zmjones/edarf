@@ -88,6 +88,8 @@ imp <- fit_reg$importance[, 1]
 plot_imp(names(imp), imp)
 
 pd_reg <- partial_dependence(fit_reg, swiss, "Education", 50)
-
-plot_twoway_partial(pd_reg$Education, pd_reg$Fertility, smooth = TRUE)
+plot_twoway_partial(pd_reg$Education, pd_reg$Fertility, smooth = TRUE,
+                    ylab = "Education", xlab = "Fertility")
 ```
+
+![](http://zmjones.com/static/images/pd_ex.png)
