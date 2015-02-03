@@ -78,9 +78,11 @@ partial_dependence.randomForest <- function(fit, df, var, cutoff = 10,
         pred <- as.data.frame(do.call(rbind, lapply(pred, unlist)))
     else pred <- as.data.frame(do.call(rbind, pred))
     colnames(pred)[1:length(var)] <- var
-    if (type != "prob")
-        colnames(pred)[(length(var) + 1):ncol(pred)] <- names(y_class)
-    fix_classes(c(var, names(y_class)), df, pred)
+    if (type != "prob") {
+        colnames(pred)[ncol(pred)] <- names(y_class)
+        pred <- fix_classes(colnames(pred), df, pred)
+    }
+    pred
 }
 #' Partial dependence for RandomForest objects from package \code{party}
 #'
@@ -150,6 +152,7 @@ partial_dependence.RandomForest <- function(fit, var, cutoff = 10,
                     pred <- predict(fit, newdata = df, type = "prob")
                     pred <- do.call(rbind, pred)
                     pred <- colMeans(pred)
+                    names(pred) <- gsub(paste0(names(y), "\\."), "", names(pred))
                 } else if (type == "class" | type == "") {
                     pred <- predict(fit, newdata = df)
                     pred <- table(pred)
@@ -168,8 +171,11 @@ partial_dependence.RandomForest <- function(fit, var, cutoff = 10,
         pred <- as.data.frame(do.call(rbind, lapply(pred, unlist)))
     else pred <- as.data.frame(do.call(rbind, pred))
     colnames(pred)[1:length(var)] <- var
-    colnames(pred)[(length(var) + 1):ncol(pred)] <- colnames(y)
-    fix_classes(c(var, colnames(y)), df, pred)
+    if (type != "prob") {
+        colnames(pred)[(length(var) + 1):ncol(pred)] <- colnames(y)
+        pred <- fix_classes(c(var, colnames(y)), df, pred)
+    }
+    pred
 }
 #' Partial dependence for RandomForest objects from package \code{party}
 #'
@@ -223,7 +229,7 @@ partial_dependence.rfsrc <- function(fit, var, cutoff = 10, empirical = TRUE, pa
     rng <- expand.grid(lapply(var, function(x) ivar_points(df, x, cutoff, empirical)))
     '%op%' <- ifelse(foreach::getDoParWorkers() > 1 & parallel, foreach::'%dopar%', foreach::'%do%')
     type <- ifelse(is.null(args[["type"]]), "", args[["type"]])
-    pred <- foreach::foreach(i = 1:nrow(rng), .inorder = FALSE, .packages = "party") %op% {
+    pred <- foreach::foreach(i = 1:nrow(rng), .inorder = FALSE, .packages = "randomForestSRC") %op% {
         df[, var] <- rng[i, ]
         pred <- predict(fit, newdata = df, outcome = "train")
         if (class(y) == "factor") {
@@ -249,8 +255,8 @@ partial_dependence.rfsrc <- function(fit, var, cutoff = 10, empirical = TRUE, pa
     if (is.data.frame(fit$yvar)) {
         colnames(pred)[ncol(pred)] <- "chf"
         pred[, -ncol(pred)] <- fix_classes(var, df, pred[, -ncol(pred)])
-    } else {
-        colnames(pred)[(length(var) + 1):ncol(pred)] <- fit$yvar.names
+    } else if (type != "prob"){
+        colnames(pred)[ncol(pred)] <- fit$yvar.names
         pred <- fix_classes(c(var, fit$yvar.names), df, pred)
     }
     pred
