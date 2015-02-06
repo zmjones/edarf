@@ -2,15 +2,16 @@
 % Please edit documentation in R/pd.R
 \name{partial_dependence.rfsrc}
 \alias{partial_dependence.rfsrc}
-\title{Partial dependence for RandomForest objects from package \code{party}}
+\title{Partial dependence for rfsrc objects from package \code{randomForestSRC}}
 \usage{
 \method{partial_dependence}{rfsrc}(fit, var, cutoff = 10, empirical = TRUE,
   parallel = FALSE, ...)
 }
 \arguments{
-\item{fit}{an object of class 'RandomForest' returned from \code{cforest}}
+\item{fit}{an object of class 'rfsrc' returned from \code{rfsrc}}
 
-\item{var}{a character vector of the predictors of interest, which must match the input matrix in the call to \code{randomForest}}
+\item{var}{a character vector of the predictors of interest, which must match
+the input matrix in the call to \code{rfsrc}}
 
 \item{cutoff}{the maximal number of unique points in each element of 'var' used in the
 partial dependence calculation}
@@ -30,7 +31,7 @@ in the model but not in `var`
 }
 \description{
 Calculates the partial dependence of the response on an arbitrary dimensional set of predictors
-from a fitted random forest object from the \code{party} package
+from a fitted random forest object from the \code{randomForestSRC} package
 }
 \examples{
 \dontrun{

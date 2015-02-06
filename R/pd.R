@@ -177,7 +177,7 @@ partial_dependence.RandomForest <- function(fit, var, cutoff = 10,
     }
     pred
 }
-#' Partial dependence for RandomForest objects from package \code{randomForestSRC}
+#' Partial dependence for rfsrc objects from package \code{randomForestSRC}
 #'
 #' Calculates the partial dependence of the response on an arbitrary dimensional set of predictors
 #' from a fitted random forest object from the \code{randomForestSRC} package
