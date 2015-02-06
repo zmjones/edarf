@@ -6,8 +6,6 @@
 #'
 #' @param pd object of class \code{c("pd", "data.frame")} as returned by
 #' \code{\link{partial_dependence}}
-#' @param ylab label for the y-axis
-#' @param xlab label for the y-axis
 #' @param title title for the plot
 #'
 #' @return a ggplot2 object
@@ -46,22 +44,29 @@ plot.pd <- function(pd, title = NULL) {
     }
     
   } else {
-    # Interaction PLots
+    # Interaction Plots
     assert_that(ncol(pd) == 3)
     if(atts$prob) 
       stop("Interaction plot for predicted class probabilities not implemented")
     if(class(pd[, 3]) == "numeric") {
       n_unique <- apply(pd[, 1:2], 2, function(x) length(unique(x)))
-      plt <- which.max(n_unique)
-      fct <- which.min(n_unique)
-      if(n_unique[1] == n_unique[2]) fct <- colnames(pd)[2]
+      if(n_unique[1] == n_unique[2]) {
+        plt <- 1
+        fct <- 2
+      } else {
+        plt <- which.max(n_unique)
+        fct <- which.min(n_unique)  
+      }
       
-      pd[, fct] <- as.factor(pd[, fct]) 
-      p <- ggplot(pd, aes(x = pd[, plt], y = pd[, 3], colour = pd[, fct]))
+      pd[, fct] <- as.factor(pd[, fct])
+      x <- colnames(pd)[plt]
+      y <- colnames(pd)[3]
+      fct <- colnames(pd)[fct]
+      p <- ggplot(pd, aes_string(x = x, y = y, colour = fct))
       p <- p + geom_line() + geom_point()
       p <- p + theme_bw()
-      p <- p + labs(color = colnames(pd)[fct], x = colnames(pd)[plt],
-                    y = paste("Predicted", colnames(pd)[3]), title = title)
+      p <- p + labs(color = fct, x = x,
+                    y = paste("Predicted", y), title = title)
       p
     } else {
       stop("Interaction plot for discrete outcomes not implemented")

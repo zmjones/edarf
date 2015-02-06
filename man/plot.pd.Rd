@@ -4,17 +4,13 @@
 \alias{plot.pd}
 \title{Plot permutation importance from random forests}
 \usage{
-plot.pd(pd, title = NULL)
+\method{plot}{pd}(pd, title = NULL)
 }
 \arguments{
 \item{pd}{object of class \code{c("pd", "data.frame")} as returned by
 \code{\link{partial_dependence}}}
 
 \item{title}{title for the plot}
-
-\item{ylab}{label for the y-axis}
-
-\item{xlab}{label for the y-axis}
 }
 \value{
 a ggplot2 object
