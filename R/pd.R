@@ -177,13 +177,14 @@ partial_dependence.RandomForest <- function(fit, var, cutoff = 10,
     }
     pred
 }
-#' Partial dependence for RandomForest objects from package \code{party}
+#' Partial dependence for RandomForest objects from package \code{randomForestSRC}
 #'
 #' Calculates the partial dependence of the response on an arbitrary dimensional set of predictors
-#' from a fitted random forest object from the \code{party} package
+#' from a fitted random forest object from the \code{randomForestSRC} package
 #'
-#' @param fit an object of class 'RandomForest' returned from \code{cforest}
-#' @param var a character vector of the predictors of interest, which must match the input matrix in the call to \code{randomForest}
+#' @param fit an object of class 'rfsrc' returned from \code{rfsrc}
+#' @param var a character vector of the predictors of interest, which must match 
+#' the input matrix in the call to \code{rfsrc}
 #' @param cutoff the maximal number of unique points in each element of 'var' used in the
 #' partial dependence calculation
 #' @param empirical logical indicator of whether or not only values in the data should be sampled
