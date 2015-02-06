@@ -25,7 +25,7 @@ partial_dependence <- function(fit, ...) UseMethod("partial_dependence")
 #' each set of values taken by the values of 'var' averaged within the values of predictors
 #' in the model but not in `var`
 #'
-#' #' @examples
+#' @examples
 #' \dontrun{
 #' library(randomForest)
 #' ## library(doParallel)
@@ -82,6 +82,9 @@ partial_dependence.randomForest <- function(fit, df, var, cutoff = 10,
         colnames(pred)[ncol(pred)] <- names(y_class)
         pred <- fix_classes(colnames(pred), df, pred)
     }
+    attr(pred, "class") <- c("pd", "data.frame")
+    attr(pred, "prob") <- type == "prob"
+    attr(pred, "interaction") <- length(var) > 1
     pred
 }
 #' Partial dependence for RandomForest objects from package \code{party}
@@ -101,7 +104,7 @@ partial_dependence.randomForest <- function(fit, df, var, cutoff = 10,
 #' each set of values taken by the values of 'var' averaged within the values of predictors
 #' in the model but not in `var`
 #'
-#' #' @examples
+#' @examples
 #' \dontrun{
 #' library(party)
 #' ## library(doParallel)
@@ -175,6 +178,9 @@ partial_dependence.RandomForest <- function(fit, var, cutoff = 10,
         colnames(pred)[(length(var) + 1):ncol(pred)] <- colnames(y)
         pred <- fix_classes(c(var, colnames(y)), df, pred)
     }
+    attr(pred, "class") <- c("pd", "data.frame")
+    attr(pred, "prob") <- type == "prob"
+    attr(pred, "interaction") <- length(var) > 1
     pred
 }
 #' Partial dependence for RandomForest objects from package \code{randomForestSRC}
@@ -195,7 +201,7 @@ partial_dependence.RandomForest <- function(fit, var, cutoff = 10,
 #' each set of values taken by the values of 'var' averaged within the values of predictors
 #' in the model but not in `var`
 #'
-#' #' @examples
+#' @examples
 #' \dontrun{
 #' library(randomForestSRC)
 #' ## library(doParallel)
@@ -260,6 +266,9 @@ partial_dependence.rfsrc <- function(fit, var, cutoff = 10, empirical = TRUE, pa
         colnames(pred)[ncol(pred)] <- fit$yvar.names
         pred <- fix_classes(c(var, fit$yvar.names), df, pred)
     }
+    attr(pred, "class") <- c("pd", "data.frame")
+    attr(pred, "prob") <- type == "prob"
+    attr(pred, "interaction") <- length(var) > 1
     pred
 }
 #' Creates a prediction vector for variables to decrease computation time
