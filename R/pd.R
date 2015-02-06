@@ -284,7 +284,7 @@ ivar_points <- function(df, x, cutoff = 10, empirical = TRUE) {
     rng <- rng[!is.na(rng)]
     if (length(rng) > cutoff & !is.factor(df[, x])) {
         if (empirical == TRUE & cutoff < length(rng))
-            rng <- sample(rng, cutoff)
+            rng <- c(sample(rng, (cutoff - 2)), range(rng))
         else if (empirical == FALSE)
             rng <- seq(min(rng), max(rng), length.out = cutoff)
     }
