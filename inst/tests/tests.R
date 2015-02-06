@@ -92,7 +92,7 @@ test_that("partial_dependence works with party multivariate regression", {
     pd <- partial_dependence(fit, "mpg")
     expect_that(pd, is_a("data.frame"))
     expect_that(colnames(pd), equals(c("mpg", "hp", "qsec")))
-    expect_that(pd$mpg is_a("numeric"))
+    expect_that(pd$mpg, is_a("numeric"))
     expect_that(pd$hp, is_a("integer"))
     expect_that(pd$qsec, is_a("numeric"))
     expect_that(length(unique(pd$mpg)), equals(nrow(pd)))

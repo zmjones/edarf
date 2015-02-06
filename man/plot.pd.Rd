@@ -4,13 +4,17 @@
 \alias{plot.pd}
 \title{Plot permutation importance from random forests}
 \usage{
-\method{plot}{pd}(pd, title = NULL)
+plot.pd(pd, title = NULL, facet_var = NULL)
 }
 \arguments{
 \item{pd}{object of class \code{c("pd", "data.frame")} as returned by
 \code{\link{partial_dependence}}}
 
 \item{title}{title for the plot}
+
+\item{facet_var}{A caracter vector indicating the variable that should be used
+to facet on if inteaction is plotted. If not specified the variable with less
+unique values is chosen.}
 }
 \value{
 a ggplot2 object

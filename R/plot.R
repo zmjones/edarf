@@ -6,6 +6,9 @@
 #'
 #' @param pd object of class \code{c("pd", "data.frame")} as returned by
 #' \code{\link{partial_dependence}}
+#' @param facet_var A caracter vector indicating the variable that should be used
+#' to facet on if inteaction is plotted. If not specified the variable with less 
+#' unique values is chosen.
 #' @param title title for the plot
 #'
 #' @return a ggplot2 object
@@ -18,7 +21,7 @@
 #' plot(pd)
 #' @export
 
-plot.pd <- function(pd, title = NULL) {
+plot.pd <- function(pd, title = NULL, facet_var = NULL) {
   atts <- attributes(pd)
   # One predictor Plots
   if(!atts$interaction) {
@@ -27,7 +30,8 @@ plot.pd <- function(pd, title = NULL) {
       df <- data.frame(x = pd[, 1], y = pd[, 2])
       p <- ggplot(df, aes(x, y))
       p <- p + geom_point() + geom_line()
-      p <- p + labs(y = colnames(pd)[2], x = colnames(pd)[1], title = title) 
+      p <- p + labs(y = paste("Predicted", colnames(pd)[2]), x = colnames(pd)[1], 
+                    title = title) 
       p <- p + theme_bw()
       p  
     } else {
@@ -49,23 +53,17 @@ plot.pd <- function(pd, title = NULL) {
     if(atts$prob) 
       stop("Interaction plot for predicted class probabilities not implemented")
     if(class(pd[, 3]) == "numeric") {
-      n_unique <- apply(pd[, 1:2], 2, function(x) length(unique(x)))
-      if(n_unique[1] == n_unique[2]) {
-        plt <- 1
-        fct <- 2
-      } else {
-        plt <- which.max(n_unique)
-        fct <- which.min(n_unique)  
-      }
-      
-      pd[, fct] <- as.factor(pd[, fct])
-      x <- colnames(pd)[plt]
+      if(is.null(facet_var)) {
+        n_unique <- apply(pd[, 1:2], 2, function(x) length(unique(x)))
+        facet_var <- names(which.min(n_unique))
+      }  
+      pd[, facet_var] <- as.factor(pd[, facet_var])
+      plot_var <- colnames(pd)[which(colnames(pd)[-3] != facet_var)]
       y <- colnames(pd)[3]
-      fct <- colnames(pd)[fct]
-      p <- ggplot(pd, aes_string(x = x, y = y, colour = fct))
+      p <- ggplot(pd, aes_string(x = plot_var, y = y, colour = facet_var))
       p <- p + geom_line() + geom_point()
       p <- p + theme_bw()
-      p <- p + labs(color = fct, x = x,
+      p <- p + labs(color = facet_var, x = plot_var,
                     y = paste("Predicted", y), title = title)
       p
     } else {
