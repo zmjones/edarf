@@ -61,6 +61,17 @@ test_that("partial_dependence works with cforest classification", {
     expect_that(colnames(pd), equals(c("Petal.Width", "Species")))
     expect_that(pd$Species, is_a("factor"))
     expect_that(length(unique(pd$Petal.Width)), equals(nrow(pd)))
+})
+
+test_that("partial_dependence works with cforest classification w/ probability output", {
+    library(party)
+    data(iris)
+    fit <- cforest(Species ~ ., iris, controls = cforest_unbiased(mtry = 2))
+    pd <- partial_dependence(fit, "Petal.Width", length(unique(iris$Petal.Width)), type = "prob")
+    expect_that(pd, is_a("data.frame"))
+    expect_that(colnames(pd), equals(c("Petal.Width", "setosa", "versicolor", "virginica")))
+    expect_that(pd$Petal.Width, is_a("numeric"))
+    expect_that(length(unique(pd$Petal.Width)), equals(nrow(pd)))
 }) 
 
 test_that("partial_dependence works with rfsrc classification", {
@@ -72,4 +83,17 @@ test_that("partial_dependence works with rfsrc classification", {
     expect_that(colnames(pd), equals(c("Petal.Width", "Species")))
     expect_that(pd$Species, is_a("factor"))
     expect_that(length(unique(pd$Petal.Width)), equals(nrow(pd)))
+})
+
+test_that("partial_dependence works with party multivariate regression", {
+    library(party)
+    data(mtcars)
+    fit <- cforest(hp + qsec ~ ., mtcars, controls = cforest_control(mtry = 2))
+    pd <- partial_dependence(fit, "mpg")
+    expect_that(pd, is_a("data.frame"))
+    expect_that(colnames(pd), equals(c("mpg", "hp", "qsec")))
+    expect_that(pd$mpg is_a("numeric"))
+    expect_that(pd$hp, is_a("integer"))
+    expect_that(pd$qsec, is_a("numeric"))
+    expect_that(length(unique(pd$mpg)), equals(nrow(pd)))
 })
