@@ -283,9 +283,10 @@ ivar_points <- function(df, x, cutoff = 10, empirical = TRUE) {
     rng <- unique(df[, x])
     rng <- rng[!is.na(rng)]
     if (length(rng) > cutoff & !is.factor(df[, x])) {
-        if (empirical == TRUE & cutoff < length(rng))
-            rng <- c(sample(rng, (cutoff - 2)), range(rng))
-        else if (empirical == FALSE)
+        if (empirical == TRUE & cutoff < length(rng)) {
+          rng_s <- sort(rng)[-c(1, length(rng))]
+          rng <- c(sample(rng_s, (cutoff - 2)), range(rng))
+        } else if (empirical == FALSE)
             rng <- seq(min(rng), max(rng), length.out = cutoff)
     }
     class(rng) <- class(df[, x])

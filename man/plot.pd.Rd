@@ -4,7 +4,7 @@
 \alias{plot.pd}
 \title{Plot permutation importance from random forests}
 \usage{
-plot.pd(pd, title = NULL, facet_var = NULL)
+\method{plot}{pd}(pd, title = NULL, facet_var = NULL)
 }
 \arguments{
 \item{pd}{object of class \code{c("pd", "data.frame")} as returned by

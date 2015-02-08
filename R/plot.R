@@ -37,13 +37,11 @@ plot.pd <- function(pd, title = NULL, facet_var = NULL) {
     } else {
       # Predicted probabilities
       df <- melt(pd, id.vars = 1)
-      if(is.null(xlab)) xlab <- colnames(pd)[1]
       colnames(df) <- c("x", "Class", "Probability")
       p <- ggplot(df, aes(x = x, y = Probability, fill = Class))
       p <- p + geom_area(position = "fill") 
-      #p <- p + scale_fill_brewer(palette = "Set5")
       p <- p + scale_fill_grey()
-      p <- p + theme_bw() + labs(x = xlab, title = title)
+      p <- p + theme_bw() + labs(x = colnames(pd)[1], title = title)
       p
     }
     
