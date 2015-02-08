@@ -6,6 +6,11 @@
 \usage{
 partial_dependence(fit, ...)
 }
+\arguments{
+\item{fit}{object of class 'RandomForest', 'randomForest', or 'rfsrc'}
+
+\item{...}{arguments to be passed to \code{partial_dependence}}
+}
 \description{
 Calculates the partial dependence of the response on an arbitrary dimensional set of predictors
 from a fitted random forest object from the party, randomForest, or randomForestSRC packages

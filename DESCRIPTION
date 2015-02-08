@@ -10,7 +10,8 @@ License: MIT + file LICENSE
 Imports:
     foreach,
     ggplot2,
-    assertthat
+    assertthat,
+    reshape2
 Suggests:
     scales,
     doParallel

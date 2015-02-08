@@ -4,6 +4,8 @@
 #' from a fitted random forest object from the party, randomForest, or randomForestSRC packages
 #'
 #' @importFrom foreach foreach %dopar% %do%
+#' @param fit object of class 'RandomForest', 'randomForest', or 'rfsrc'
+#' @param ... arguments to be passed to \code{partial_dependence}
 #'
 #' @export
 partial_dependence <- function(fit, ...) UseMethod("partial_dependence")
@@ -23,7 +25,7 @@ partial_dependence <- function(fit, ...) UseMethod("partial_dependence")
 #'
 #' @return a dataframe with columns for each predictor in `var` and the fitted value for
 #' each set of values taken by the values of 'var' averaged within the values of predictors
-#' in the model but not in `var`
+#' in the model but not in `var`. The dataframe also has class "pd" with attributes "class", "prob", "multivariate", and "interaction", which are used by the plot method.
 #'
 #' @examples
 #' \dontrun{
@@ -85,6 +87,7 @@ partial_dependence.randomForest <- function(fit, df, var, cutoff = 10,
     attr(pred, "class") <- c("pd", "data.frame")
     attr(pred, "prob") <- type == "prob"
     attr(pred, "interaction") <- length(var) > 1
+    attr(pred, "multivariate") <- FALSE
     pred
 }
 #' Partial dependence for RandomForest objects from package \code{party}
@@ -102,7 +105,7 @@ partial_dependence.randomForest <- function(fit, df, var, cutoff = 10,
 #'
 #' @return a dataframe with columns for each predictor in `var` and the fitted value for
 #' each set of values taken by the values of 'var' averaged within the values of predictors
-#' in the model but not in `var`
+#' in the model but not in `var`. The dataframe also has class "pd" with attributes "class", "prob", "multivariate", and "interaction", which are used by the plot method.
 #'
 #' @examples
 #' \dontrun{
@@ -181,6 +184,7 @@ partial_dependence.RandomForest <- function(fit, var, cutoff = 10,
     attr(pred, "class") <- c("pd", "data.frame")
     attr(pred, "prob") <- type == "prob"
     attr(pred, "interaction") <- length(var) > 1
+    attr(pred, "multivariate") <- dim(y)[2] != 1
     pred
 }
 #' Partial dependence for rfsrc objects from package \code{randomForestSRC}
@@ -199,7 +203,7 @@ partial_dependence.RandomForest <- function(fit, var, cutoff = 10,
 #'
 #' @return a dataframe with columns for each predictor in `var` and the fitted value for
 #' each set of values taken by the values of 'var' averaged within the values of predictors
-#' in the model but not in `var`
+#' in the model but not in `var`. The dataframe also has class "pd" with attributes "class", "prob", "multivariate", and "interaction", which are used by the plot method.
 #'
 #' @examples
 #' \dontrun{
@@ -269,6 +273,7 @@ partial_dependence.rfsrc <- function(fit, var, cutoff = 10, empirical = TRUE, pa
     attr(pred, "class") <- c("pd", "data.frame")
     attr(pred, "prob") <- type == "prob"
     attr(pred, "interaction") <- length(var) > 1
+    attr(pred, "multivariate") <- FALSE
     pred
 }
 #' Creates a prediction vector for variables to decrease computation time
