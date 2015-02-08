@@ -20,7 +20,6 @@ install_github("zmjones/edarf")
 ```{r}
 library(edarf)
 
-
 ## classification
 data(iris)
 library(randomForest)
@@ -53,8 +52,6 @@ pd_int <- partial_dependence(fit, c("age", "diagtime"))
 plot(pd_int)
 
 ## multivariate
-
-```{r}
 data(mtcars)
 library(party)
 fit <- cforest(hp + qsec ~ ., mtcars, controls = cforest_control(mtry = 2))
