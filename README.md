@@ -19,25 +19,19 @@ install_github("zmjones/edarf")
 
 ```{r}
 library(randomForest)
-library(party)
-library(randomForestSRC)
 library(edarf)
 data(iris)
 
-library(doParallel)
-registerDoParallel(makeCluster(detectCores()))
+fit <- randomForest(Species ~ ., iris)
 
-fit_rf <- randomForest(Species ~ ., iris)
-fit_pt <- cforest(Species ~ ., iris, controls = cforest_control(mtry = 2))
-fit_rfsrc <- rfsrc(Species ~ ., iris)
+pd <- partial_dependence(fit, iris, "Petal.Width", type = "prob")
+plot(pd)
 
-pd_rf <- partial_dependence(fit_rf, iris, "Petal.Width")
-pd_pt <- partial_dependence(fit_pt, "Petal.Width")
-pd_rfsrc <- partial_dependence(fit_rfsrc, "Petal.Width")
+pd_int <- partial_dependence(fit, iris, c("Petal.Width", "Sepal.Length"), type = "prob")
+```
 
-pd_int_rf <- partial_dependence(fit_rf, iris, c("Petal.Width", "Sepal.Length"))
-pd_int_pt <- partial_dependence(fit_pt, c("Petal.Width", "Sepal.Length"))
-pd_int_rfsrc <- partial_dependence(fit_rfsrc, c("Petal.Width", "Sepal.Length"))
+```{r}
+
 ```
 
 ### Regression
@@ -76,20 +70,4 @@ data(mtcars)
 fit <- cforest(hp + qsec ~ ., mtcars, controls = cforest_control(mtry = 2))
 pd <- partial_dependence(fit, "mpg")
 pd_int <- partial_dependence(fit, c("mpg", "cyl"))
-
 ```
-
-### Plotting
-
-```{r}
-fit_reg <- randomForest(Fertility ~ ., swiss)
-
-imp <- fit_reg$importance[, 1]
-plot_imp(names(imp), imp)
-
-pd_reg <- partial_dependence(fit_reg, swiss, "Education", 50)
-plot_twoway_partial(pd_reg$Education, pd_reg$Fertility, smooth = TRUE,
-                    ylab = "Education", xlab = "Fertility")
-```
-
-![](http://zmjones.com/static/images/pd_ex.png)

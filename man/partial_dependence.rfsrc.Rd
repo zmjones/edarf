@@ -25,7 +25,7 @@ partial dependence calculation}
 \value{
 a dataframe with columns for each predictor in `var` and the fitted value for
 each set of values taken by the values of 'var' averaged within the values of predictors
-in the model but not in `var`
+in the model but not in `var`. The dataframe also has class "pd" with attributes "class", "prob", "multivariate", and "interaction", which are used by the plot method.
 }
 \description{
 Calculates the partial dependence of the response on an arbitrary dimensional set of predictors

@@ -2,17 +2,19 @@
 % Please edit documentation in R/plot.R
 \name{plot.pd}
 \alias{plot.pd}
-\title{Plot permutation importance from random forests}
+\title{Plot partial dependence from random forests}
 \usage{
-plot.pd(pd, title = NULL, facet_var = NULL)
+\method{plot}{pd}(pd, geom = "line", title = "", facet_var = NULL)
 }
 \arguments{
 \item{pd}{object of class \code{c("pd", "data.frame")} as returned by
 \code{\link{partial_dependence}}}
 
+\item{geom}{"line", "area", or "bar". "line" is applicable to most situations, "area" works well for plotting class probabilities, and "bar" works well for showing the majority class (the axes are flipped in this case)}
+
 \item{title}{title for the plot}
 
-\item{facet_var}{A caracter vector indicating the variable that should be used
+\item{facet_var}{A character vector indicating the variable that should be used
 to facet on if inteaction is plotted. If not specified the variable with less
 unique values is chosen.}
 }
@@ -20,13 +22,14 @@ unique values is chosen.}
 a ggplot2 object
 }
 \description{
-Plot permutation importance from random forests
+Plot partial dependence from random forests
 }
 \examples{
 library(randomForest)
+library(edarf)
 data(iris)
 fit <- randomForest(Species ~ ., iris)
-pd <- partial_dependence(fit, iris, "Petal.Width")
-plot(pd)
+pd <- partial_dependence(fit, iris, "Petal.Width", type = "prob")
+plot(pd, geom = "area")
 }
 
