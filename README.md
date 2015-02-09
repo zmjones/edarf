@@ -31,6 +31,7 @@ pd <- partial_dependence(fit, iris, "Petal.Width")
 plot(pd, geom = "bar")
 pd_int <- partial_dependence(fit, iris, c("Petal.Width", "Sepal.Length"), type = "prob")
 plot(pd_int, geom = "line")
+plot(pd_int, geom = "area")
 pd_int <- partial_dependence(fit, iris, c("Petal.Width", "Sepal.Length"))
 plot(pd_int, geom = "bar")
 

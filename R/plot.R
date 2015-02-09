@@ -22,7 +22,7 @@
 #' pd <- partial_dependence(fit, iris, "Petal.Width", type = "prob")
 #' plot(pd, geom = "area")
 #' @export
-plot.pd <- function(pd, geom = "line", title = NULL, facet_var = NULL) {
+plot.pd <- function(pd, geom = "line", title = "", facet_var) {
     atts <- attributes(pd)
     ## One predictor Plots
     if (!atts$interaction) {
@@ -38,8 +38,7 @@ plot.pd <- function(pd, geom = "line", title = NULL, facet_var = NULL) {
             p <- p + labs(y = paste("Predicted", colnames(pd)[2]),
                           x = colnames(pd)[1],
                           title = title)
-            p <- p + theme_bw()
-            p
+            p + theme_bw()
         } else {
             ## Predicted probabilities
             df <- melt(pd, id.vars = 1)
@@ -52,33 +51,56 @@ plot.pd <- function(pd, geom = "line", title = NULL, facet_var = NULL) {
                 p <- ggplot(df, aes(x, Probability, colour = Class))
                 p <- p + geom_line() + geom_point()
             } else stop("Unsupported geom")
-            p <- p + theme_bw() + labs(x = colnames(pd)[1],
-                                       title = title)
-            p
+            p <- p + labs(x = colnames(pd)[1], title = title)
+            p + theme_bw()
         }
-    } else {
+    } else if (atts$interaction) {
         ## Interaction Plots
-        assert_that(ncol(pd) == 3)
-        if (atts$prob)
-            stop("Interaction plot for predicted class probabilities not implemented")
-        if (class(pd[, 3]) == "numeric") {
-            if (is.null(facet_var)) {
-                n_unique <- apply(pd[, 1:2], 2, function(x) length(unique(x)))
-                facet_var <- names(which.min(n_unique))
-            }
-            pd[, facet_var] <- as.factor(pd[, facet_var])
-            plot_var <- colnames(pd)[which(colnames(pd)[-3] != facet_var)]
+        if (length(atts$var) > 2) stop("Only two-way interactions supported")
+        if (!exists("facet_var", mode = "character")) {
+            n_unique <- apply(pd[, atts$var], 2, function(x) length(unique(x)))
+            facet_var <- names(which.min(n_unique))
+        }
+        if (!(is.numeric(pd[, facet_var]))) stop("Non-numeric facetting variable")
+        pd[, facet_var] <- as.factor(pd[, facet_var])
+        plot_var <- atts$var[atts$var != facet_var]
+        if (atts$prob) {
+            df <- melt(pd, id.vars = atts$var)
+            colnames(df) <- c(atts$var, "Class", "Probability")
+            if (geom == "area") {
+                p <- ggplot(df, aes_string(x = plot_var,
+                                           y = "Probability",
+                                           fill = "Class"))
+                p <- p + geom_area(position = "fill")
+                p <- p + scale_fill_grey()
+            } else if (geom == "line") {
+                p <- ggplot(df, aes_string(x = plot_var,
+                                           y = "Probability",
+                                           colour = "Class"))
+                p <- p + geom_line() + geom_point()
+            } else stop("Unsupported geom")
+            p <- p + facet_wrap(as.formula(paste0("~", facet_var)))
+            p <- p + labs(x = plot_var, title = title)
+        } else if (!atts$prob & class(pd[, 3]) == "numeric" & !atts$multivariate) {
             y <- colnames(pd)[3]
             p <- ggplot(pd, aes_string(x = plot_var, y = y, colour = facet_var))
             p <- p + geom_line() + geom_point()
-            p <- p + theme_bw()
             p <- p + labs(color = facet_var,
                           x = plot_var,
                           y = paste("Predicted", y),
                           title = title)
-            p
-        } else {
-            stop("Interaction plot for discrete outcomes not implemented")
+        } else if (class(pd[, 3]) == "factor" | class(pd[, 3]) == "character") {
+            y <- colnames(pd)[3]
+            p <- ggplot(pd, aes_string(x = plot_var, y = y, group = facet_var))
+            p <- p + facet_wrap(as.formula(paste0("~", facet_var)))
+            p <- p + labs(x = plot_var, y = paste("Predicted", y), title = title)
+            if (geom == "line")
+                p <- p + geom_point() + geom_line()
+            else if (geom == "bar")
+                p <- p + geom_bar(stat = "identity")
         }
+        p + theme_bw()
+        
     }
 }
+

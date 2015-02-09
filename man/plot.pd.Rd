@@ -4,7 +4,7 @@
 \alias{plot.pd}
 \title{Plot partial dependence from random forests}
 \usage{
-\method{plot}{pd}(pd, geom = "line", title = NULL, facet_var = NULL)
+\method{plot}{pd}(pd, geom = "line", title = "", facet_var)
 }
 \arguments{
 \item{pd}{object of class \code{c("pd", "data.frame")} as returned by

@@ -88,6 +88,7 @@ partial_dependence.randomForest <- function(fit, df, var, cutoff = 10,
     attr(pred, "prob") <- type == "prob"
     attr(pred, "interaction") <- length(var) > 1
     attr(pred, "multivariate") <- FALSE
+    attr(pred, "var") <- var
     pred
 }
 #' Partial dependence for RandomForest objects from package \code{party}
@@ -185,6 +186,7 @@ partial_dependence.RandomForest <- function(fit, var, cutoff = 10,
     attr(pred, "prob") <- type == "prob"
     attr(pred, "interaction") <- length(var) > 1
     attr(pred, "multivariate") <- dim(y)[2] != 1
+    attr(pred, "var") <- var
     pred
 }
 #' Partial dependence for rfsrc objects from package \code{randomForestSRC}
@@ -274,6 +276,7 @@ partial_dependence.rfsrc <- function(fit, var, cutoff = 10, empirical = TRUE, pa
     attr(pred, "prob") <- type == "prob"
     attr(pred, "interaction") <- length(var) > 1
     attr(pred, "multivariate") <- FALSE
+    attr(pred, "var") <- var
     pred
 }
 #' Creates a prediction vector for variables to decrease computation time
