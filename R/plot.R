@@ -54,13 +54,11 @@ plot_pd <- function(pd, geom = "line", title = "", facet_var) {
             ## Multivariate with single explanatory variable
             df <- melt(pd, id.vars = 1)
             colnames(df) <- c("x", "Outcome", "value")
+            df$Outcome <- paste0("Outcome: ", df$Outcome)
             p <- ggplot(df, aes(x, value, group = Outcome))
             p <- p + geom_line() + geom_point()
             p <- p + facet_wrap(~ Outcome, scales = "free")
-            p <- p + labs(y = paste("Predicted", colnames(pd)[2:ncol(pd)]),
-                          x = colnames(pd)[1],
-                          title = title)
-
+            p <- p + labs(x = colnames(pd)[1], title = title, y = "Predicted Outcome")
         }
     } else if (atts$interaction) {
         ## Interaction Plots
@@ -70,6 +68,8 @@ plot_pd <- function(pd, geom = "line", title = "", facet_var) {
             facet_var <- names(which.min(n_unique))
         }
         if (!(is.numeric(pd[, facet_var]))) stop("Non-numeric facetting variable")
+        
+        pd[, facet_var] <- paste0(facet_var, " = ", as.character(pd[, facet_var]))
         pd[, facet_var] <- as.factor(pd[, facet_var])
         plot_var <- atts$var[atts$var != facet_var]
         if (atts$prob) {
