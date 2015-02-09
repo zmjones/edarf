@@ -8,7 +8,7 @@
 #' @param ... arguments to be passed to \code{partial_dependence}
 #'
 #' @export
-partial_dependence <- function(fit, ...) UseMethod("partial_dependence")
+partial_dependence <- function(fit, ...) UseMethod("partial_dependence", fit)
 #' Partial dependence for randomForest objects
 #'
 #' Calculates the partial dependence of the response on an arbitrary dimensional set of predictors
