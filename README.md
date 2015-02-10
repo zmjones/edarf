@@ -26,38 +26,84 @@ library(randomForest)
 fit <- randomForest(Species ~ ., iris)
 pd <- partial_dependence(fit, iris, "Petal.Width", type = "prob")
 plot_pd(pd, geom = "line")
+```
+![](http://zmjones.com/static/images/iris_pd_line.png)
+
+```{r}
 plot_pd(pd, geom = "area")
+```
+![](http://zmjones.com/static/images/iris_pd_area.png)
+
+```{r}
 pd <- partial_dependence(fit, iris, "Petal.Width")
 plot_pd(pd, geom = "bar")
+```
+![](http://zmjones.com/static/images/iris_pd_bar.png)
+
+```{r}
 pd_int <- partial_dependence(fit, iris, c("Petal.Width", "Sepal.Length"), type = "prob")
 plot_pd(pd_int, geom = "line")
+```
+![](http://zmjones.com/static/images/iris_pd_int_line.png)
+
+```{r}
 plot_pd(pd_int, geom = "area")
+```
+![](http://zmjones.com/static/images/iris_pd_int_area.png)
+
+```{r}
 pd_int <- partial_dependence(fit, iris, c("Petal.Width", "Sepal.Length"))
 plot_pd(pd_int, geom = "bar")
+```
+![](http://zmjones.com/static/images/iris_pd_int_bar.png)
 
 ## regression
+
+```{r}
 data(swiss)
 fit <- randomForest(Fertility ~ ., swiss)
 pd <- partial_dependence(fit, swiss, "Education")
 plot_pd(pd)
+```
+![](http://zmjones.com/static/images/swiss_pd_line.png)
+
+```{r}
 pd_int <- partial_dependence(fit, swiss, c("Education", "Catholic"))
 plot_pd(pd_int)
+```
+![](http://zmjones.com/static/images/swiss_pd_int_line.png)
 
 ## survival
+
+```{r}
 library(randomForestSRC)
 data(veteran)
 fit <- rfsrc(Surv(time, status) ~ ., veteran)
 pd <- partial_dependence(fit, "age")
 plot_pd(pd)
+```
+![](http://zmjones.com/static/images/veteran_pd_line.png)
+
+```{r}
 pd_int <- partial_dependence(fit, c("age", "diagtime"))
 plot_pd(pd_int)
+```
+![](http://zmjones.com/static/images/veteran_pd_int_line.png)
 
 ## multivariate
+
+```{r}
 data(mtcars)
 library(party)
 fit <- cforest(hp + qsec ~ ., mtcars, controls = cforest_control(mtry = 2))
 pd <- partial_dependence(fit, "mpg")
 plot_pd(pd)
+```
+![](http://zmjones.com/static/images/mtcars_pd_line.png)
+
+```{r}
 pd_int <- partial_dependence(fit, c("mpg", "cyl"))
 plot_pd(pd_int)
 ```
+
+Multivariate two-way interaction plots not yet implemented.
