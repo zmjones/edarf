@@ -68,9 +68,10 @@ plot_pd <- function(pd, geom = "line", title = "", facet_var) {
             facet_var <- names(which.min(n_unique))
         }
         if (!(is.numeric(pd[, facet_var]))) stop("Non-numeric facetting variable")
-        pd[, facet_var] <- factor(pd[, facet_var],
-                                  labels = paste0(facet_var, " = ", as.character(unique(pd[, facet_var]))))
-        levels(pd[, facet_var]) <- sort(levels(pd[, facet_var]))
+        ordering <- as.character(unique(sort(pd[, facet_var])))
+        labels <- paste0(facet_var, " = ", ordering)
+        pd[, facet_var] <- factor(pd[, facet_var], levels = ordering,
+                                  labels = labels)
         plot_var <- atts$var[atts$var != facet_var]
         if (atts$prob) {
             df <- melt(pd, id.vars = atts$var)
