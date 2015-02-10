@@ -68,8 +68,7 @@ partial_dependence.randomForest <- function(fit, df, var, cutoff = 10,
                 pred <- predict(fit, newdata = df, type = "prob")
                 pred <- colMeans(pred)
             } else if (type == "class" | type == "") {
-                pred <- predict(fit, newdata = df)
-                pred <- table(pred)
+                pred <- table(predict(fit, newdata = df))
                 pred <- names(pred)[pred == max(pred)]
                 if (length(pred) != 1) pred <- sample(pred, 1)
             } else stop("invalid type parameter passed to predict.randomForest*")
@@ -77,8 +76,8 @@ partial_dependence.randomForest <- function(fit, df, var, cutoff = 10,
         c(rng[i, ], pred)
     }
     if (length(var) > 1)
-        pred <- as.data.frame(do.call(rbind, lapply(pred, unlist)))
-    else pred <- as.data.frame(do.call(rbind, pred))
+        pred <- as.data.frame(do.call(rbind, lapply(pred, unlist)), stringsAsFactors = FALSE)
+    else pred <- as.data.frame(do.call(rbind, pred), stringsAsFactors = FALSE)
     colnames(pred)[1:length(var)] <- var
     if (type != "prob") {
         colnames(pred)[ncol(pred)] <- names(y_class)
