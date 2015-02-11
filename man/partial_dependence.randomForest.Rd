@@ -5,7 +5,7 @@
 \title{Partial dependence for RandomForest objects from package \code{party}}
 \usage{
 \method{partial_dependence}{RandomForest}(fit, var, cutoff = 10,
-  empirical = TRUE, parallel = FALSE, ...)
+  empirical = TRUE, parallel = FALSE, type = "")
 }
 \arguments{
 \item{fit}{an object of class 'RandomForest' returned from \code{cforest}}
@@ -19,7 +19,7 @@ partial dependence calculation}
 
 \item{parallel}{logical indicator of whether a parallel backend should be used if registered}
 
-\item{...}{additional arguments to be passed to \code{predict.RandomForest}}
+\item{type}{with classification, default "" gives most probable class for classification and "prob" gives class probabilities}
 }
 \value{
 a dataframe with columns for each predictor in `var` and the fitted value for

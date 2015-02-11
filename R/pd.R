@@ -21,7 +21,7 @@ partial_dependence <- function(fit, ...) UseMethod("partial_dependence", fit)
 #' partial dependence calculation
 #' @param empirical logical indicator of whether or not only values in the data should be sampled
 #' @param parallel logical indicator of whether a parallel backend should be used if registered
-#' @param ... additional arguments to be passed to \code{predict.randomForest}
+#' @param type with classification, default "" gives most probable class for classification and "prob" gives class probabilities
 #'
 #' @return a dataframe with columns for each predictor in `var` and the fitted value for
 #' each set of values taken by the values of 'var' averaged within the values of predictors
@@ -52,12 +52,10 @@ partial_dependence <- function(fit, ...) UseMethod("partial_dependence", fit)
 #' }
 #' @export
 partial_dependence.randomForest <- function(fit, df, var, cutoff = 10,
-                                            empirical = TRUE, parallel = FALSE, ...) {
-    args <- list(...)
+                                            empirical = TRUE, parallel = FALSE, type = "") {
     y_class <- attr(fit$terms, "dataClasses")[1]
     rng <- expand.grid(lapply(var, function(x) ivar_points(df, x, cutoff, empirical)))
     '%op%' <- ifelse(foreach::getDoParWorkers() > 1 & parallel, foreach::'%dopar%', foreach::'%do%')
-    type <- ifelse(is.null(args[["type"]]), "", args[["type"]])
     pred <- foreach::foreach(i = 1:nrow(rng), .inorder = FALSE, .packages = "randomForest") %op% {
         df[, var] <- rng[i, ]
         if (y_class == "numeric" | y_class == "integer") {
@@ -65,7 +63,7 @@ partial_dependence.randomForest <- function(fit, df, var, cutoff = 10,
             pred <- mean(pred)
         } else if (y_class == "factor") {
             if (type == "prob") {
-                pred <- predict(fit, newdata = df, type = "prob")
+                pred <- predict(fit, newdata = df, type = type)
                 pred <- colMeans(pred)
             } else if (type == "class" | type == "") {
                 pred <- table(predict(fit, newdata = df))
@@ -101,7 +99,7 @@ partial_dependence.randomForest <- function(fit, df, var, cutoff = 10,
 #' partial dependence calculation
 #' @param empirical logical indicator of whether or not only values in the data should be sampled
 #' @param parallel logical indicator of whether a parallel backend should be used if registered
-#' @param ... additional arguments to be passed to \code{predict.RandomForest}
+#' @param type with classification, default "" gives most probable class for classification and "prob" gives class probabilities
 #'
 #' @return a dataframe with columns for each predictor in `var` and the fitted value for
 #' each set of values taken by the values of 'var' averaged within the values of predictors
@@ -140,13 +138,11 @@ partial_dependence.randomForest <- function(fit, df, var, cutoff = 10,
 #' }
 #' @export
 partial_dependence.RandomForest <- function(fit, var, cutoff = 10,
-                                            empirical = TRUE, parallel = FALSE, ...) {
-    args <- list(...)
+                                            empirical = TRUE, parallel = FALSE, type = "") {
     y <- get("response", fit@data@env)
     df <- data.frame(get("input", fit@data@env), y)
     rng <- expand.grid(lapply(var, function(x) ivar_points(df, x, cutoff, empirical)))
     '%op%' <- ifelse(foreach::getDoParWorkers() > 1 & parallel, foreach::'%dopar%', foreach::'%do%')
-    type <- ifelse(is.null(args[["type"]]), "", args[["type"]])
     pred <- foreach::foreach(i = 1:nrow(rng), .inorder = FALSE, .packages = "party") %op% {
         df[, var] <- rng[i, ]
         if (dim(y)[2] == 1) {
@@ -155,7 +151,7 @@ partial_dependence.RandomForest <- function(fit, var, cutoff = 10,
                     pred <- mean(pred)
             } else if (class(y[, 1]) == "factor") {
                 if (type == "prob") {
-                    pred <- predict(fit, newdata = df, type = "prob")
+                    pred <- predict(fit, newdata = df, type = type)
                     pred <- do.call(rbind, pred)
                     pred <- colMeans(pred)
                     names(pred) <- gsub(paste0(names(y), "\\."), "", names(pred))
@@ -200,7 +196,7 @@ partial_dependence.RandomForest <- function(fit, var, cutoff = 10,
 #' partial dependence calculation
 #' @param empirical logical indicator of whether or not only values in the data should be sampled
 #' @param parallel logical indicator of whether a parallel backend should be used if registered
-#' @param ... additional arguments to be passed to \code{predict.rfsrc}
+#' @param type with classification, default "" gives most probable class for classification and "prob" gives class probabilities
 #'
 #' @return a dataframe with columns for each predictor in `var` and the fitted value for
 #' each set of values taken by the values of 'var' averaged within the values of predictors
@@ -232,15 +228,13 @@ partial_dependence.RandomForest <- function(fit, var, cutoff = 10,
 #' pd_int <- partial_dependence(fit_rfsrc, c("age", "diagtime"))
 #' }
 #' @export
-partial_dependence.rfsrc <- function(fit, var, cutoff = 10, empirical = TRUE, parallel = FALSE, ...) {
-    args <- list(...)
+partial_dependence.rfsrc <- function(fit, var, cutoff = 10, empirical = TRUE, parallel = FALSE, type = "") {
     y <- fit$yvar
     df <- data.frame(fit$xvar, y)
     if (!is.data.frame(y))
         colnames(df)[ncol(df)] <- fit$yvar.names
     rng <- expand.grid(lapply(var, function(x) ivar_points(df, x, cutoff, empirical)))
     '%op%' <- ifelse(foreach::getDoParWorkers() > 1 & parallel, foreach::'%dopar%', foreach::'%do%')
-    type <- ifelse(is.null(args[["type"]]), "", args[["type"]])
     pred <- foreach::foreach(i = 1:nrow(rng), .inorder = FALSE, .packages = "randomForestSRC") %op% {
         df[, var] <- rng[i, ]
         pred <- predict(fit, newdata = df, outcome = "train")
