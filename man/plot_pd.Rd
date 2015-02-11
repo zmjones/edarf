@@ -31,7 +31,7 @@ library(edarf)
 data(iris)
 fit <- randomForest(Species ~ ., iris)
 pd <- partial_dependence(fit, iris, "Petal.Width", type = "prob")
-plot(pd, geom = "area")
+plot_pd(pd, geom = "area")
 }
 }
 
