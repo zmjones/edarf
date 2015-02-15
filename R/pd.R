@@ -175,45 +175,86 @@ partial_dependence.randomForest <- function(fit, df, var, cutoff = 10, bootstrap
 #' pd_int <- partial_dependence(fit, c("mpg", "cyl"))
 #' }
 #' @export
-partial_dependence.RandomForest <- function(fit, var, cutoff = 10,
+partial_dependence.RandomForest <- function(fit, var, cutoff = 10, bootstrap = FALSE, bootstrap_iter = 100,
                                             empirical = TRUE, parallel = FALSE, type = "") {
+    if (dim(y)[2] != 1 & bootstrap)
+        stop("bootstrapping the ensemble is not supported for multivariate responses (yet)")
     y <- get("response", fit@data@env)
     df <- data.frame(get("input", fit@data@env), y)
     rng <- expand.grid(lapply(var, function(x) ivar_points(df, x, cutoff, empirical)))
     '%op%' <- ifelse(foreach::getDoParWorkers() > 1 & parallel, foreach::'%dopar%', foreach::'%do%')
-    pred <- foreach::foreach(i = 1:nrow(rng), .inorder = FALSE, .packages = "party") %op% {
-        df[, var] <- rng[i, ]
-        if (dim(y)[2] == 1) {
-            if (class(y[, 1]) == "numeric" | class(y[, 1]) == "integer") {
+    if (bootstrap) {
+        if (dim(y)[2] != 1) 
+        pred <- foreach::foreach(i = 1:nrow(rng), .inorder = FALSE, .packages = "party") %op% {
+            df[, var] <- rng[i, ]
+            where <- do.call(cbind, fit@get_where(df))
+            pred <- apply(where, 2, function(x) {
+                pred <- rep(NA, length.out = nrow(y))
+                bins <- unique(x)
+                idx <- sapply(bins[bins != 0], function(z) which(x == z))
+                for (i in idx) {
+                    if (class(y[, 1]) %in% c("numeric", "integer"))
+                        pred[i] <- mean(y[i, 1])
+                    else if (class(y[, 1]) == "factor") {
+                        tab <- table(y[i, 1])
+                        out <- names(tab)[which(tab == max(tab))]
+                        if (length(out) != 1) out <- sample(out, 1)
+                        pred[i] <- out
+                    } else stop("invalid response type")
+                }
+                pred
+            })
+            out_bs <- foreach::foreach(iterators::icount(bootstrap_iter), .inorder = FALSE) %op% {
+                idx <- sample(1:ncol(pred), ncol(pred), TRUE)
+                if (class(y[, 1]) %in% c("numeric", "integer"))
+                    out <- mean(apply(pred[, idx], 1, function(x) mean(x, na.rm = TRUE)))
+                else if (class(y[, 1]) == "factor") {
+                    out <- t(apply(pred[, idx], 1, function(x) {
+                        tab <- table(factor(x, levels = levels(y[, 1])))
+                        tab / sum(tab)
+                    }))
+                    out <- colMeans(out)
+                } else stop("invalid response type")
+                c(rng[i, ], out)
+            }
+            out_bs <- as.data.frame(do.call(rbind, out_bs))
+            colnames(out_bs)[1:length(var)] <- var
+            if (class(y[, 1]) == "factor") {
+                out_bs <- reshape2::melt(out_bs, id.vars = 1:length(var))
+                colnames(out_bs)[(length(var) + 1):ncol(out_bs)] <- c("level", "prediction")
+                out_bs$point <- as.factor(1:nrow(out_bs))
+            } else colnames(out_bs)[(ncol(out_bs) - dim(y)[2] + 1):ncol(out_bs)] <- names(y)
+            out_bs
+        }
+        pred <- do.call(rbind, pred)
+    } else {
+        pred <- foreach::foreach(i = 1:nrow(rng), .inorder = FALSE, .packages = "party") %op% {
+            df[, var] <- rng[i, ]
+            if (dim(y)[2] == 1) {
+                if (class(y[, 1]) == "numeric" | class(y[, 1]) == "integer") {
                     pred <- predict(fit, newdata = df)
                     pred <- mean(pred)
-            } else if (class(y[, 1]) == "factor") {
-                if (type == "prob") {
-                    pred <- predict(fit, newdata = df, type = type)
-                    pred <- do.call(rbind, pred)
-                    pred <- colMeans(pred)
-                    names(pred) <- gsub(paste0(names(y), "\\."), "", names(pred))
-                } else if (type == "class" | type == "") {
-                    pred <- predict(fit, newdata = df)
-                    pred <- table(pred)
-                    pred <- names(pred)[pred == max(pred)]
-                    if (length(pred) != 1) pred <- sample(pred, 1)
-                } else stop("invalid type parameter passed to predict.RandomForest*")
-            } else stop("invalid response type")
-        } else {
-            pred <- predict(fit, newdata = df)
-            pred <- do.call(rbind, pred)
-            pred <- colMeans(pred)
+                } else if (class(y[, 1]) == "factor") {
+                    if (type == "prob") {
+                        pred <- colMeans(do.call(rbind, predict(fit, newdata = df, type = type)))
+                        names(pred) <- gsub(paste0(names(y), "\\."), "", names(pred))
+                    } else if (type == "class" | type == "") {
+                        pred <- table(predict(fit, newdata = df))
+                        pred <- names(pred)[pred == max(pred)]
+                        if (length(pred) != 1) pred <- sample(pred, 1)
+                    } else stop("invalid type parameter passed to predict.RandomForest*")
+                } else stop("invalid response type")
+            } else pred <- colMeans(do.call(rbind, predict(fit, newdata = df)))
+            c(rng[i, ], pred)
         }
-        c(rng[i, ], pred)
-    }
-    if (length(var) > 1)
-        pred <- as.data.frame(do.call(rbind, lapply(pred, unlist)))
-    else pred <- as.data.frame(do.call(rbind, pred))
-    colnames(pred)[1:length(var)] <- var
-    if (type != "prob") {
-        colnames(pred)[(length(var) + 1):ncol(pred)] <- colnames(y)
-        pred <- fix_classes(c(var, colnames(y)), df, pred)
+        if (length(var) > 1)
+            pred <- as.data.frame(do.call(rbind, lapply(pred, unlist)))
+        else pred <- as.data.frame(do.call(rbind, pred))
+        colnames(pred)[1:length(var)] <- var
+        if (type != "prob") {
+            colnames(pred)[(length(var) + 1):ncol(pred)] <- colnames(y)
+            pred <- fix_classes(c(var, colnames(y)), df, pred)
+        }
     }
     attr(pred, "class") <- c("pd", "data.frame")
     attr(pred, "prob") <- type == "prob"
