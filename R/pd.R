@@ -57,39 +57,39 @@ partial_dependence.randomForest <- function(fit, df, var, cutoff = 10, bootstrap
     y_class <- attr(fit$terms, "dataClasses")[1]
     rng <- expand.grid(lapply(var, function(x) ivar_points(df, x, cutoff, empirical)))
     '%op%' <- ifelse(foreach::getDoParWorkers() > 1 & parallel, foreach::'%dopar%', foreach::'%do%')
-    if (bootstrap & (y_class == "numeric" | y_class == "integer")) {
+    if (bootstrap) {
+        idx <- lapply(1:bootstrap_iter, function(x) sample(1:fit$ntree, fit$ntree, TRUE))
         out_rng <- foreach::foreach(i = 1:nrow(rng), .inorder = FALSE) %op% {
             df[, var] <- rng[i, ]
             pred <- predict(fit, newdata = df, predict.all = TRUE)$individual
-            out_bs <- foreach::foreach(iterators::icount(bootstrap_iter), .inorder = FALSE) %op% {
-                mean(apply(pred[, sample(1:fit$ntree, fit$ntree, TRUE)], 1,
-                           function(x) mean(x[which(x != 0)])))
-            }
-            unlist(out_bs)
-        }
-        pred <- as.data.frame(cbind(do.call(rbind, out_rng), rng))
-        colnames(pred)[(ncol(pred) - length(var) + 1):ncol(pred)] <- var
-        colnames(pred)[!(colnames(pred) %in% var)] <- paste0("bs_", 1:bootstrap_iter)
-        pred <- reshape2::melt(pred, id.vars = var, value.name = names(y_class))
-    } else if (bootstrap & y_class == "factor" & type == "prob") {
-        out_rng <- foreach::foreach(i = 1:nrow(rng), .inorder = FALSE) %op% {
-            df[, var] <- rng[i, ]
-            pred <- predict(fit, newdata = df, predict.all = TRUE)$individual
-            out_bs <- foreach::foreach(iterators::icount(bootstrap_iter), .inorder = FALSE) %op% {
-                props <- t(apply(pred[, sample(1:fit$ntree, fit$ntree, TRUE)], 1, function(x) {
-                    tab <- table(factor(x, levels = levels(df[, names(y_class)])))
-                    tab / sum(tab)
-                }))
-                c(rng[i, ], colMeans(props))
+            out_bs <- foreach::foreach(j = 1:bootstrap_iter, .inorder = FALSE) %op% {
+                if (y_class %in% c("numeric", "integer")) {
+                    out <- mean(apply(pred[, idx[[j]]], function(x) mean(x[which(x != 0)])))
+                    c(rng[i, ], out)
+                } else if (y_class == "factor") {
+                    out <- t(apply(pred[, idx[[j]]], 1, function(x) {
+                        tab <- table(factor(x, levels = levels(df[, names(y_class)])))
+                        tab / sum(tab)
+                    }))
+                    c(rng[i, ], colMeans(out))
+                } else stop("invalid response type")
             }
             out_bs <- as.data.frame(do.call(rbind, out_bs))
-            colnames(out_bs)[1:length(var)] <- var
-            out_bs <- reshape2::melt(out_bs, id.vars = 1:length(var))
-            colnames(out_bs)[(length(var) + 1):ncol(out_bs)] <- c("level", "prediction")
-            out_bs$point <- as.factor(1:nrow(out_bs))
-            out_bs
+            if (y_class %in% c("numeric", "integer")) {
+                colnames(out_bs)[1:length(var)] <- var
+                colnames(out_bs)[(length(var) + 1):ncol(out_bs)] <- names(y_class)
+                out_bs$point <- as.factor(1:nrow(out_bs))
+                out_bs
+            } else if (y_class == "factor") {
+                colnames(out_bs)[1:length(var)] <- var
+                colnames(out_bs)[(length(var) + 1):ncol(out_bs)] <- levels(df[, names(y_class)])
+                out_bs <- reshape2::melt(out_bs, id.vars = 1:length(var))
+                colnames(out_bs)[(length(var) + 1):ncol(out_bs)] <- c("level", "prediction")
+                out_bs$point <- as.factor(1:nrow(out_bs))
+                out_bs
+            } else stop("invalid response type")
         }
-        pred <- do.call(rbind, out_rng)
+        pred <- as.data.frame(do.call(rbind, out_rng))
     } else {
         pred <- foreach::foreach(i = 1:nrow(rng), .inorder = FALSE, .packages = "randomForest") %op% {
             df[, var] <- rng[i, ]
