@@ -183,18 +183,15 @@ partial_dependence.RandomForest <- function(fit, var, cutoff = 10, bootstrap = F
     df <- data.frame(get("input", fit@data@env), y)
     rng <- expand.grid(lapply(var, function(x) ivar_points(df, x, cutoff, empirical)))
     '%op%' <- ifelse(foreach::getDoParWorkers() > 1 & parallel, foreach::'%dopar%', foreach::'%do%')
-    get_new_weights <- function(fit, df, idx, mincriterion = 0, OOB = FALSE) {
-        .Call("R_predictRF_weights",
-              fit@ensemble[idx], fit@where[idx], fit@weights[idx],
-              party:::newinputs(fit, df),
-              mincriterion, OOB && is.null(df), PACKAGE = "party")
-    }
     if (bootstrap) {
         idx <- lapply(1:bootstrap_iter, function(x) sample(seq_along(fit@ensemble), length(fit@ensemble), TRUE))
         out_rng <- foreach::foreach(i = 1:nrow(rng), .inorder = FALSE, .packages = "party") %op% {
             df[, var] <- rng[i, ]
             out_bs <- foreach::foreach(j = 1:bootstrap_iter, .inorder = FALSE) %op% {
-                pw <- get_new_weights(fit, df, idx[[j]])
+                pw <- .Call("R_predictRF_weights",
+                            fit@ensemble[idx[[j]]], fit@where[idx[[j]]], fit@weights[idx[[j]]],
+                            party:::newinputs(fit, df),
+                            0, FALSE, PACKAGE = "party")
                 out <- sapply(pw, function(w) w %*% fit@responses@predict_trafo / sum(w))
                 if (class(y[, 1]) %in% c("numeric", "integer"))
                     c(rng[i, ], mean(out))
@@ -202,14 +199,13 @@ partial_dependence.RandomForest <- function(fit, var, cutoff = 10, bootstrap = F
                     c(rng[i, ], rowMeans(out))
                 else stop("invalid response type")
             }
+            out_bs <- as.data.frame(do.call(rbind, out_bs))
             if (class(y[, 1]) %in% c("numeric", "integer")) {
-                out_bs <- as.data.frame(do.call(rbind, out_bs))
                 colnames(out_bs)[1:length(var)] <- var
                 colnames(out_bs)[(length(var) + 1):ncol(out_bs)] <- names(y[, 1])
                 out_bs$point <- as.factor(1:nrow(out_bs))
                 out_bs
             } else if (class(y[, 1]) == "factor") {
-                out_bs <- as.data.frame(do.call(rbind, out_bs))
                 colnames(out_bs)[1:length(var)] <- var
                 colnames(out_bs)[(length(var) + 1):ncol(out_bs)] <- levels(y[, 1])
                 out_bs <- reshape2::melt(out_bs, id.vars = 1:length(var))
@@ -253,6 +249,7 @@ partial_dependence.RandomForest <- function(fit, var, cutoff = 10, bootstrap = F
     attr(pred, "interaction") <- length(var) > 1
     attr(pred, "multivariate") <- dim(y)[2] != 1
     attr(pred, "var") <- var
+    attr(pred, "boostrap") <- bootstrap
     pred
 }
 #' Partial dependence for rfsrc objects from package \code{randomForestSRC}
