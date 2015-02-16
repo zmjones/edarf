@@ -177,56 +177,48 @@ partial_dependence.randomForest <- function(fit, df, var, cutoff = 10, bootstrap
 #' @export
 partial_dependence.RandomForest <- function(fit, var, cutoff = 10, bootstrap = FALSE, bootstrap_iter = 100,
                                             empirical = TRUE, parallel = FALSE, type = "") {
+    y <- get("response", fit@data@env)
     if (dim(y)[2] != 1 & bootstrap)
         stop("bootstrapping the ensemble is not supported for multivariate responses (yet)")
-    y <- get("response", fit@data@env)
     df <- data.frame(get("input", fit@data@env), y)
     rng <- expand.grid(lapply(var, function(x) ivar_points(df, x, cutoff, empirical)))
     '%op%' <- ifelse(foreach::getDoParWorkers() > 1 & parallel, foreach::'%dopar%', foreach::'%do%')
+    get_new_weights <- function(fit, df, idx, mincriterion = 0, OOB = FALSE) {
+        .Call("R_predictRF_weights",
+              fit@ensemble[idx], fit@where[idx], fit@weights[idx],
+              party:::newinputs(fit, df),
+              mincriterion, OOB && is.null(df), PACKAGE = "party")
+    }
     if (bootstrap) {
-        if (dim(y)[2] != 1) 
-        pred <- foreach::foreach(i = 1:nrow(rng), .inorder = FALSE, .packages = "party") %op% {
+        idx <- lapply(1:bootstrap_iter, function(x) sample(seq_along(fit@ensemble), length(fit@ensemble), TRUE))
+        out_rng <- foreach::foreach(i = 1:nrow(rng), .inorder = FALSE, .packages = "party") %op% {
             df[, var] <- rng[i, ]
-            where <- do.call(cbind, fit@get_where(df))
-            pred <- apply(where, 2, function(x) {
-                pred <- rep(NA, length.out = nrow(y))
-                bins <- unique(x)
-                idx <- sapply(bins[bins != 0], function(z) which(x == z))
-                for (i in idx) {
-                    if (class(y[, 1]) %in% c("numeric", "integer"))
-                        pred[i] <- mean(y[i, 1])
-                    else if (class(y[, 1]) == "factor") {
-                        tab <- table(y[i, 1])
-                        out <- names(tab)[which(tab == max(tab))]
-                        if (length(out) != 1) out <- sample(out, 1)
-                        pred[i] <- out
-                    } else stop("invalid response type")
-                }
-                pred
-            })
-            out_bs <- foreach::foreach(iterators::icount(bootstrap_iter), .inorder = FALSE) %op% {
-                idx <- sample(1:ncol(pred), ncol(pred), TRUE)
+            out_bs <- foreach::foreach(j = 1:bootstrap_iter, .inorder = FALSE) %op% {
+                pw <- get_new_weights(fit, df, idx[[j]])
+                out <- sapply(pw, function(w) w %*% fit@responses@predict_trafo / sum(w))
                 if (class(y[, 1]) %in% c("numeric", "integer"))
-                    out <- mean(apply(pred[, idx], 1, function(x) mean(x, na.rm = TRUE)))
-                else if (class(y[, 1]) == "factor") {
-                    out <- t(apply(pred[, idx], 1, function(x) {
-                        tab <- table(factor(x, levels = levels(y[, 1])))
-                        tab / sum(tab)
-                    }))
-                    out <- colMeans(out)
-                } else stop("invalid response type")
-                c(rng[i, ], out)
+                    c(rng[i, ], mean(out))
+                else if (class(y[, 1]) == "factor")
+                    c(rng[i, ], rowMeans(out))
+                else stop("invalid response type")
             }
-            out_bs <- as.data.frame(do.call(rbind, out_bs))
-            colnames(out_bs)[1:length(var)] <- var
-            if (class(y[, 1]) == "factor") {
+            if (class(y[, 1]) %in% c("numeric", "integer")) {
+                out_bs <- as.data.frame(do.call(rbind, out_bs))
+                colnames(out_bs)[1:length(var)] <- var
+                colnames(out_bs)[(length(var) + 1):ncol(out_bs)] <- names(y[, 1])
+                out_bs$point <- as.factor(1:nrow(out_bs))
+                out_bs
+            } else if (class(y[, 1]) == "factor") {
+                out_bs <- as.data.frame(do.call(rbind, out_bs))
+                colnames(out_bs)[1:length(var)] <- var
+                colnames(out_bs)[(length(var) + 1):ncol(out_bs)] <- levels(y[, 1])
                 out_bs <- reshape2::melt(out_bs, id.vars = 1:length(var))
                 colnames(out_bs)[(length(var) + 1):ncol(out_bs)] <- c("level", "prediction")
                 out_bs$point <- as.factor(1:nrow(out_bs))
-            } else colnames(out_bs)[(ncol(out_bs) - dim(y)[2] + 1):ncol(out_bs)] <- names(y)
-            out_bs
+                out_bs
+            } else stop("invalid response type")
         }
-        pred <- do.call(rbind, pred)
+        pred <- as.data.frame(do.call(rbind, out_rng))
     } else {
         pred <- foreach::foreach(i = 1:nrow(rng), .inorder = FALSE, .packages = "party") %op% {
             df[, var] <- rng[i, ]
