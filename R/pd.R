@@ -39,7 +39,7 @@ partial_dependence <- function(fit, ...) UseMethod("partial_dependence", fit)
 #' 
 #' data(iris)
 #' 
-#' fit <- randomForest(Species ~ ., iris)
+#' fit <- randomForest(Species ~ ., iris, keep.inbag = TRUE)
 #' pd <- partial_dependence(fit, iris, "Petal.Width")
 #' pd_int <- partial_dependence(fit, iris, c("Petal.Width", "Sepal.Length"))
 #'
@@ -52,76 +52,40 @@ partial_dependence <- function(fit, ...) UseMethod("partial_dependence", fit)
 #' pd_int <- partial_dependence(fit, swiss, c("Education", "Catholic"))
 #' }
 #' @export
-partial_dependence.randomForest <- function(fit, df, var, cutoff = 10, bootstrap = FALSE, bootstrap_iter = 100,
+partial_dependence.randomForest <- function(fit, df, var, cutoff = 10,
                                             empirical = TRUE, parallel = FALSE, type = "") {
     y_class <- attr(fit$terms, "dataClasses")[1]
     rng <- expand.grid(lapply(var, function(x) ivar_points(df, x, cutoff, empirical)))
     '%op%' <- ifelse(foreach::getDoParWorkers() > 1 & parallel, foreach::'%dopar%', foreach::'%do%')
-    if (bootstrap) {
-        idx <- lapply(1:bootstrap_iter, function(x) sample(1:fit$ntree, fit$ntree, TRUE))
-        out_rng <- foreach::foreach(i = 1:nrow(rng), .inorder = FALSE) %op% {
-            df[, var] <- rng[i, ]
-            pred <- predict(fit, newdata = df, predict.all = TRUE)$individual
-            out_bs <- foreach::foreach(j = 1:bootstrap_iter, .inorder = FALSE) %op% {
-                if (y_class %in% c("numeric", "integer")) {
-                    out <- mean(apply(pred[, idx[[j]]], function(x) mean(x[which(x != 0)])))
-                    c(rng[i, ], out)
-                } else if (y_class == "factor") {
-                    out <- t(apply(pred[, idx[[j]]], 1, function(x) {
-                        tab <- table(factor(x, levels = levels(df[, names(y_class)])))
-                        tab / sum(tab)
-                    }))
-                    c(rng[i, ], colMeans(out))
-                } else stop("invalid response type")
-            }
-            out_bs <- as.data.frame(do.call(rbind, out_bs))
-            if (y_class %in% c("numeric", "integer")) {
-                colnames(out_bs)[1:length(var)] <- var
-                colnames(out_bs)[(length(var) + 1):ncol(out_bs)] <- names(y_class)
-                out_bs$point <- as.factor(1:nrow(out_bs))
-                out_bs
-            } else if (y_class == "factor") {
-                colnames(out_bs)[1:length(var)] <- var
-                colnames(out_bs)[(length(var) + 1):ncol(out_bs)] <- levels(df[, names(y_class)])
-                out_bs <- reshape2::melt(out_bs, id.vars = 1:length(var))
-                colnames(out_bs)[(length(var) + 1):ncol(out_bs)] <- c("level", "prediction")
-                out_bs$point <- as.factor(1:nrow(out_bs))
-                out_bs
-            } else stop("invalid response type")
-        }
-        pred <- as.data.frame(do.call(rbind, out_rng))
-    } else {
-        pred <- foreach::foreach(i = 1:nrow(rng), .inorder = FALSE, .packages = "randomForest") %op% {
-            df[, var] <- rng[i, ]
-            if (y_class == "numeric" | y_class == "integer") {
-                pred <- predict(fit, newdata = df)
-                pred <- mean(pred)
-            } else if (y_class == "factor") {
-                if (type == "prob") {
-                    pred <- predict(fit, newdata = df, type = type)
-                    pred <- colMeans(pred)
-                } else if (type == "class" | type == "") {
-                    pred <- table(predict(fit, newdata = df))
-                    pred <- names(pred)[pred == max(pred)]
-                    if (length(pred) != 1) pred <- sample(pred, 1)
-                } else stop("invalid type parameter passed to predict.randomForest*")
-            } else stop("invalid response type")
-            c(rng[i, ], pred)
-        }
-        if (length(var) > 1)
-            pred <- as.data.frame(do.call(rbind, lapply(pred, unlist)), stringsAsFactors = FALSE)
-        else pred <- as.data.frame(do.call(rbind, pred), stringsAsFactors = FALSE)
-        colnames(pred)[1:length(var)] <- var
-        if (type != "prob") {
-            colnames(pred)[ncol(pred)] <- names(y_class)
-            pred <- fix_classes(colnames(pred), df, pred)
-        }
+    pred <- foreach::foreach(i = 1:nrow(rng), .inorder = FALSE, .packages = "randomForest") %op% {
+        df[, var] <- rng[i, ]
+        if (y_class == "numeric" | y_class == "integer") {
+            pred <- predict(fit, newdata = df)
+            pred <- mean(pred)
+        } else if (y_class == "factor") {
+            if (type == "prob") {
+                pred <- predict(fit, newdata = df, type = type)
+                pred <- colMeans(pred)
+            } else if (type == "class" | type == "") {
+                pred <- table(predict(fit, newdata = df))
+                pred <- names(pred)[pred == max(pred)]
+                if (length(pred) != 1) pred <- sample(pred, 1)
+            } else stop("invalid type parameter passed to predict.randomForest*")
+        } else stop("invalid response type")
+        c(rng[i, ], pred)
+    }
+    if (length(var) > 1)
+        pred <- as.data.frame(do.call(rbind, lapply(pred, unlist)), stringsAsFactors = FALSE)
+    else pred <- as.data.frame(do.call(rbind, pred), stringsAsFactors = FALSE)
+    colnames(pred)[1:length(var)] <- var
+    if (type != "prob") {
+        colnames(pred)[ncol(pred)] <- names(y_class)
+        pred <- fix_classes(colnames(pred), df, pred)
     }
     attr(pred, "class") <- c("pd", "data.frame")
     attr(pred, "prob") <- type == "prob"
     attr(pred, "interaction") <- length(var) > 1
     attr(pred, "multivariate") <- FALSE
-    attr(pred, "bootstrap") <- bootstrap
     attr(pred, "var") <- var
     pred
 }
@@ -154,7 +118,7 @@ partial_dependence.randomForest <- function(fit, df, var, cutoff = 10, bootstrap
 #' 
 #' data(iris)
 #' 
-#' fit <- cforest(Species ~ ., iris, controls = cforest_control(mtry = 2))
+#' fit <- cforest(Species ~ ., iris, controls = cforest_unbiased(mtry = 2))
 #' pd <- partial_dependence(fit, "Petal.Width")
 #' pd_int <- partial_dependence(fit, c("Petal.Width", "Sepal.Length"))
 #'
@@ -175,81 +139,44 @@ partial_dependence.randomForest <- function(fit, df, var, cutoff = 10, bootstrap
 #' pd_int <- partial_dependence(fit, c("mpg", "cyl"))
 #' }
 #' @export
-partial_dependence.RandomForest <- function(fit, var, cutoff = 10, bootstrap = FALSE, bootstrap_iter = 100,
+partial_dependence.RandomForest <- function(fit, var, cutoff = 10,
                                             empirical = TRUE, parallel = FALSE, type = "") {
     y <- get("response", fit@data@env)
-    if (dim(y)[2] != 1 & bootstrap)
-        stop("bootstrapping the ensemble is not supported for multivariate responses (yet)")
     df <- data.frame(get("input", fit@data@env), y)
     rng <- expand.grid(lapply(var, function(x) ivar_points(df, x, cutoff, empirical)))
     '%op%' <- ifelse(foreach::getDoParWorkers() > 1 & parallel, foreach::'%dopar%', foreach::'%do%')
-    if (bootstrap) {
-        idx <- lapply(1:bootstrap_iter, function(x) sample(seq_along(fit@ensemble), length(fit@ensemble), TRUE))
-        out_rng <- foreach::foreach(i = 1:nrow(rng), .inorder = FALSE, .packages = "party") %op% {
-            df[, var] <- rng[i, ]
-            out_bs <- foreach::foreach(j = 1:bootstrap_iter, .inorder = FALSE) %op% {
-                pw <- .Call("R_predictRF_weights",
-                            fit@ensemble[idx[[j]]], fit@where[idx[[j]]], fit@weights[idx[[j]]],
-                            party:::newinputs(fit, df),
-                            0, FALSE, PACKAGE = "party")
-                out <- sapply(pw, function(w) w %*% fit@responses@predict_trafo / sum(w))
-                if (class(y[, 1]) %in% c("numeric", "integer"))
-                    c(rng[i, ], mean(out))
-                else if (class(y[, 1]) == "factor")
-                    c(rng[i, ], rowMeans(out))
-                else stop("invalid response type")
-            }
-            out_bs <- as.data.frame(do.call(rbind, out_bs))
-            if (class(y[, 1]) %in% c("numeric", "integer")) {
-                colnames(out_bs)[1:length(var)] <- var
-                colnames(out_bs)[(length(var) + 1):ncol(out_bs)] <- names(y[, 1])
-                out_bs$point <- as.factor(1:nrow(out_bs))
-                out_bs
+    pred <- foreach::foreach(i = 1:nrow(rng), .inorder = FALSE, .packages = "party") %op% {
+        df[, var] <- rng[i, ]
+        if (dim(y)[2] == 1) {
+            if (class(y[, 1]) == "numeric" | class(y[, 1]) == "integer") {
+                pred <- predict(fit, newdata = df)
+                pred <- mean(pred)
             } else if (class(y[, 1]) == "factor") {
-                colnames(out_bs)[1:length(var)] <- var
-                colnames(out_bs)[(length(var) + 1):ncol(out_bs)] <- levels(y[, 1])
-                out_bs <- reshape2::melt(out_bs, id.vars = 1:length(var))
-                colnames(out_bs)[(length(var) + 1):ncol(out_bs)] <- c("level", "prediction")
-                out_bs$point <- as.factor(1:nrow(out_bs))
-                out_bs
+                if (type == "prob") {
+                    pred <- colMeans(do.call(rbind, predict(fit, newdata = df, type = type)))
+                    names(pred) <- gsub(paste0(names(y), "\\."), "", names(pred))
+                } else if (type == "class" | type == "") {
+                    pred <- table(predict(fit, newdata = df))
+                    pred <- names(pred)[pred == max(pred)]
+                    if (length(pred) != 1) pred <- sample(pred, 1)
+                } else stop("invalid type parameter passed to predict.RandomForest*")
             } else stop("invalid response type")
-        }
-        pred <- as.data.frame(do.call(rbind, out_rng))
-    } else {
-        pred <- foreach::foreach(i = 1:nrow(rng), .inorder = FALSE, .packages = "party") %op% {
-            df[, var] <- rng[i, ]
-            if (dim(y)[2] == 1) {
-                if (class(y[, 1]) == "numeric" | class(y[, 1]) == "integer") {
-                    pred <- predict(fit, newdata = df)
-                    pred <- mean(pred)
-                } else if (class(y[, 1]) == "factor") {
-                    if (type == "prob") {
-                        pred <- colMeans(do.call(rbind, predict(fit, newdata = df, type = type)))
-                        names(pred) <- gsub(paste0(names(y), "\\."), "", names(pred))
-                    } else if (type == "class" | type == "") {
-                        pred <- table(predict(fit, newdata = df))
-                        pred <- names(pred)[pred == max(pred)]
-                        if (length(pred) != 1) pred <- sample(pred, 1)
-                    } else stop("invalid type parameter passed to predict.RandomForest*")
-                } else stop("invalid response type")
-            } else pred <- colMeans(do.call(rbind, predict(fit, newdata = df)))
-            c(rng[i, ], pred)
-        }
-        if (length(var) > 1)
-            pred <- as.data.frame(do.call(rbind, lapply(pred, unlist)))
-        else pred <- as.data.frame(do.call(rbind, pred))
-        colnames(pred)[1:length(var)] <- var
-        if (type != "prob") {
-            colnames(pred)[(length(var) + 1):ncol(pred)] <- colnames(y)
-            pred <- fix_classes(c(var, colnames(y)), df, pred)
-        }
+        } else pred <- colMeans(do.call(rbind, predict(fit, newdata = df)))
+        c(rng[i, ], pred)
+    }
+    if (length(var) > 1)
+        pred <- as.data.frame(do.call(rbind, lapply(pred, unlist)))
+    else pred <- as.data.frame(do.call(rbind, pred))
+    colnames(pred)[1:length(var)] <- var
+    if (type != "prob") {
+        colnames(pred)[(length(var) + 1):ncol(pred)] <- colnames(y)
+        pred <- fix_classes(c(var, colnames(y)), df, pred)
     }
     attr(pred, "class") <- c("pd", "data.frame")
     attr(pred, "prob") <- type == "prob"
     attr(pred, "interaction") <- length(var) > 1
     attr(pred, "multivariate") <- dim(y)[2] != 1
     attr(pred, "var") <- var
-    attr(pred, "boostrap") <- bootstrap
     pred
 }
 #' Partial dependence for rfsrc objects from package \code{randomForestSRC}
@@ -273,6 +200,7 @@ partial_dependence.RandomForest <- function(fit, var, cutoff = 10, bootstrap = F
 #' @examples
 #' \dontrun{
 #' library(randomForestSRC)
+#' library(edarf)
 #' ## library(doParallel)
 #' ## library(parallel)
 #' ## registerDoParallel(makeCluster(detectCores()))
@@ -296,7 +224,8 @@ partial_dependence.RandomForest <- function(fit, var, cutoff = 10, bootstrap = F
 #' pd_int <- partial_dependence(fit_rfsrc, c("age", "diagtime"))
 #' }
 #' @export
-partial_dependence.rfsrc <- function(fit, var, cutoff = 10, empirical = TRUE, parallel = FALSE, type = "") {
+partial_dependence.rfsrc <- function(fit, var, cutoff = 10,
+                                     empirical = TRUE, parallel = FALSE, type = "") {
     y <- fit$yvar
     df <- data.frame(fit$xvar, y)
     if (!is.data.frame(y))
