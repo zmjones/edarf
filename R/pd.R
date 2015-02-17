@@ -30,6 +30,7 @@ partial_dependence <- function(fit, ...) UseMethod("partial_dependence", fit)
 #' @examples
 #' \dontrun{
 #' library(randomForest)
+#' library(edarf)
 #' ## library(doParallel)
 #' ## library(parallel)
 #' ## registerDoParallel(makeCluster(detectCores()))
@@ -38,7 +39,7 @@ partial_dependence <- function(fit, ...) UseMethod("partial_dependence", fit)
 #' 
 #' data(iris)
 #' 
-#' fit <- randomForest(Species ~ ., iris)
+#' fit <- randomForest(Species ~ ., iris, keep.inbag = TRUE)
 #' pd <- partial_dependence(fit, iris, "Petal.Width")
 #' pd_int <- partial_dependence(fit, iris, c("Petal.Width", "Sepal.Length"))
 #'
@@ -108,6 +109,7 @@ partial_dependence.randomForest <- function(fit, df, var, cutoff = 10,
 #' @examples
 #' \dontrun{
 #' library(party)
+#' library(edarf)
 #' ## library(doParallel)
 #' ## library(parallel)
 #' ## registerDoParallel(makeCluster(detectCores()))
@@ -116,7 +118,7 @@ partial_dependence.randomForest <- function(fit, df, var, cutoff = 10,
 #' 
 #' data(iris)
 #' 
-#' fit <- cforest(Species ~ ., iris, controls = cforest_control(mtry = 2))
+#' fit <- cforest(Species ~ ., iris, controls = cforest_unbiased(mtry = 2))
 #' pd <- partial_dependence(fit, "Petal.Width")
 #' pd_int <- partial_dependence(fit, c("Petal.Width", "Sepal.Length"))
 #'
@@ -147,26 +149,19 @@ partial_dependence.RandomForest <- function(fit, var, cutoff = 10,
         df[, var] <- rng[i, ]
         if (dim(y)[2] == 1) {
             if (class(y[, 1]) == "numeric" | class(y[, 1]) == "integer") {
-                    pred <- predict(fit, newdata = df)
-                    pred <- mean(pred)
+                pred <- predict(fit, newdata = df)
+                pred <- mean(pred)
             } else if (class(y[, 1]) == "factor") {
                 if (type == "prob") {
-                    pred <- predict(fit, newdata = df, type = type)
-                    pred <- do.call(rbind, pred)
-                    pred <- colMeans(pred)
+                    pred <- colMeans(do.call(rbind, predict(fit, newdata = df, type = type)))
                     names(pred) <- gsub(paste0(names(y), "\\."), "", names(pred))
                 } else if (type == "class" | type == "") {
-                    pred <- predict(fit, newdata = df)
-                    pred <- table(pred)
+                    pred <- table(predict(fit, newdata = df))
                     pred <- names(pred)[pred == max(pred)]
                     if (length(pred) != 1) pred <- sample(pred, 1)
                 } else stop("invalid type parameter passed to predict.RandomForest*")
             } else stop("invalid response type")
-        } else {
-            pred <- predict(fit, newdata = df)
-            pred <- do.call(rbind, pred)
-            pred <- colMeans(pred)
-        }
+        } else pred <- colMeans(do.call(rbind, predict(fit, newdata = df)))
         c(rng[i, ], pred)
     }
     if (length(var) > 1)
@@ -205,6 +200,7 @@ partial_dependence.RandomForest <- function(fit, var, cutoff = 10,
 #' @examples
 #' \dontrun{
 #' library(randomForestSRC)
+#' library(edarf)
 #' ## library(doParallel)
 #' ## library(parallel)
 #' ## registerDoParallel(makeCluster(detectCores()))
@@ -228,7 +224,8 @@ partial_dependence.RandomForest <- function(fit, var, cutoff = 10,
 #' pd_int <- partial_dependence(fit_rfsrc, c("age", "diagtime"))
 #' }
 #' @export
-partial_dependence.rfsrc <- function(fit, var, cutoff = 10, empirical = TRUE, parallel = FALSE, type = "") {
+partial_dependence.rfsrc <- function(fit, var, cutoff = 10,
+                                     empirical = TRUE, parallel = FALSE, type = "") {
     y <- fit$yvar
     df <- data.frame(fit$xvar, y)
     if (!is.data.frame(y))
