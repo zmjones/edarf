@@ -19,6 +19,8 @@ partial_dependence <- function(fit, ...) UseMethod("partial_dependence", fit)
 #' @param var a character vector of the predictors of interest, which must match the input matrix in the call to \code{randomForest}
 #' @param cutoff the maximal number of unique points in each element of 'var' used in the
 #' partial dependence calculation
+#' @param se use the bias corrected infinitesimal jackknife from Wager, Hastie, and Efron (2014) implemented in randomForestCI, currently only works with regression
+#' @param confidence desired confidence for the returned interval (ignored if se is false)
 #' @param empirical logical indicator of whether or not only values in the data should be sampled
 #' @param parallel logical indicator of whether a parallel backend should be used if registered
 #' @param type with classification, default "" gives most probable class for classification and "prob" gives class probabilities
@@ -46,40 +48,55 @@ partial_dependence <- function(fit, ...) UseMethod("partial_dependence", fit)
 #'
 #' data(swiss)
 #'
-#' fit <- randomForest(Fertility ~ ., swiss)
+#' fit <- randomForest(Fertility ~ ., swiss, keep.inbag = TRUE)
 #' pd <- partial_dependence(fit, swiss, "Education")
 #' pd_int <- partial_dependence(fit, swiss, c("Education", "Catholic"))
 #' }
 #' @export
-partial_dependence.randomForest <- function(fit, df, var, cutoff = 10,
+partial_dependence.randomForest <- function(fit, df, var, cutoff = 10, se = TRUE, confidence = .95,
                                             empirical = TRUE, parallel = FALSE, type = "") {
-    y_class <- attr(fit$terms, "dataClasses")[1]
+    y_class <- attr(fit$terms, "dataClasses")[1] ## what type is y
+    ## get the prediction grid for whatever var is
     rng <- expand.grid(lapply(var, function(x) ivar_points(df, x, cutoff, empirical)))
+    ## run the pd algo in parallel?
     '%op%' <- ifelse(foreach::getDoParWorkers() > 1 & parallel, foreach::'%dopar%', foreach::'%do%')
+    ## loop over points in prediction grid (rng)
     pred <- foreach::foreach(i = 1:nrow(rng), .inorder = FALSE, .packages = "randomForest") %op% {
+        ## fix var to points in prediction grid
         df[, var] <- rng[i, ]
+        ## if numeric outcome predict and take the mean, if standard errors requested
+        ## use the bias-corrected infinitesimal jackknife implemented in randomForestCI
+        ## which is called using the var_est method
         if (y_class == "numeric" | y_class == "integer") {
-            pred <- predict(fit, newdata = df)
-            pred <- mean(pred)
+            if (se) colMeans(var_est(fit, df))
+            else mean(predict(fit, newdata = df))
         } else if (y_class == "factor") {
-            if (type == "prob") {
-                pred <- predict(fit, newdata = df, type = type)
-                pred <- colMeans(pred)
-            } else if (type == "class" | type == "") {
-                pred <- table(predict(fit, newdata = df))
-                pred <- names(pred)[pred == max(pred)]
+            ## if y is a factor and class probs are requested (soft voting), get the probs
+            ## and take their mean across all obs.
+            if (type == "prob") pred <- colMeans(predict(fit, newdata = df, type = type))
+            else if (type == "class" | type == "") {
+                ## if no class probs, then just find the maximal class
+                ## and if there are ties randomly pick one
+                pred <- names(which.max(table(predict(fit, newdata = df))))
                 if (length(pred) != 1) pred <- sample(pred, 1)
             } else stop("invalid type parameter passed to predict.randomForest*")
         } else stop("invalid response type")
         c(rng[i, ], pred)
     }
+    ## bind everything together in a data.frame
     if (length(var) > 1)
         pred <- as.data.frame(do.call(rbind, lapply(pred, unlist)), stringsAsFactors = FALSE)
     else pred <- as.data.frame(do.call(rbind, pred), stringsAsFactors = FALSE)
     colnames(pred)[1:length(var)] <- var
-    if (type != "prob") {
+    if (type != "prob" & !se) {
         colnames(pred)[ncol(pred)] <- names(y_class)
         pred <- fix_classes(colnames(pred), df, pred)
+    } else if (se) {
+        ## compute 1 - confidence intervals
+        ci <- qnorm((1 - confidence) / 2, lower.tail = FALSE)
+        se <- sqrt(pred$variance)
+        pred$low <- pred$predicted - ci * se
+        pred$high <- pred$predicted + ci * se
     }
     attr(pred, "class") <- c("pd", "data.frame")
     attr(pred, "prob") <- type == "prob"
@@ -137,45 +154,63 @@ partial_dependence.randomForest <- function(fit, df, var, cutoff = 10,
 #' pd_int <- partial_dependence(fit, c("mpg", "cyl"))
 #' }
 #' @export
-partial_dependence.RandomForest <- function(fit, var, cutoff = 10,
+partial_dependence.RandomForest <- function(fit, var, cutoff = 10, se = FALSE, confidence = .95,
                                             empirical = TRUE, parallel = FALSE, type = "") {
+    ## get y from the fit object
     y <- get("response", fit@data@env)
+    ## get input data and combine into model data.frame
     df <- data.frame(get("input", fit@data@env), y)
+    ## get prediction grid for whatever is in var
     rng <- expand.grid(lapply(var, function(x) ivar_points(df, x, cutoff, empirical)))
+    ## check to see if parallel backend registered
     '%op%' <- ifelse(foreach::getDoParWorkers() > 1 & parallel, foreach::'%dopar%', foreach::'%do%')
     pred <- foreach::foreach(i = 1:nrow(rng), .inorder = FALSE, .packages = "party") %op% {
+        ## fix var predictiors
         df[, var] <- rng[i, ]
+        ## check to see if we are doing a multivariate fit
         if (dim(y)[2] == 1) {
             if (class(y[, 1]) == "numeric" | class(y[, 1]) == "integer") {
-                    pred <- predict(fit, newdata = df)
-                    pred <- mean(pred)
+                ## if doing regression and standard errors requested use
+                ## the var_est method to use the bias corrected infinitesimal jackknife
+                ## from Wager, Efron, and Tibsharani (2014). the implementation is a modified
+                ## version of the code from randomForestCI
+                ## then take column means (if we have a variance estimate) or just the mean,
+                ## across observations
+                if (se) colMeans(var_est(fit, df))
+                else mean(predict(fit, newdata = df))
             } else if (class(y[, 1]) == "factor") {
+                ## if y is a factor and we want class probs return the mean prob across
+                ## obs. for each observation. predict.cforest returns a list, which is row binded
+                ## and then the means are computed, i also remove the name of the factor (y)
+                ## and just use the level labels as the column names (same as randomForest)
                 if (type == "prob") {
-                    pred <- predict(fit, newdata = df, type = type)
-                    pred <- do.call(rbind, pred)
-                    pred <- colMeans(pred)
+                    pred <- colMeans(do.call(rbind, predict(fit, newdata = df, type = type)))
                     names(pred) <- gsub(paste0(names(y), "\\."), "", names(pred))
                 } else if (type == "class" | type == "") {
-                    pred <- predict(fit, newdata = df)
-                    pred <- table(pred)
-                    pred <- names(pred)[pred == max(pred)]
+                    ## if no class probs requested just find the name of the maximal class
+                    ## and randomly pick one if there are ties
+                    pred <- names(which.max(table(predict(fit, newdata = df))))
                     if (length(pred) != 1) pred <- sample(pred, 1)
                 } else stop("invalid type parameter passed to predict.RandomForest*")
             } else stop("invalid response type")
-        } else {
-            pred <- predict(fit, newdata = df)
-            pred <- do.call(rbind, pred)
-            pred <- colMeans(pred)
-        }
+        } else pred <- colMeans(do.call(rbind, predict(fit, newdata = df)))
         c(rng[i, ], pred)
     }
     if (length(var) > 1)
         pred <- as.data.frame(do.call(rbind, lapply(pred, unlist)))
     else pred <- as.data.frame(do.call(rbind, pred))
     colnames(pred)[1:length(var)] <- var
-    if (type != "prob") {
+    if (type != "prob" & !se) {
+        ## make sure types agree with the input
+        ## not really sure now where the coercion comes from
         colnames(pred)[(length(var) + 1):ncol(pred)] <- colnames(y)
         pred <- fix_classes(c(var, colnames(y)), df, pred)
+    } else if (se) {
+        ## compute 1 - confidence intervals
+        ci <- qnorm((1 - confidence) / 2, lower.tail = FALSE)
+        se <- sqrt(pred$variance)
+        pred$low <- pred$predicted - ci * se
+        pred$high <- pred$predicted + ci * se
     }
     attr(pred, "class") <- c("pd", "data.frame")
     attr(pred, "prob") <- type == "prob"
@@ -285,10 +320,10 @@ ivar_points <- function(df, x, cutoff = 10, empirical = TRUE) {
     rng <- rng[!is.na(rng)]
     if (length(rng) > cutoff & !is.factor(df[, x])) {
         if (empirical == TRUE & cutoff < length(rng)) {
-          rng_s <- sort(rng)[-c(1, length(rng))]
-          rng <- c(sample(rng_s, (cutoff - 2)), range(rng))
+            rng_s <- sort(rng)[-c(1, length(rng))]
+            rng <- c(sample(rng_s, (cutoff - 2)), range(rng))
         } else if (empirical == FALSE)
-            rng <- seq(min(rng), max(rng), length.out = cutoff)
+              rng <- seq(min(rng), max(rng), length.out = cutoff)
     }
     class(rng) <- class(df[, x])
     return(rng)

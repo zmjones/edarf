@@ -21,18 +21,20 @@ var_est.RandomForest <- function(fit, df, parallel = FALSE) {
                     0, FALSE, PACKAGE = "party")
         sapply(pw, function(w) w %*% fit@responses@predict_trafo / sum(w))
     }
-    pred_center <- pred - Matrix::rowMeans(pred)  ## mean deviated tree pred
-    N <- Matrix::Matrix(do.call(cbind, fit@weights)) ## matrix were i,j is obs i in bs_j
-    N_avg <- Matrix::rowMeans(N) ## proportion of times i is in b_i
-    B <- length(fit@ensemble) ## boostrap replicates
-    n <- length(get("response", fit@data@env)[, 1])
-    s <- sum(N) / B ## number of obs. sampled at each b_i
-    ## bs weight - proportion i selected over B * sum of mean deviated predictions
+    pred_center <- pred - Matrix::rowMeans(pred)  ## difference between tree prediction
+    ## and mean across trees
+    N <- Matrix::Matrix(do.call(cbind, fit@weights), sparse = TRUE) ## matrix where i,j is count of obs. i in b
+    N_avg <- Matrix::rowMeans(N) ## proportion of times i appears in B (all b)
+    B <- length(fit@ensemble) ## number of boostrap replicates
+    n <- sum(N) / B ## portion of obs. sampled at each b, same as sum(N_avg), equals no. obs. w/ bootstrap,
+    ## and is < no. obs. w/ subsampling
+    ## covariance between number of times obs. i appears in b and difference between tree
+    ## and mean across trees (across in bag and out bag)
     C <- N %*% t(pred_center) - Matrix::Matrix(N_avg, nrow(N), 1) %*%
         Matrix::Matrix(rowSums(pred_center), 1, nrow(pred_center))
     raw_IJ <- Matrix::colSums(C^2) / B^2
-    N_var <- mean(Matrix::rowMeans(N^2) - Matrix::rowMeans(N)^2)
-    boot_var <- rowSums(pred_center^2) / B
+    N_var <- mean(Matrix::rowMeans(N^2) - N_avg^2)
+    boot_var <- Matrix::rowMeans(pred_center^2)
     bias_correct <- n * N_var * boot_var / B
     vars <- raw_IJ - bias_correct
     data.frame("prediction" = predict(fit, newdata = df), "variance" = vars)
