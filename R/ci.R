@@ -5,7 +5,7 @@ var_est.randomForest <- function(fit, df) {
     info <- info[, c("Package", "Version")]
     if (!"randomForestCI" %in% info)
         stop("install randomForestCI from http://github.com/swager/randomForestCI")
-    if (!info[which(info[, 1] == "randomForest"), 3] == "4.6-11")
+    if (!info[info[, 1] == "randomForest", "Version"] == "4.6-11")
         stop("install fixed randomForest from http://github.com/swager/randomForest")
     out <- randomForestCI::randomForestInfJack(fit, df)
     colnames(out) <- c("prediction", "variance")
@@ -17,19 +17,15 @@ var_est.RandomForest <- function(fit, df, parallel = FALSE) {
     pred <- foreach::foreach(i = 1:length(fit@ensemble), .inorder = FALSE,
                              .combine = "cbind", .packages = "party") %op% {
         pw <- .Call("R_predictRF_weights",
-                    fit@ensemble[i],
-                    fit@where[i],
-                    fit@weights[i],
-                    party:::newinputs(fit, df),
+                    fit@ensemble[i], fit@where[i], fit@weights[i], party:::newinputs(fit, df),
                     0, FALSE, PACKAGE = "party")
         sapply(pw, function(w) w %*% fit@responses@predict_trafo / sum(w))
     }
-
     pred_center <- pred - Matrix::rowMeans(pred)  ## mean deviated tree pred
     N <- Matrix::Matrix(do.call(cbind, fit@weights)) ## matrix were i,j is obs i in bs_j
     N_avg <- Matrix::rowMeans(N) ## proportion of times i is in b_i
     B <- length(fit@ensemble) ## boostrap replicates
-    n <- length(fit@responses) 
+    n <- length(get("response", fit@data@env)[, 1])
     s <- sum(N) / B ## number of obs. sampled at each b_i
     ## bs weight - proportion i selected over B * sum of mean deviated predictions
     C <- N %*% t(pred_center) - Matrix::Matrix(N_avg, nrow(N), 1) %*%
