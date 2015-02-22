@@ -12,20 +12,34 @@ var_est.randomForest <- function(fit, df) {
     out
 }
 
-var_est.RandomForest <- function(fit, df, parallel = FALSE) {
-    '%op%' <- ifelse(foreach::getDoParWorkers() > 1 & parallel, foreach::'%dopar%', foreach::'%do%')
-    pred <- foreach::foreach(i = 1:length(fit@ensemble), .inorder = FALSE,
-                             .combine = "cbind", .packages = "party") %op% {
-        pw <- .Call("R_predictRF_weights",
-                    fit@ensemble[i], fit@where[i], fit@weights[i], party:::newinputs(fit, df),
-                    0, FALSE, PACKAGE = "party")
-        sapply(pw, function(w) w %*% fit@responses@predict_trafo / sum(w))
+var_est.RandomForest <- function(fit, df) {
+    new_df <- party:::newinputs(fit, df)
+    pred <- sapply(1:length(fit@ensemble), function(i) {
+        sapply(.Call("R_predictRF_weights",
+                     fit@ensemble[i], fit@where[i], fit@weights[i], new_df, 0, FALSE, PACKAGE = "party"),
+               function(w) w %*% fit@responses@predict_trafo / sum(w))
+    })
+    data.frame("predicton" = predict(fit, newdata = df),
+               "variance" = inf_jackknife(pred, length(fit@ensemble),
+                   Matrix::Matrix(do.call(cbind, fit@weights), sparse = TRUE)))
+}
+
+var_est.rfsrc <- function(fit, df) {
+    pred <- matrix(NA, fit$n, fit$ntree)
+    for (i in 1:fit$n) {
+        for (j in 1:fit$ntree) {
+            idx <- which(fit$membership[, j] == fit$membership[i, j])
+            pred[i, j] <- weighted.mean(fit$yvar[idx], fit$inbag[idx, j])
+        }
     }
+    data.frame("prediction" = rowMeans(pred),
+               "variance" = inf_jackknife(pred, fit$ntree, fit$inbag))
+}
+
+inf_jackknife <- function(pred, B, N) {
     pred_center <- pred - Matrix::rowMeans(pred)  ## difference between tree prediction
     ## and mean across trees
-    N <- Matrix::Matrix(do.call(cbind, fit@weights), sparse = TRUE) ## matrix where i,j is count of obs. i in b
     N_avg <- Matrix::rowMeans(N) ## proportion of times i appears in B (all b)
-    B <- length(fit@ensemble) ## number of boostrap replicates
     n <- sum(N) / B ## portion of obs. sampled at each b, same as sum(N_avg), equals no. obs. w/ bootstrap,
     ## and is < no. obs. w/ subsampling
     ## covariance between number of times obs. i appears in b and difference between tree
@@ -36,9 +50,5 @@ var_est.RandomForest <- function(fit, df, parallel = FALSE) {
     N_var <- mean(Matrix::rowMeans(N^2) - N_avg^2)
     boot_var <- Matrix::rowMeans(pred_center^2)
     bias_correct <- n * N_var * boot_var / B
-    vars <- raw_IJ - bias_correct
-    data.frame("prediction" = predict(fit, newdata = df), "variance" = vars)
-}
-
-var_est.rfsrc <- function(fit, df) {
+    raw_IJ - bias_correct
 }
