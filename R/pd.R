@@ -32,6 +32,7 @@ partial_dependence <- function(fit, ...) UseMethod("partial_dependence", fit)
 #' @examples
 #' \dontrun{
 #' library(randomForest)
+#' library(edarf)
 #' ## library(doParallel)
 #' ## library(parallel)
 #' ## registerDoParallel(makeCluster(detectCores()))
@@ -40,7 +41,7 @@ partial_dependence <- function(fit, ...) UseMethod("partial_dependence", fit)
 #' 
 #' data(iris)
 #' 
-#' fit <- randomForest(Species ~ ., iris)
+#' fit <- randomForest(Species ~ ., iris, keep.inbag = TRUE)
 #' pd <- partial_dependence(fit, iris, "Petal.Width")
 #' pd_int <- partial_dependence(fit, iris, c("Petal.Width", "Sepal.Length"))
 #'
@@ -127,6 +128,7 @@ partial_dependence.randomForest <- function(fit, df, var, cutoff = 10, se = TRUE
 #' @examples
 #' \dontrun{
 #' library(party)
+#' library(edarf)
 #' ## library(doParallel)
 #' ## library(parallel)
 #' ## registerDoParallel(makeCluster(detectCores()))
@@ -135,7 +137,7 @@ partial_dependence.randomForest <- function(fit, df, var, cutoff = 10, se = TRUE
 #' 
 #' data(iris)
 #' 
-#' fit <- cforest(Species ~ ., iris, controls = cforest_control(mtry = 2))
+#' fit <- cforest(Species ~ ., iris, controls = cforest_unbiased(mtry = 2))
 #' pd <- partial_dependence(fit, "Petal.Width")
 #' pd_int <- partial_dependence(fit, c("Petal.Width", "Sepal.Length"))
 #'
@@ -180,6 +182,8 @@ partial_dependence.RandomForest <- function(fit, var, cutoff = 10, se = TRUE, co
                 ## across observations
                 if (se) pred <- colMeans(var_est(fit, df))
                 else pred <- mean(predict(fit, newdata = df))
+                pred <- predict(fit, newdata = df)
+                pred <- mean(pred)
             } else if (class(y[, 1]) == "factor") {
                 ## if y is a factor and we want class probs return the mean prob across
                 ## obs. for each observation. predict.cforest returns a list, which is row binded
@@ -192,6 +196,8 @@ partial_dependence.RandomForest <- function(fit, var, cutoff = 10, se = TRUE, co
                     ## if no class probs requested just find the name of the maximal class
                     ## and randomly pick one if there are ties
                     pred <- names(which.max(table(predict(fit, newdata = df))))
+                    pred <- table(predict(fit, newdata = df))
+                    pred <- names(pred)[pred == max(pred)]
                     if (length(pred) != 1) pred <- sample(pred, 1)
                 } else stop("invalid type parameter passed to predict.RandomForest*")
             } else stop("invalid response type")
@@ -244,6 +250,7 @@ partial_dependence.RandomForest <- function(fit, var, cutoff = 10, se = TRUE, co
 #' @examples
 #' \dontrun{
 #' library(randomForestSRC)
+#' library(edarf)
 #' ## library(doParallel)
 #' ## library(parallel)
 #' ## registerDoParallel(makeCluster(detectCores()))
@@ -268,7 +275,6 @@ partial_dependence.RandomForest <- function(fit, var, cutoff = 10, se = TRUE, co
 #' }
 #' @export
 partial_dependence.rfsrc <- function(fit, var, cutoff = 10, se = TRUE, confidence = .95,
-                                     empirical = TRUE, parallel = FALSE, type = "") {
     y <- fit$yvar
     df <- data.frame(fit$xvar, y)
     if (!is.data.frame(y))
