@@ -12,7 +12,11 @@ Imports:
     ggplot2,
     assertthat,
     reshape2,
-    Matrix
+    Matrix,
+    randomForestCI,
+    randomForest,
+    randomForestSRC,
+    party
 Suggests:
     scales,
     doParallel
