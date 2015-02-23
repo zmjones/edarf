@@ -4,8 +4,8 @@
 \alias{partial_dependence.RandomForest}
 \title{Partial dependence for RandomForest objects from package \code{party}}
 \usage{
-\method{partial_dependence}{RandomForest}(fit, var, cutoff = 10,
-  empirical = TRUE, parallel = FALSE, type = "")
+\method{partial_dependence}{RandomForest}(fit, var, cutoff = 10, se = TRUE,
+  confidence = 0.95, empirical = TRUE, parallel = FALSE, type = "")
 }
 \arguments{
 \item{fit}{an object of class 'RandomForest' returned from \code{cforest}}
@@ -14,6 +14,10 @@
 
 \item{cutoff}{the maximal number of unique points in each element of 'var' used in the
 partial dependence calculation}
+
+\item{se}{use the bias corrected infinitesimal jackknife from Wager, Hastie, and Efron (2014)}
+
+\item{confidence}{desired confidence for the returned interval (ignored if se is false)}
 
 \item{empirical}{logical indicator of whether or not only values in the data should be sampled}
 
