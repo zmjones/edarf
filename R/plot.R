@@ -29,9 +29,10 @@ plot_pd <- function(pd, geom = "line", title = "", facet_var) {
         if (!atts$prob & !atts$multivariate) {
             ## Numeric Y or Majority class
             p <- ggplot(pd, aes_string(colnames(pd)[1], colnames(pd)[2]))
-            if (geom == "line")
+            if (geom == "line") {
                 p <- p + geom_point() + geom_line()
-            else if (geom == "bar")
+                if (atts$ci) p <- p + geom_ribbon(aes(ymin = low, ymax = high), alpha = .25)
+            } else if (geom == "bar")
                 p <- p + geom_bar(stat = "identity")
             else stop("Unsupported geom")
             p <- p + labs(y = paste("Predicted", colnames(pd)[2]),
@@ -95,6 +96,7 @@ plot_pd <- function(pd, geom = "line", title = "", facet_var) {
             p <- ggplot(pd, aes_string(x = plot_var, y = y, group = facet_var))
             p <- p + facet_wrap(as.formula(paste0("~", facet_var)))
             p <- p + geom_line() + geom_point()
+            if (atts$ci) p <- p + geom_ribbon(aes(ymin = low, ymax = high), alpha = .25)
             p <- p + labs(x = plot_var,
                           y = paste("Predicted", y),
                           title = title)

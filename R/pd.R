@@ -19,8 +19,8 @@ partial_dependence <- function(fit, ...) UseMethod("partial_dependence", fit)
 #' @param var a character vector of the predictors of interest, which must match the input matrix in the call to \code{randomForest}
 #' @param cutoff the maximal number of unique points in each element of 'var' used in the
 #' partial dependence calculation
-#' @param se use the bias corrected infinitesimal jackknife from Wager, Hastie, and Efron (2014) implemented in randomForestCI, currently only works with regression
-#' @param confidence desired confidence for the returned interval (ignored if se is false)
+#' @param ci use the bias corrected infinitesimal jackknife from Wager, Hastie, and Efron (2014) implemented in randomForestCI, currently only works with regression
+#' @param confidence desired confidence for the returned interval (ignored if ci is false)
 #' @param empirical logical indicator of whether or not only values in the data should be sampled
 #' @param parallel logical indicator of whether a parallel backend should be used if registered
 #' @param type with classification, default "" gives most probable class for classification and "prob" gives class probabilities
@@ -54,7 +54,7 @@ partial_dependence <- function(fit, ...) UseMethod("partial_dependence", fit)
 #' pd_int <- partial_dependence(fit, swiss, c("Education", "Catholic"))
 #' }
 #' @export
-partial_dependence.randomForest <- function(fit, df, var, cutoff = 10, se = TRUE, confidence = .95,
+partial_dependence.randomForest <- function(fit, df, var, cutoff = 10, ci = TRUE, confidence = .95,
                                             empirical = TRUE, parallel = FALSE, type = "") {
     y_class <- attr(fit$terms, "dataClasses")[1] ## what type is y
     ## get the prediction grid for whatever var is
@@ -69,7 +69,7 @@ partial_dependence.randomForest <- function(fit, df, var, cutoff = 10, se = TRUE
         ## use the bias-corrected infinitesimal jackknife implemented in randomForestCI
         ## which is called using the var_est method
         if (y_class == "numeric" | y_class == "integer") {
-            if (se) pred <- colMeans(var_est(fit, df))
+            if (ci) pred <- colMeans(var_est(fit, df))
             else pred <- mean(predict(fit, newdata = df))
         } else if (y_class == "factor") {
             ## if y is a factor and class probs are requested (soft voting), get the probs
@@ -89,21 +89,23 @@ partial_dependence.randomForest <- function(fit, df, var, cutoff = 10, se = TRUE
         pred <- as.data.frame(do.call(rbind, lapply(pred, unlist)), stringsAsFactors = FALSE)
     else pred <- as.data.frame(do.call(rbind, pred), stringsAsFactors = FALSE)
     colnames(pred)[1:length(var)] <- var
-    if (type != "prob" & !se) {
+    if (type != "prob" & !ci) {
         colnames(pred)[ncol(pred)] <- names(y_class)
         pred <- fix_classes(colnames(pred), df, pred)
-    } else if (se) {
+    } else if (ci) {
+        colnames(pred)[ncol(pred) - 1] <- names(y_class)
         ## compute 1 - confidence intervals
-        ci <- qnorm((1 - confidence) / 2, lower.tail = FALSE)
+        cl <- qnorm((1 - confidence) / 2, lower.tail = FALSE)
         se <- sqrt(pred$variance)
-        pred$low <- pred$prediction - ci * se
-        pred$high <- pred$prediction + ci * se
+        pred$low <- pred[, names(y_class)] - cl * se
+        pred$high <- pred[, names(y_class)] + cl * se
     }
     attr(pred, "class") <- c("pd", "data.frame")
     attr(pred, "prob") <- type == "prob"
     attr(pred, "interaction") <- length(var) > 1
     attr(pred, "multivariate") <- FALSE
     attr(pred, "var") <- var
+    attr(pred, "ci") <- ci
     pred
 }
 #' Partial dependence for RandomForest objects from package \code{party}
@@ -115,8 +117,8 @@ partial_dependence.randomForest <- function(fit, df, var, cutoff = 10, se = TRUE
 #' @param var a character vector of the predictors of interest, which must match the input matrix in the call to \code{randomForest}
 #' @param cutoff the maximal number of unique points in each element of 'var' used in the
 #' partial dependence calculation
-#' @param se use the bias corrected infinitesimal jackknife from Wager, Hastie, and Efron (2014)
-#' @param confidence desired confidence for the returned interval (ignored if se is false)
+#' @param ci use the bias corrected infinitesimal jackknife from Wager, Hastie, and Efron (2014)
+#' @param confidence desired confidence for the returned interval (ignored if ci is false)
 #' @param empirical logical indicator of whether or not only values in the data should be sampled
 #' @param parallel logical indicator of whether a parallel backend should be used if registered
 #' @param type with classification, default "" gives most probable class for classification and "prob" gives class probabilities
@@ -158,7 +160,7 @@ partial_dependence.randomForest <- function(fit, df, var, cutoff = 10, se = TRUE
 #' pd_int <- partial_dependence(fit, c("mpg", "cyl"))
 #' }
 #' @export
-partial_dependence.RandomForest <- function(fit, var, cutoff = 10, se = TRUE, confidence = .95,
+partial_dependence.RandomForest <- function(fit, var, cutoff = 10, ci = TRUE, confidence = .95,
                                             empirical = TRUE, parallel = FALSE, type = "") {
     ## get y from the fit object
     y <- get("response", fit@data@env)
@@ -180,7 +182,7 @@ partial_dependence.RandomForest <- function(fit, var, cutoff = 10, se = TRUE, co
                 ## version of the code from randomForestCI
                 ## then take column means (if we have a variance estimate) or just the mean,
                 ## across observations
-                if (se) pred <- colMeans(var_est(fit, df))
+                if (ci) pred <- colMeans(var_est(fit, df))
                 else pred <- mean(predict(fit, newdata = df))
             } else if (class(y[, 1]) == "factor") {
                 ## if y is a factor and we want class probs return the mean prob across
@@ -204,23 +206,24 @@ partial_dependence.RandomForest <- function(fit, var, cutoff = 10, se = TRUE, co
         pred <- as.data.frame(do.call(rbind, lapply(pred, unlist)))
     else pred <- as.data.frame(do.call(rbind, pred))
     colnames(pred)[1:length(var)] <- var
-    if (type != "prob" & !se) {
+    if (type != "prob" & !ci) {
         ## make sure types agree with the input
         ## not really sure now where the coercion comes from
         colnames(pred)[(length(var) + 1):ncol(pred)] <- colnames(y)
         pred <- fix_classes(c(var, colnames(y)), df, pred)
-    } else if (se) {
+    } else if (ci) {
         ## compute 1 - confidence intervals
-        ci <- qnorm((1 - confidence) / 2, lower.tail = FALSE)
+        cl <- qnorm((1 - confidence) / 2, lower.tail = FALSE)
         se <- sqrt(pred$variance)
-        pred$low <- pred[, names(y)] - ci * se
-        pred$high <- pred[, names(y)] + ci * se
+        pred$low <- pred[, names(y)] - cl * se
+        pred$high <- pred[, names(y)] + cl * ce
     }
     attr(pred, "class") <- c("pd", "data.frame")
     attr(pred, "prob") <- type == "prob"
     attr(pred, "interaction") <- length(var) > 1
     attr(pred, "multivariate") <- dim(y)[2] != 1
     attr(pred, "var") <- var
+    attr(pred, "ci") <- ci
     pred
 }
 #' Partial dependence for rfsrc objects from package \code{randomForestSRC}
@@ -233,8 +236,8 @@ partial_dependence.RandomForest <- function(fit, var, cutoff = 10, se = TRUE, co
 #' the input matrix in the call to \code{rfsrc}
 #' @param cutoff the maximal number of unique points in each element of 'var' used in the
 #' partial dependence calculation
-#' @param se use the bias corrected infinitesimal jackknife from Wager, Hastie, and Efron (2014)
-#' @param confidence desired confidence for the returned interval (ignored if se is false)
+#' @param ci use the bias corrected infinitesimal jackknife from Wager, Hastie, and Efron (2014)
+#' @param confidence desired confidence for the returned interval (ignored if ci is false)
 #' @param empirical logical indicator of whether or not only values in the data should be sampled
 #' @param parallel logical indicator of whether a parallel backend should be used if registered
 #' @param type with classification, default "" gives most probable class for classification and "prob" gives class probabilities
@@ -270,7 +273,7 @@ partial_dependence.RandomForest <- function(fit, var, cutoff = 10, se = TRUE, co
 #' pd_int <- partial_dependence(fit_rfsrc, c("age", "diagtime"))
 #' }
 #' @export
-partial_dependence.rfsrc <- function(fit, var, cutoff = 10, se = TRUE, confidence = .95,
+partial_dependence.rfsrc <- function(fit, var, cutoff = 10, ci = TRUE, confidence = .95,
                                      empirical = TRUE, parallel = FALSE, type = "") {
     y <- fit$yvar
     df <- data.frame(fit$xvar, y)
@@ -309,16 +312,17 @@ partial_dependence.rfsrc <- function(fit, var, cutoff = 10, se = TRUE, confidenc
     } else if (se & class(y) == "numeric") {
         colnames(pred)[ncol(pred) - 1] <- fit$yvar.names
         ## compute 1 - confidence intervals
-        ci <- qnorm((1 - confidence) / 2, lower.tail = FALSE)
+        cl <- qnorm((1 - confidence) / 2, lower.tail = FALSE)
         se <- sqrt(pred$variance)
-        pred$low <- pred[, fit$yvar.names] - ci * se
-        pred$high <- pred[, fit$yvar.names] + ci * se
+        pred$low <- pred[, fit$yvar.names] - cl * se
+        pred$high <- pred[, fit$yvar.names] + cl * se
     }
     attr(pred, "class") <- c("pd", "data.frame")
     attr(pred, "prob") <- type == "prob"
     attr(pred, "interaction") <- length(var) > 1
     attr(pred, "multivariate") <- FALSE
     attr(pred, "var") <- var
+    attr(pred, "ci") <- ci
     pred
 }
 #' Creates a prediction vector for variables to decrease computation time
