@@ -1,5 +1,33 @@
-var_est <- function(fit, ...) UseMethod("var_est", fit)
-
+#' Variance estimates for predicted values from random forests
+#'
+#' Calculates the variance of predictions from a random forest using the bias corrected infinitesimal
+#' jackknife from Wager, Efron, and Tibsharani (2014) using a fitted random forest object from the
+#' party, randomForest, or randomForestSRC packages
+#'
+#' @importFrom Matrix Matrix rowSums rowMeans colSums
+#' @param fit object of class 'RandomForest', 'randomForest', or 'rfsrc' (must be regression)
+#' @param df dataframe to be used for prediction
+#'
+#' @export
+var_est <- function(fit, df) UseMethod("var_est", fit)
+#' Variance estimation for randomForest objects from package \code{randomForest}
+#'
+#' Calculates the variance of predictions from regression using randomForest by calling randomForestCI (\url{https://github.com/swager/randomForestCI})
+#'
+#' @param fit an object of class 'randomForest' returned from \code{randomForest} with \code{keep.inbag = TRUE}
+#' @param df dataframe to be used for prediction
+#'
+#' @return a dataframe with two columns: 'prediction' and 'variance', where the former is the prediction calculated using the inbag data, and the variance is calculated using the bias corrected infinitesimal bootstrap from Wager, Efron, and Tibsharani (2014).
+#'
+#' @examples
+#' \dontrun{
+#' library(randomForest)
+#' data(swiss)
+#'
+#' fit <- randomForest(Fertility ~ ., swiss, keep.inbag = TRUE)
+#' var_est(fit, swiss)
+#' }
+#' @export
 var_est.randomForest <- function(fit, df) {
     info <- installed.packages(fields = c("Package", "Version"))
     info <- info[, c("Package", "Version")]
@@ -11,7 +39,24 @@ var_est.randomForest <- function(fit, df) {
     colnames(out) <- c("prediction", "variance")
     out
 }
-
+#' Variance estimation for RandomForest objects from package \code{party}
+#'
+#' Calculates the variance of predictions from regression using RandomForest using a slightly modified version of the code from randomForestCI (\url{https://github.com/swager/randomForestCI})
+#'
+#' @param fit an object of class 'RandomForest' returned from \code{cforest}
+#' @param df dataframe to be used for prediction
+#'
+#' @return a dataframe with two columns: 'prediction' and 'variance', where the former is the prediction calculated using the inbag data, and the variance is calculated using the bias corrected infinitesimal bootstrap from Wager, Efron, and Tibsharani (2014).
+#'
+#' @examples
+#' \dontrun{
+#' library(party)
+#' data(swiss)
+#'
+#' fit <- cforest(Fertility ~ ., swiss, controls = cforest_control(mtry = 2))
+#' var_est(fit, swiss)
+#' }
+#' @export
 var_est.RandomForest <- function(fit, df) {
     new_df <- party:::newinputs(fit, df)
     pred <- sapply(1:length(fit@ensemble), function(i) {
@@ -19,23 +64,59 @@ var_est.RandomForest <- function(fit, df) {
                      fit@ensemble[i], fit@where[i], fit@weights[i], new_df, 0, FALSE, PACKAGE = "party"),
                function(w) w %*% fit@responses@predict_trafo / sum(w))
     })
-    data.frame("predicton" = predict(fit, newdata = df),
+    data.frame("prediction" = predict(fit, newdata = df),
                "variance" = inf_jackknife(pred, length(fit@ensemble),
                    Matrix::Matrix(do.call(cbind, fit@weights), sparse = TRUE)))
 }
-
+#' Variance estimation for rfsrc objects from package \code{randomForestSRC}
+#'
+#' Calculates the variance of predictions from regression using RandomForest using a slightly modified version of the code from randomForestCI (\url{https://github.com/swager/randomForestCI})
+#'
+#' @param fit an predict object of class 'rfsrc' returned from \code{rfsrc}
+#' @param df dataframe to be used for prediction
+#'
+#' @return a dataframe with two columns: 'prediction' and 'variance', where the former is the prediction calculated using the inbag data, and the variance is calculated using the bias corrected infinitesimal bootstrap from Wager, Efron, and Tibsharani (2014).
+#'
+#' @examples
+#' \dontrun{
+#' library(randomForestSRC)
+#' data(swiss)
+#'
+#' fit <- rfsrc(Fertility ~ ., swiss)
+#' var_est(fit, swiss)
+#' }
+#' @export
 var_est.rfsrc <- function(fit, df) {
-    pred <- matrix(NA, fit$n, fit$ntree)
+    out <- matrix(NA, fit$n, fit$ntree)
     for (i in 1:fit$n) {
         for (j in 1:fit$ntree) {
-            idx <- which(fit$membership[, j] == fit$membership[i, j])
-            pred[i, j] <- weighted.mean(fit$yvar[idx], fit$inbag[idx, j])
+            idx <- which(fit$pd_membership[, j] == fit$pd_membership[i, j])
+            out[i, j] <- weighted.mean(fit$yvar[idx], fit$inbag[idx, j])
         }
     }
-    data.frame("prediction" = rowMeans(pred),
-               "variance" = inf_jackknife(pred, fit$ntree, fit$inbag))
+    data.frame("prediction" = fit$pd_predicted,
+               "variance" = inf_jackknife(out, fit$ntree, fit$inbag))
 }
-
+#' Bias corrected infinitesimal jackknife variance estimator for predictions given a matrix of tree predictions
+#'
+#' Essentially code from randomForestCI (\url{https://github.com/swager/randomForestCI}) with some modifications, and factored out so that it can be made more generic
+#'
+#' @param pred matrix with n rows and B columns, where n is the number of observations, and B the number of trees in the forest
+#' @param B number of trees
+#' @param N matrix with n rows and B columns, where each entry gives the number of times observation i appears in tree j
+#'
+#' @return a vector of variance estimates for each observation
+#'
+#' @examples
+#' \dontrun{
+#' library(randomForest)
+#' data(swiss)
+#'
+#' fit <- randomForest(Fertility ~ ., swiss, keep.inbag = TRUE)
+#' pred <- predict(fit, newdata = swiss, predict.all = TRUE)
+#' inf_jackknife(pred$individual, fit$ntree, fit$inbag)
+#' }
+#' @export
 inf_jackknife <- function(pred, B, N) {
     pred_center <- pred - Matrix::rowMeans(pred)  ## difference between tree prediction
     ## and mean across trees
@@ -45,7 +126,7 @@ inf_jackknife <- function(pred, B, N) {
     ## covariance between number of times obs. i appears in b and difference between tree
     ## and mean across trees (across in bag and out bag)
     C <- N %*% t(pred_center) - Matrix::Matrix(N_avg, nrow(N), 1) %*%
-        Matrix::Matrix(rowSums(pred_center), 1, nrow(pred_center))
+        Matrix::Matrix(Matrix::rowSums(pred_center), 1, nrow(pred_center))
     raw_IJ <- Matrix::colSums(C^2) / B^2
     N_var <- mean(Matrix::rowMeans(N^2) - N_avg^2)
     boot_var <- Matrix::rowMeans(pred_center^2)
