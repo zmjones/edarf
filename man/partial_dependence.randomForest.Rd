@@ -4,7 +4,7 @@
 \alias{partial_dependence.RandomForest}
 \title{Partial dependence for RandomForest objects from package \code{party}}
 \usage{
-\method{partial_dependence}{RandomForest}(fit, var, cutoff = 10, se = TRUE,
+\method{partial_dependence}{RandomForest}(fit, var, cutoff = 10, ci = TRUE,
   confidence = 0.95, empirical = TRUE, parallel = FALSE, type = "")
 }
 \arguments{
@@ -15,9 +15,9 @@
 \item{cutoff}{the maximal number of unique points in each element of 'var' used in the
 partial dependence calculation}
 
-\item{se}{use the bias corrected infinitesimal jackknife from Wager, Hastie, and Efron (2014)}
+\item{ci}{use the bias corrected infinitesimal jackknife from Wager, Hastie, and Efron (2014)}
 
-\item{confidence}{desired confidence for the returned interval (ignored if se is false)}
+\item{confidence}{desired confidence for the returned interval (ignored if ci is false)}
 
 \item{empirical}{logical indicator of whether or not only values in the data should be sampled}
 
@@ -37,6 +37,7 @@ from a fitted random forest object from the \code{party} package
 \examples{
 \dontrun{
 library(party)
+library(edarf)
 ## library(doParallel)
 ## library(parallel)
 ## registerDoParallel(makeCluster(detectCores()))
@@ -45,7 +46,7 @@ library(party)
 
 data(iris)
 
-fit <- cforest(Species ~ ., iris, controls = cforest_control(mtry = 2))
+fit <- cforest(Species ~ ., iris, controls = cforest_unbiased(mtry = 2))
 pd <- partial_dependence(fit, "Petal.Width")
 pd_int <- partial_dependence(fit, c("Petal.Width", "Sepal.Length"))
 

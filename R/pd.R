@@ -3,7 +3,7 @@
 #' Calculates the partial dependence of the response on an arbitrary dimensional set of predictors
 #' from a fitted random forest object from the party, randomForest, or randomForestSRC packages
 #'
-#' @importFrom foreach foreach %dopar% %do%
+#' @importFrom foreach foreach %dopar% %do% %:% getDoParWorkers
 #' @param fit object of class 'RandomForest', 'randomForest', or 'rfsrc'
 #' @param ... arguments to be passed to \code{partial_dependence}
 #'
@@ -41,34 +41,39 @@ partial_dependence <- function(fit, ...) UseMethod("partial_dependence", fit)
 #' 
 #' data(iris)
 #' 
-#' fit <- randomForest(Species ~ ., iris, keep.inbag = TRUE)
-#' pd <- partial_dependence(fit, iris, "Petal.Width")
-#' pd_int <- partial_dependence(fit, iris, c("Petal.Width", "Sepal.Length"))
+#' fit <- randomForest(Species ~ ., iris)
+#' pd <- partial_dependence(fit, iris, c("Petal.Width", "Sepal.Length"))
+#' pd_int <- partial_dependence(fit, iris, c("Petal.Width", "Sepal.Length"), interaction = TRUE)
 #'
 #' ## Regression
 #'
 #' data(swiss)
 #'
 #' fit <- randomForest(Fertility ~ ., swiss, keep.inbag = TRUE)
-#' pd <- partial_dependence(fit, swiss, "Education")
-#' pd_int <- partial_dependence(fit, swiss, c("Education", "Catholic"))
+#' pd <- partial_dependence(fit, swiss, "Education", ci = TRUE)
+#' pd_int <- partial_dependence(fit, swiss, c("Education", "Catholic"), interaction = TRUE, ci = TRUE)
 #' }
 #' @export
-partial_dependence.randomForest <- function(fit, df, var, cutoff = 10, ci = TRUE, confidence = .95,
+partial_dependence.randomForest <- function(fit, df, var, cutoff = 10, interaction = FALSE,
+                                            ci = TRUE, confidence = .95,
                                             empirical = TRUE, parallel = FALSE, type = "") {
+    pkg <- "randomForest"
     y_class <- attr(fit$terms, "dataClasses")[1] ## what type is y
+    if (!y_class %in% c("integer", "numeric") & ci) ci <- FALSE
     ## get the prediction grid for whatever var is
-    rng <- expand.grid(lapply(var, function(x) ivar_points(df, x, cutoff, empirical)))
+    if (length(var) == 1 | interaction)
+        rng <- expand.grid(lapply(var, function(x) ivar_points(df, x, cutoff, empirical)))
+    else
+        rng <- lapply(var, function(x) data.frame(ivar_points(df, x, cutoff, empirical)))
     ## run the pd algo in parallel?
-    '%op%' <- ifelse(foreach::getDoParWorkers() > 1 & parallel, foreach::'%dopar%', foreach::'%do%')
-    ## loop over points in prediction grid (rng)
-    pred <- foreach::foreach(i = 1:nrow(rng), .inorder = FALSE, .packages = "randomForest") %op% {
+    '%op%' <- ifelse(getDoParWorkers() > 1 & parallel, foreach::'%dopar%', foreach::'%do%')
+    inner_loop <- function(df, rng, fit, idx) {
         ## fix var to points in prediction grid
-        df[, var] <- rng[i, ]
+        df[, var] <- rng[idx, ]
         ## if numeric outcome predict and take the mean, if standard errors requested
         ## use the bias-corrected infinitesimal jackknife implemented in randomForestCI
         ## which is called using the var_est method
-        if (y_class == "numeric" | y_class == "integer") {
+        if (y_class %in% c("numeric", "integer")) {
             if (ci) pred <- colMeans(var_est(fit, df))
             else pred <- mean(predict(fit, newdata = df))
         } else if (y_class == "factor") {
@@ -82,17 +87,32 @@ partial_dependence.randomForest <- function(fit, df, var, cutoff = 10, ci = TRUE
                 if (length(pred) != 1) pred <- sample(pred, 1)
             } else stop("invalid type parameter passed to predict.randomForest*")
         } else stop("invalid response type")
-        c(rng[i, ], pred)
+        c(rng[idx, ], pred)
     }
-    ## bind everything together in a data.frame
-    if (length(var) > 1)
+    ## loop over points in prediction grid (rng)
+    if (is.data.frame(rng)) {
+        pred <- foreach(i = 1:nrow(rng), .packages = pkg) %op%
+                     inner_loop(df, rng, fit, i)
         pred <- as.data.frame(do.call(rbind, lapply(pred, unlist)), stringsAsFactors = FALSE)
-    else pred <- as.data.frame(do.call(rbind, pred), stringsAsFactors = FALSE)
-    colnames(pred)[1:length(var)] <- var
-    if (type != "prob" & !ci) {
-        colnames(pred)[ncol(pred)] <- names(y_class)
-        pred <- fix_classes(colnames(pred), df, pred)
-    } else if (ci) {
+        colnames(pred)[1:length(var)] <- var
+        if (type != "prob" & (!ci | !(y_class %in% c("numeric", "integer"))))
+            colnames(pred)[ncol(pred)] <- names(y_class)
+    } else {
+        pred <- foreach(x = rng, .packages = pkg) %:%
+        foreach(idx = 1:nrow(x), .combine = rbind) %op% inner_loop(df, x, fit, idx)
+        ## op not appropriate here, too much overhead, for some reason referencing foreach doesn't work
+        ## e.g. foreach::'%do%' fails
+        pred <- foreach(i = 1:length(pred), .combine = rbind) %do% {
+            out <- data.frame(pred[[i]], "variable" = var[i], stringsAsFactors = FALSE)
+            colnames(out)[1:2] <- c("value", names(y_class))
+            out$value <- as.numeric(out$value)
+            out
+        }
+        row.names(pred) <- NULL
+        ## probably the value column needs to be restricted to be a numeric or integer vector
+        ## should check to see what is up. not sure what to do with categorical predictors
+    }
+    if (ci & y_class %in% c("integer", "numeric")) {
         colnames(pred)[ncol(pred) - 1] <- names(y_class)
         ## compute 1 - confidence intervals
         cl <- qnorm((1 - confidence) / 2, lower.tail = FALSE)
