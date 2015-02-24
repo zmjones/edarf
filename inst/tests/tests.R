@@ -160,6 +160,17 @@ test_that("partial_dependence works with randomForest classification", {
     expect_that(length(unique(pd$Petal.Width)), equals(nrow(pd)))
 })
 
+test_that("partial_dependence works with randomForest classification w/ probability output", {
+    library(randomForest)
+    data(iris)
+    fit <- randomForest(Species ~ ., iris)
+    pd <- partial_dependence(fit, "Petal.Width", length(unique(iris$Petal.Width)), type = "prob")
+    expect_that(pd, is_a("data.frame"))
+    expect_that(colnames(pd), equals(c("Petal.Width", "setosa", "versicolor", "virginica")))
+    expect_that(pd$Petal.Width, is_a("numeric"))
+    expect_that(length(unique(pd$Petal.Width)), equals(nrow(pd)))
+}) 
+
 test_that("partial_dependence works with cforest classification", {
     library(party)
     data(iris)

@@ -60,6 +60,7 @@ partial_dependence.randomForest <- function(fit, df, var, cutoff = 10, interacti
     pkg <- "randomForest"
     y_class <- attr(fit$terms, "dataClasses")[1] ## what type is y
     if (!y_class %in% c("integer", "numeric") & ci) ci <- FALSE
+    if (length(var) == 1) interaction <- FALSE
     ## get the prediction grid for whatever var is
     if (length(var) == 1 | interaction)
         rng <- expand.grid(lapply(var, function(x) ivar_points(df, x, cutoff, empirical)))
@@ -119,7 +120,7 @@ partial_dependence.randomForest <- function(fit, df, var, cutoff = 10, interacti
         se <- sqrt(pred$variance)
         pred$low <- pred[, names(y_class)] - cl * se
         pred$high <- pred[, names(y_class)] + cl * se
-    } else if (length(var) == 1)
+    } else if (length(var) == 1 & type != "prob")
           pred <- fix_classes(c(var, names(y_class)), df, pred)
     attr(pred, "class") <- c("pd", "data.frame")
     attr(pred, "prob") <- type == "prob"
