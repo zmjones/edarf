@@ -164,12 +164,26 @@ test_that("partial_dependence works with randomForest classification w/ probabil
     library(randomForest)
     data(iris)
     fit <- randomForest(Species ~ ., iris)
-    pd <- partial_dependence(fit, "Petal.Width", length(unique(iris$Petal.Width)), type = "prob")
+    pd <- partial_dependence(fit, iris, "Petal.Width", length(unique(iris$Petal.Width)), type = "prob")
     expect_that(pd, is_a("data.frame"))
     expect_that(colnames(pd), equals(c("Petal.Width", "setosa", "versicolor", "virginica")))
     expect_that(pd$Petal.Width, is_a("numeric"))
     expect_that(length(unique(pd$Petal.Width)), equals(nrow(pd)))
-}) 
+})
+
+test_that("partial_dependence works with randomForest classification w/ probability output and vector input", {
+    library(randomForest)
+    data(iris)
+    fit <- randomForest(Species ~ ., iris)
+    pd <- partial_dependence(fit, iris, c("Petal.Width", "Petal.Length"), type = "prob")
+    expect_that(pd, is_a("data.frame"))
+    expect_that(colnames(pd), equals(c("value", "setosa", "versicolor", "virginica", "variable")))
+    expect_that(pd$value, is_a("numeric"))
+    expect_that(pd$setosa, is_a("numeric"))
+    expect_that(pd$versicolor, is_a("numeric"))
+    expect_that(pd$virginica, is_a("numeric"))
+    expect_that(pd$variable, is_a("character"))
+})
 
 test_that("partial_dependence works with cforest classification", {
     library(party)

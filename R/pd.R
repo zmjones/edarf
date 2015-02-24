@@ -62,10 +62,12 @@ partial_dependence.randomForest <- function(fit, df, var, cutoff = 10, interacti
     if (!y_class %in% c("integer", "numeric") & ci) ci <- FALSE
     if (length(var) == 1) interaction <- FALSE
     ## get the prediction grid for whatever var is
-    if (length(var) == 1 | interaction)
+    if (interaction)
         rng <- expand.grid(lapply(var, function(x) ivar_points(df, x, cutoff, empirical)))
-    else
+    else if (length(var) > 1 & !interaction)
         rng <- lapply(var, function(x) data.frame(ivar_points(df, x, cutoff, empirical)))
+    else
+        rng <- data.frame(ivar_points(df, var, cutoff, empirical))
     ## run the pd algo in parallel?
     '%op%' <- ifelse(getDoParWorkers() > 1 & parallel, foreach::'%dopar%', foreach::'%do%')
     inner_loop <- function(df, rng, fit, idx) {
@@ -105,7 +107,9 @@ partial_dependence.randomForest <- function(fit, df, var, cutoff = 10, interacti
         ## e.g. foreach::'%do%' fails
         pred <- foreach(i = 1:length(pred), .combine = rbind) %do% {
             out <- data.frame(pred[[i]], "variable" = var[i], stringsAsFactors = FALSE)
-            colnames(out)[1:2] <- c("value", names(y_class))
+            if (type != "prob")
+                colnames(out)[1:2] <- c("value", names(y_class))
+            else colnames(out)[1] <- "value"
             out$value <- as.numeric(out$value)
             out
         }
@@ -120,8 +124,8 @@ partial_dependence.randomForest <- function(fit, df, var, cutoff = 10, interacti
         se <- sqrt(pred$variance)
         pred$low <- pred[, names(y_class)] - cl * se
         pred$high <- pred[, names(y_class)] + cl * se
-    } else if (length(var) == 1 & type != "prob")
-          pred <- fix_classes(c(var, names(y_class)), df, pred)
+    }
+    if (length(var) == 1 & type != "prob") pred <- fix_classes(c(var, names(y_class)), df, pred)
     attr(pred, "class") <- c("pd", "data.frame")
     attr(pred, "prob") <- type == "prob"
     attr(pred, "interaction") <- length(var) > 1
