@@ -236,7 +236,7 @@ partial_dependence.RandomForest <- function(fit, var, cutoff = 10, ci = TRUE, co
         cl <- qnorm((1 - confidence) / 2, lower.tail = FALSE)
         se <- sqrt(pred$variance)
         pred$low <- pred[, names(y)] - cl * se
-        pred$high <- pred[, names(y)] + cl * ce
+        pred$high <- pred[, names(y)] + cl * se
     }
     attr(pred, "class") <- c("pd", "data.frame")
     attr(pred, "prob") <- type == "prob"
