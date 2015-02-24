@@ -35,6 +35,65 @@ test_that("partial_dependence returns confidence interval for randomForest regre
     expect_that(length(unique(pd$Education)), equals(nrow(pd)))
 })
 
+test_that("partial_dependence works with a vector input with randomForest with ci", {
+    library(randomForest)
+    data(swiss)
+    fit <- randomForest(Fertility ~ ., swiss, keep.inbag = TRUE)
+    pd <- partial_dependence(fit, swiss, c("Education", "Agriculture"), cutoff = 10, interaction = FALSE)
+    expect_that(pd, is_a("data.frame"))
+    expect_that(colnames(pd), equals(c("value", "Fertility", "variance", "variable", "low", "high")))
+    expect_that(pd$Fertility, is_a("numeric"))
+    expect_that(pd$variance, is_a("numeric"))
+    expect_that(pd$low, is_a("numeric"))
+    expect_that(pd$high, is_a("numeric"))
+    expect_that(pd$value, is_a("numeric"))
+    expect_that(pd$variable, is_a("character"))
+    expect_that(nrow(pd), equals(20))
+})
+
+test_that("partial_dependence works with a vector input with randomForest with ci", {
+    library(randomForest)
+    data(swiss)
+    fit <- randomForest(Fertility ~ ., swiss)
+    pd <- partial_dependence(fit, swiss, c("Education", "Agriculture"), cutoff = 10,
+                             interaction = FALSE, ci = FALSE)
+    expect_that(pd, is_a("data.frame"))
+    expect_that(colnames(pd), equals(c("value", "Fertility", "variable")))
+    expect_that(pd$Fertility, is_a("numeric"))
+    expect_that(pd$value, is_a("numeric"))
+    expect_that(pd$variable, is_a("character"))
+    expect_that(nrow(pd), equals(20))
+})
+
+test_that("partial_dependence works with a vector input with randomForest and interactions", {
+    library(randomForest)
+    data(swiss)
+    fit <- randomForest(Fertility ~ ., swiss)
+    pd <- partial_dependence(fit, swiss, c("Education", "Agriculture"), cutoff = 10,
+                             interaction = TRUE, ci = FALSE)
+    expect_that(pd, is_a("data.frame"))
+    expect_that(colnames(pd), equals(c("Education", "Agriculture", "Fertility")))
+    expect_that(pd$Fertility, is_a("numeric"))
+    ## expect_that(pd$Education, is_a("integer"))
+    ## expect_that(pd$Agriculture, is_a("integer"))
+    expect_that(nrow(pd), equals(100))
+})
+
+test_that("partial_dependence works with a vector input with randomForest, interactions, and ci", {
+    library(randomForest)
+    data(swiss)
+    fit <- randomForest(Fertility ~ ., swiss, keep.inbag = TRUE)
+    pd <- partial_dependence(fit, swiss, c("Education", "Agriculture"), cutoff = 10,
+                             interaction = TRUE, ci = TRUE)
+    expect_that(pd, is_a("data.frame"))
+    ## expect_that(pd$Education, is_a("integer"))
+    ## expect_that(pd$Agriculture, is_a("integer"))
+    expect_that(pd$variance, is_a("numeric"))
+    expect_that(pd$low, is_a("numeric"))
+    expect_that(pd$high, is_a("numeric"))
+    expect_that(nrow(pd), equals(100))
+})
+
 test_that("partial_dependence works with cforest regression", {
     library(party)
     data(swiss)

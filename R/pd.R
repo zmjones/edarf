@@ -113,13 +113,14 @@ partial_dependence.randomForest <- function(fit, df, var, cutoff = 10, interacti
         ## should check to see what is up. not sure what to do with categorical predictors
     }
     if (ci & y_class %in% c("integer", "numeric")) {
-        colnames(pred)[ncol(pred) - 1] <- names(y_class)
+        if (length(var) == 1 | interaction) colnames(pred)[ncol(pred) - 1] <- names(y_class)
         ## compute 1 - confidence intervals
         cl <- qnorm((1 - confidence) / 2, lower.tail = FALSE)
         se <- sqrt(pred$variance)
         pred$low <- pred[, names(y_class)] - cl * se
         pred$high <- pred[, names(y_class)] + cl * se
-    } else pred <- fix_classes(c(var, names(y_class)), df, pred)
+    } else if (length(var) == 1)
+          pred <- fix_classes(c(var, names(y_class)), df, pred)
     attr(pred, "class") <- c("pd", "data.frame")
     attr(pred, "prob") <- type == "prob"
     attr(pred, "interaction") <- length(var) > 1
