@@ -119,7 +119,7 @@ partial_dependence.randomForest <- function(fit, df, var, cutoff = 10, interacti
         se <- sqrt(pred$variance)
         pred$low <- pred[, names(y_class)] - cl * se
         pred$high <- pred[, names(y_class)] + cl * se
-    }
+    } else pred <- fix_classes(c(var, names(y_class)), df, pred)
     attr(pred, "class") <- c("pd", "data.frame")
     attr(pred, "prob") <- type == "prob"
     attr(pred, "interaction") <- length(var) > 1
@@ -184,6 +184,7 @@ partial_dependence.RandomForest <- function(fit, var, cutoff = 10, ci = TRUE, co
                                             empirical = TRUE, parallel = FALSE, type = "") {
     ## get y from the fit object
     y <- get("response", fit@data@env)
+    if (ncol(y) > 1 | !(class(y[, 1]) %in% c("integer", "numeric"))) ci <- FALSE
     ## get input data and combine into model data.frame
     df <- data.frame(get("input", fit@data@env), y)
     ## get prediction grid for whatever is in var
@@ -296,6 +297,7 @@ partial_dependence.RandomForest <- function(fit, var, cutoff = 10, ci = TRUE, co
 partial_dependence.rfsrc <- function(fit, var, cutoff = 10, ci = TRUE, confidence = .95,
                                      empirical = TRUE, parallel = FALSE, type = "") {
     y <- fit$yvar
+    if (!(class(y) %in% c("numeric", "integer"))) ci <- FALSE
     df <- data.frame(fit$xvar, y)
     if (!is.data.frame(y))
         colnames(df)[ncol(df)] <- fit$yvar.names
@@ -314,7 +316,7 @@ partial_dependence.rfsrc <- function(fit, var, cutoff = 10, ci = TRUE, confidenc
                 if (length(pred) != 1) pred <- sample(pred, 1)
             }
         } else if (class(y) == "numeric" | class(y) == "data.frame") {
-            if (class(y) == "numeric" & se) pred <- colMeans(var_est(fit, df))
+            if (class(y) == "numeric" & ci) pred <- colMeans(var_est(fit, df))
             else pred <- mean(pred$predicted)
         } else stop("invalid response type")
         c(rng[i, ], pred)
@@ -326,10 +328,10 @@ partial_dependence.rfsrc <- function(fit, var, cutoff = 10, ci = TRUE, confidenc
     if (is.data.frame(fit$yvar)) {
         colnames(pred)[ncol(pred)] <- "chf"
         pred[, -ncol(pred)] <- fix_classes(var, df, pred[, -ncol(pred)])
-    } else if (type != "prob" & !se) {
+    } else if (type != "prob" & !ci) {
         colnames(pred)[ncol(pred)] <- fit$yvar.names
         pred <- fix_classes(c(var, fit$yvar.names), df, pred)
-    } else if (se & class(y) == "numeric") {
+    } else if (ci & class(y) == "numeric") {
         colnames(pred)[ncol(pred) - 1] <- fit$yvar.names
         ## compute 1 - confidence intervals
         cl <- qnorm((1 - confidence) / 2, lower.tail = FALSE)
@@ -353,6 +355,8 @@ partial_dependence.rfsrc <- function(fit, var, cutoff = 10, ci = TRUE, confidenc
 #' @param empirical logical indicator of whether or not only values in the data should be sampled
 #'  
 #' @return a vector of unique values taken by \code{x} of length < `cutoff`
+#'
+#' @export
 ivar_points <- function(df, x, cutoff = 10, empirical = TRUE) {
     rng <- unique(df[, x])
     rng <- rng[!is.na(rng)]
@@ -373,6 +377,8 @@ ivar_points <- function(df, x, cutoff = 10, empirical = TRUE) {
 #' @param pred output dataframe
 #'
 #' @return dataframe \code{pred} with \code{var} column classes matched to those in \code{df}
+#'
+#' @export
 fix_classes <- function(var, df, pred) {
     for (x in var) {
         if (class(df[, x]) == "factor")
