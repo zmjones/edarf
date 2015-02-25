@@ -166,7 +166,7 @@ partial_dependence.randomForest <- function(fit, df, var, cutoff = 10, interacti
 #' 
 #' fit <- cforest(Species ~ ., iris, controls = cforest_unbiased(mtry = 2))
 #' pd <- partial_dependence(fit, "Petal.Width")
-#' pd_int <- partial_dependence(fit, c("Petal.Width", "Sepal.Length"))
+#' pd_int <- partial_dependence(fit, c("Petal.Width", "Sepal.Length"), interaction = TRUE)
 #'
 #' ## Regression
 #'
@@ -174,7 +174,7 @@ partial_dependence.randomForest <- function(fit, df, var, cutoff = 10, interacti
 #'
 #' fit <- cforest(Fertility ~ ., swiss, controls = cforest_control(mtry = 2))
 #' pd <- partial_dependence(fit, "Education")
-#' pd_int <- partial_dependence(fit, c("Education", "Catholic"))
+#' pd_int <- partial_dependence(fit, c("Education", "Catholic"), interaction = TRUE)
 #'
 #' ## Multivariate
 #' 
@@ -182,26 +182,39 @@ partial_dependence.randomForest <- function(fit, df, var, cutoff = 10, interacti
 #'
 #' fit <- cforest(hp + qsec ~ ., mtcars, controls = cforest_control(mtry = 2))
 #' pd <- partial_dependence(fit, "mpg")
-#' pd_int <- partial_dependence(fit, c("mpg", "cyl"))
+#' pd_int <- partial_dependence(fit, c("mpg", "cyl"), interaction = TRUE)
 #' }
 #' @export
-partial_dependence.RandomForest <- function(fit, var, cutoff = 10, ci = TRUE, confidence = .95,
+partial_dependence.RandomForest <- function(fit, var, cutoff = 10, interaction = FALSE,
+                                            ci = TRUE, confidence = .95,
                                             empirical = TRUE, parallel = FALSE, type = "") {
+    pkg <- "party"
     ## get y from the fit object
     y <- get("response", fit@data@env)
     if (ncol(y) > 1 | !(class(y[, 1]) %in% c("integer", "numeric"))) ci <- FALSE
+    if (length(var) == 1) interaction <- FALSE
     ## get input data and combine into model data.frame
     df <- data.frame(get("input", fit@data@env), y)
     ## get prediction grid for whatever is in var
-    rng <- expand.grid(lapply(var, function(x) ivar_points(df, x, cutoff, empirical)))
+    if (interaction) {
+        rng <- expand.grid(lapply(var, function(x) ivar_points(df, x, cutoff, empirical)))
+    } else if (length(var) > 1 & !interaction) {
+        rng <- lapply(var, function(x) data.frame(ivar_points(df, x, cutoff, empirical)))
+        names(rng) <- var
+    } else rng <- data.frame(ivar_points(df, var, cutoff, empirical))
     ## check to see if parallel backend registered
     '%op%' <- ifelse(foreach::getDoParWorkers() > 1 & parallel, foreach::'%dopar%', foreach::'%do%')
-    pred <- foreach::foreach(i = 1:nrow(rng), .inorder = FALSE, .packages = "party") %op% {
+    inner_loop <- function(df, rng, idx, var, var_class) {
         ## fix var predictiors
-        df[, var] <- rng[i, ]
+        df[, var] <- rng[idx, ]
+        if (length(var) == 1) {
+            if (class(df[, var]) != var_class) class(df[, var]) <- var_class
+        } else if (any(sapply(df[, var], class) != var_class)) {
+            for (i in length(var)) class(df[, i]) <- var_class[i]
+        }
         ## check to see if we are doing a multivariate fit
         if (dim(y)[2] == 1) {
-            if (class(y[, 1]) == "numeric" | class(y[, 1]) == "integer") {
+            if (class(y[, 1]) %in% c("numeric", "integer")) {
                 ## if doing regression and standard errors requested use
                 ## the var_est method to use the bias corrected infinitesimal jackknife
                 ## from Wager, Efron, and Tibsharani (2014). the implementation is a modified
@@ -226,23 +239,41 @@ partial_dependence.RandomForest <- function(fit, var, cutoff = 10, ci = TRUE, co
                 } else stop("invalid type parameter passed to predict.RandomForest*")
             } else stop("invalid response type")
         } else pred <- colMeans(do.call(rbind, predict(fit, newdata = df)))
-        c(rng[i, ], pred)
+        c(rng[idx, ], pred)
     }
-    if (length(var) > 1)
-        pred <- as.data.frame(do.call(rbind, lapply(pred, unlist)))
-    else pred <- as.data.frame(do.call(rbind, pred))
-    colnames(pred)[1:length(var)] <- var
-    if (type != "prob" & !ci) {
-        ## make sure types agree with the input
-        ## not really sure now where the coercion comes from
-        colnames(pred)[(length(var) + 1):ncol(pred)] <- colnames(y)
-        pred <- fix_classes(c(var, colnames(y)), df, pred)
-    } else if (ci) {
+    if (is.data.frame(rng)) {
+        if (length(var) > 1) {
+            var_class <- sapply(df[, var], class)
+        } else var_class <- class(df[, var])
+        pred <- foreach(i = 1:nrow(rng), .packages = pkg) %op% inner_loop(df, rng, i, var, var_class)
+        pred <- as.data.frame(do.call(rbind, lapply(pred, unlist)), stringsAsFactors = FALSE)
+        colnames(pred)[1:length(var)] <- var
+        if (type != "prob" & (!ci | !(class(y[, 1]) %in% c("numeric", "integer"))) & ncol(y) == 1)
+            colnames(pred)[ncol(pred)] <- colnames(y)
+    } else {
+        pred <- foreach(x = var, .packages = pkg) %:%
+            foreach(idx = 1:nrow(rng[[x]]), .combine = rbind) %op% inner_loop(df, rng[[x]], idx, x, class(df[, x]))
+        ## op not appropriate here, too much overhead, for some reason referencing foreach doesn't work
+        ## e.g. foreach::'%do%' fails
+        pred <- foreach(i = 1:length(pred), .combine = rbind) %do% {
+            out <- data.frame(pred[[i]], "variable" = var[i], stringsAsFactors = FALSE)
+            if (type != "prob")
+                colnames(out)[1:(ncol(y) + 1)] <- c("value", colnames(y))
+            else colnames(out)[1] <- "value"
+            out$value <- as.numeric(out$value)
+            out
+        }
+        row.names(pred) <- NULL
+        ## probably the value column needs to be restricted to be a numeric or integer vector
+        ## should check to see what is up. not sure what to do with categorical predictors
+    }
+    if (ci & class(y[, 1]) %in% c("integer", "numeric")) {
+        if (length(var) == 1 | interaction) colnames(pred)[ncol(pred) - 1] <- colnames(y)
         ## compute 1 - confidence intervals
         cl <- qnorm((1 - confidence) / 2, lower.tail = FALSE)
         se <- sqrt(pred$variance)
-        pred$low <- pred[, names(y)] - cl * se
-        pred$high <- pred[, names(y)] + cl * se
+        pred$low <- pred[, colnames(y)] - cl * se
+        pred$high <- pred[, colnames(y)] + cl * se
     }
     attr(pred, "class") <- c("pd", "data.frame")
     attr(pred, "prob") <- type == "prob"
