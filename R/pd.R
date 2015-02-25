@@ -70,7 +70,7 @@ partial_dependence.randomForest <- function(fit, df, var, cutoff = 10, interacti
         rng <- data.frame(ivar_points(df, var, cutoff, empirical))
     ## run the pd algo in parallel?
     '%op%' <- ifelse(getDoParWorkers() > 1 & parallel, foreach::'%dopar%', foreach::'%do%')
-    inner_loop <- function(df, rng, fit, idx) {
+    inner_loop <- function(df, rng, idx) {
         ## fix var to points in prediction grid
         df[, var] <- rng[idx, ]
         ## if numeric outcome predict and take the mean, if standard errors requested
@@ -94,15 +94,14 @@ partial_dependence.randomForest <- function(fit, df, var, cutoff = 10, interacti
     }
     ## loop over points in prediction grid (rng)
     if (is.data.frame(rng)) {
-        pred <- foreach(i = 1:nrow(rng), .packages = pkg) %op%
-                     inner_loop(df, rng, fit, i)
+        pred <- foreach(i = 1:nrow(rng), .packages = pkg) %op% inner_loop(df, rng, i)
         pred <- as.data.frame(do.call(rbind, lapply(pred, unlist)), stringsAsFactors = FALSE)
         colnames(pred)[1:length(var)] <- var
         if (type != "prob" & (!ci | !(y_class %in% c("numeric", "integer"))))
             colnames(pred)[ncol(pred)] <- names(y_class)
     } else {
         pred <- foreach(x = rng, .packages = pkg) %:%
-        foreach(idx = 1:nrow(x), .combine = rbind) %op% inner_loop(df, x, fit, idx)
+            foreach(idx = 1:nrow(x), .combine = rbind) %op% inner_loop(df, x, idx)
         ## op not appropriate here, too much overhead, for some reason referencing foreach doesn't work
         ## e.g. foreach::'%do%' fails
         pred <- foreach(i = 1:length(pred), .combine = rbind) %do% {
