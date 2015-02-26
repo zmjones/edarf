@@ -330,17 +330,24 @@ partial_dependence.RandomForest <- function(fit, var, cutoff = 10, interaction =
 #' pd_int <- partial_dependence(fit_rfsrc, c("age", "diagtime"))
 #' }
 #' @export
-partial_dependence.rfsrc <- function(fit, var, cutoff = 10, ci = TRUE, confidence = .95,
+partial_dependence.rfsrc <- function(fit, var, cutoff = 10, interaction = FALSE,
+                                     ci = TRUE, confidence = .95,
                                      empirical = TRUE, parallel = FALSE, type = "") {
+    pkg <- "randomForestSRC"
     y <- fit$yvar
     if (!(class(y) %in% c("numeric", "integer"))) ci <- FALSE
+    if (length(var) == 1) interaction <- FALSE
     df <- data.frame(fit$xvar, y)
-    if (!is.data.frame(y))
-        colnames(df)[ncol(df)] <- fit$yvar.names
-    rng <- expand.grid(lapply(var, function(x) ivar_points(df, x, cutoff, empirical)))
+    if (!is.data.frame(y)) colnames(df)[ncol(df)] <- fit$yvar.names
+    if (interaction) {
+        rng <- expand.grid(lapply(var, function(x) ivar_points(df, x, cutoff, empirical)))
+    } else if (length(var) > 1 & !interaction) {
+        rng <- lapply(var, function(x) data.frame(ivar_points(df, x, cutoff, empirical)))
+        names(rng) <- var
+    } else rng <- data.frame(ivar_points(df, var, cutoff, empirical))
     '%op%' <- ifelse(foreach::getDoParWorkers() > 1 & parallel, foreach::'%dopar%', foreach::'%do%')
-    pred <- foreach::foreach(i = 1:nrow(rng), .inorder = FALSE, .packages = "randomForestSRC") %op% {
-        df[, var] <- rng[i, ]
+    inner_loop <- function(df, rng, idx, var) {
+        df[, var] <- rng[idx, ]
         pred <- predict(fit, newdata = df, outcome = "train")
         fit$pd_membership <- pred$membership
         fit$pd_predicted <- pred$predicted
@@ -355,20 +362,38 @@ partial_dependence.rfsrc <- function(fit, var, cutoff = 10, ci = TRUE, confidenc
             if (class(y) == "numeric" & ci) pred <- colMeans(var_est(fit, df))
             else pred <- mean(pred$predicted)
         } else stop("invalid response type")
-        c(rng[i, ], pred)
+        c(rng[idx, ], pred)
     }
-    if (length(var) > 1)
-        pred <- as.data.frame(do.call(rbind, lapply(pred, unlist)))
-    else pred <- as.data.frame(do.call(rbind, pred))
-    colnames(pred)[1:length(var)] <- var
-    if (is.data.frame(fit$yvar)) {
+    if (is.data.frame(rng)) {
+        pred <- foreach(i = 1:nrow(rng), .packages = pkg) %op% inner_loop(df, rng, i, var)
+        pred <- as.data.frame(do.call(rbind, lapply(pred, unlist)), stringsAsFactors = FALSE)
+        colnames(pred)[1:length(var)] <- var
+        if (type != "prob" & (!ci | !(class(y) %in% c("numeric", "integer"))))
+            colnames(pred)[ncol(pred)] <- fit$yvar.names
+    } else {
+        pred <- foreach(x = var, .packages = pkg) %:%
+            foreach(idx = 1:nrow(rng[[x]]), .combine = rbind) %op% inner_loop(df, rng[[x]], idx, x)
+        ## op not appropriate here, too much overhead, for some reason referencing foreach doesn't work
+        ## e.g. foreach::'%do%' fails
+        pred <- foreach(i = 1:length(pred), .combine = rbind) %do% {
+            out <- data.frame(pred[[i]], "variable" = var[i], stringsAsFactors = FALSE)
+            if (type != "prob")
+                colnames(out)[1:2] <- c("value", fit$yvar.names)
+            else colnames(out)[1] <- "value"
+            out$value <- as.numeric(out$value)
+            out
+        }
+        row.names(pred) <- NULL
+        ## probably the value column needs to be restricted to be a numeric or integer vector
+        ## should check to see what is up. not sure what to do with categorical predictors
+    }
+    if (((length(var) > 1 & interaction ) | length(var) == 1) & !ci) {
+        pred <- fix_classes(c(var, fit$yvar.names), df, pred)
+    } else if (is.data.frame(fit$yvar)) {
         colnames(pred)[ncol(pred)] <- "chf"
         pred[, -ncol(pred)] <- fix_classes(var, df, pred[, -ncol(pred)])
-    } else if (type != "prob" & !ci) {
-        colnames(pred)[ncol(pred)] <- fit$yvar.names
-        pred <- fix_classes(c(var, fit$yvar.names), df, pred)
-    } else if (ci & class(y) == "numeric") {
-        colnames(pred)[ncol(pred) - 1] <- fit$yvar.names
+    } else if (ci & class(y) %in% c("numeric", "integer")) {
+        if (length(var) == 1 | interaction) colnames(pred)[ncol(pred) - 1] <- fit$yvar.names
         ## compute 1 - confidence intervals
         cl <- qnorm((1 - confidence) / 2, lower.tail = FALSE)
         se <- sqrt(pred$variance)
