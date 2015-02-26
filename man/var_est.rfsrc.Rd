@@ -23,6 +23,10 @@ library(randomForestSRC)
 data(swiss)
 
 fit <- rfsrc(Fertility ~ ., swiss)
+pred <- predict(fit, newdata = swiss)
+fit$pd_membership <- pred$membership
+fit$pd_predicted <- pred$predicted
+
 var_est(fit, swiss)
 }
 }
