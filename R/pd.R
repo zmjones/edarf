@@ -368,7 +368,7 @@ partial_dependence.rfsrc <- function(fit, var, cutoff = 10, interaction = FALSE,
         pred <- foreach(i = 1:nrow(rng), .packages = pkg) %op% inner_loop(df, rng, i, var)
         pred <- as.data.frame(do.call(rbind, lapply(pred, unlist)), stringsAsFactors = FALSE)
         colnames(pred)[1:length(var)] <- var
-        if (type != "prob" & (!ci | !(class(y) %in% c("numeric", "integer"))))
+        if (type != "prob" & (!ci | !(class(y) %in% c("numeric", "integer"))) & !is.data.frame(fit$yvar))
             colnames(pred)[ncol(pred)] <- fit$yvar.names
     } else {
         pred <- foreach(x = var, .packages = pkg) %:%
@@ -377,7 +377,7 @@ partial_dependence.rfsrc <- function(fit, var, cutoff = 10, interaction = FALSE,
         ## e.g. foreach::'%do%' fails
         pred <- foreach(i = 1:length(pred), .combine = rbind) %do% {
             out <- data.frame(pred[[i]], "variable" = var[i], stringsAsFactors = FALSE)
-            if (type != "prob")
+            if (type != "prob" & !is.data.frame(fit$yvar))
                 colnames(out)[1:2] <- c("value", fit$yvar.names)
             else colnames(out)[1] <- "value"
             out$value <- as.numeric(out$value)
@@ -387,11 +387,14 @@ partial_dependence.rfsrc <- function(fit, var, cutoff = 10, interaction = FALSE,
         ## probably the value column needs to be restricted to be a numeric or integer vector
         ## should check to see what is up. not sure what to do with categorical predictors
     }
-    if (((length(var) > 1 & interaction ) | length(var) == 1) & !ci) {
+    if (((length(var) > 1 & interaction) | length(var) == 1) &
+        (!ci & !(type == "prob")) & !is.data.frame(fit$yvar)) {
         pred <- fix_classes(c(var, fit$yvar.names), df, pred)
     } else if (is.data.frame(fit$yvar)) {
-        colnames(pred)[ncol(pred)] <- "chf"
-        pred[, -ncol(pred)] <- fix_classes(var, df, pred[, -ncol(pred)])
+        if (length(var) == 1 | interaction) {
+            colnames(pred)[ncol(pred)] <- "chf"
+            pred[, -ncol(pred)] <- fix_classes(var, df, pred[, -ncol(pred)])
+        } else colnames(pred)[ncol(pred) - 1] <- "chf"
     } else if (ci & class(y) %in% c("numeric", "integer")) {
         if (length(var) == 1 | interaction) colnames(pred)[ncol(pred) - 1] <- fit$yvar.names
         ## compute 1 - confidence intervals
