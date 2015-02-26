@@ -2,7 +2,13 @@ Functions useful for exploratory data analysis using random forests. Developed b
 
 This package allows you to easily calculate the partial dependence of an arbitrarily large set of explanatory variables on the outcome variable given a fitted random forest from the following packages (outcome variable types supported in parenthesis): [party](http://cran.r-project.org/web/packages/party/index.html) (multivariate, regression, and classification), [randomForestSRC](http://cran.r-project.org/web/packages/randomForestSRC/index.html) (regression, classification, and survival), and [randomForest](http://cran.r-project.org/web/packages/randomForest/index.html) (regression and classification).
 
+For regression we provide (by default) confidence intervals using the bias-corrected infintesimal jackknife ([Wager, Hastie, and Tibsharani, 2014](http://jmlr.org/papers/v15/wager14a.html)) using code adapted from [randomForestCI](https://github.com/swager/randomForestCI).
+
+The `partial_dependence` method can also either return interactions (the partial dependence on unique combinations of a subset of the predictor space) or a list of bivariate partial dependence estimates.
+
 Partial dependence can be run in parallel by registering the appropriate parallel backend, as shown below. Beyond the random forest and the set of variables for which to calculate the partial dependence, there are additional arguments which control the dimension of the prediction grid used (naturally, the more points used the longer execution will take) and whether or not points that were not observed in the data can be used in said grid (interpolation).
+
+We are planning on adding methods to make interpreting proximity and maximal subtree matrices easier.
 
 Pull requests, bug reports, feature requests, etc. are welcome!
 
@@ -20,7 +26,6 @@ install_github("zmjones/edarf")
 ```{r}
 library(edarf)
 
-## classification
 data(iris)
 library(randomForest)
 fit <- randomForest(Species ~ ., iris)
@@ -41,7 +46,7 @@ plot_pd(pd, geom = "bar")
 ![](http://zmjones.com/static/images/iris_pd_bar.png)
 
 ```{r}
-pd_int <- partial_dependence(fit, iris, c("Petal.Width", "Sepal.Length"), type = "prob")
+pd_int <- partial_dependence(fit, iris, c("Petal.Width", "Sepal.Length"), interaction = TRUE, type = "prob")
 plot_pd(pd_int, geom = "line")
 ```
 ![](http://zmjones.com/static/images/iris_pd_int_line.png)
@@ -52,7 +57,7 @@ plot_pd(pd_int, geom = "area")
 ![](http://zmjones.com/static/images/iris_pd_int_area.png)
 
 ```{r}
-pd_int <- partial_dependence(fit, iris, c("Petal.Width", "Sepal.Length"))
+pd_int <- partial_dependence(fit, iris, c("Petal.Width", "Sepal.Length"), interaction = TRUE)
 plot_pd(pd_int, geom = "bar")
 ```
 ![](http://zmjones.com/static/images/iris_pd_int_bar.png)
@@ -61,14 +66,14 @@ plot_pd(pd_int, geom = "bar")
 
 ```{r}
 data(swiss)
-fit <- randomForest(Fertility ~ ., swiss)
+fit <- randomForest(Fertility ~ ., swiss, keep.inbag = TRUE)
 pd <- partial_dependence(fit, swiss, "Education")
 plot_pd(pd)
 ```
 ![](http://zmjones.com/static/images/swiss_pd_line.png)
 
 ```{r}
-pd_int <- partial_dependence(fit, swiss, c("Education", "Catholic"))
+pd_int <- partial_dependence(fit, swiss, c("Education", "Catholic"), interaction = TRUE)
 plot_pd(pd_int)
 ```
 ![](http://zmjones.com/static/images/swiss_pd_int_line.png)
@@ -102,7 +107,7 @@ plot_pd(pd)
 ![](http://zmjones.com/static/images/mtcars_pd_line.png)
 
 ```{r}
-pd_int <- partial_dependence(fit, c("mpg", "cyl"))
+pd_int <- partial_dependence(fit, c("mpg", "cyl"), interaction = TRUE)
 plot_pd(pd_int)
 ```
 
