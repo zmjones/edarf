@@ -4,8 +4,9 @@
 \alias{partial_dependence.rfsrc}
 \title{Partial dependence for rfsrc objects from package \code{randomForestSRC}}
 \usage{
-\method{partial_dependence}{rfsrc}(fit, var, cutoff = 10, ci = TRUE,
-  confidence = 0.95, empirical = TRUE, parallel = FALSE, type = "")
+\method{partial_dependence}{rfsrc}(fit, var, cutoff = 10,
+  interaction = FALSE, ci = TRUE, confidence = 0.95, empirical = TRUE,
+  parallel = FALSE, type = "")
 }
 \arguments{
 \item{fit}{an object of class 'rfsrc' returned from \code{rfsrc}}
@@ -15,6 +16,8 @@ the input matrix in the call to \code{rfsrc}}
 
 \item{cutoff}{the maximal number of unique points in each element of 'var' used in the
 partial dependence calculation}
+
+\item{interaction}{logical, if 'var' is a vector, does this specify an interaction or a list of bivariate partial dependence}
 
 \item{ci}{use the bias corrected infinitesimal jackknife from Wager, Hastie, and Efron (2014)}
 

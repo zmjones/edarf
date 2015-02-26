@@ -4,8 +4,9 @@
 \alias{partial_dependence.RandomForest}
 \title{Partial dependence for RandomForest objects from package \code{party}}
 \usage{
-\method{partial_dependence}{RandomForest}(fit, var, cutoff = 10, ci = TRUE,
-  confidence = 0.95, empirical = TRUE, parallel = FALSE, type = "")
+\method{partial_dependence}{RandomForest}(fit, var, cutoff = 10,
+  interaction = FALSE, ci = TRUE, confidence = 0.95, empirical = TRUE,
+  parallel = FALSE, type = "")
 }
 \arguments{
 \item{fit}{an object of class 'RandomForest' returned from \code{cforest}}
@@ -14,6 +15,8 @@
 
 \item{cutoff}{the maximal number of unique points in each element of 'var' used in the
 partial dependence calculation}
+
+\item{interaction}{logical, if 'var' is a vector, does this specify an interaction or a list of bivariate partial dependence}
 
 \item{ci}{use the bias corrected infinitesimal jackknife from Wager, Hastie, and Efron (2014)}
 
@@ -48,7 +51,7 @@ data(iris)
 
 fit <- cforest(Species ~ ., iris, controls = cforest_unbiased(mtry = 2))
 pd <- partial_dependence(fit, "Petal.Width")
-pd_int <- partial_dependence(fit, c("Petal.Width", "Sepal.Length"))
+pd_int <- partial_dependence(fit, c("Petal.Width", "Sepal.Length"), interaction = TRUE)
 
 ## Regression
 
@@ -56,7 +59,7 @@ data(swiss)
 
 fit <- cforest(Fertility ~ ., swiss, controls = cforest_control(mtry = 2))
 pd <- partial_dependence(fit, "Education")
-pd_int <- partial_dependence(fit, c("Education", "Catholic"))
+pd_int <- partial_dependence(fit, c("Education", "Catholic"), interaction = TRUE)
 
 ## Multivariate
 
@@ -64,7 +67,7 @@ data(mtcars)
 
 fit <- cforest(hp + qsec ~ ., mtcars, controls = cforest_control(mtry = 2))
 pd <- partial_dependence(fit, "mpg")
-pd_int <- partial_dependence(fit, c("mpg", "cyl"))
+pd_int <- partial_dependence(fit, c("mpg", "cyl"), interaction = TRUE)
 }
 }
 

@@ -19,6 +19,7 @@ partial_dependence <- function(fit, ...) UseMethod("partial_dependence", fit)
 #' @param var a character vector of the predictors of interest, which must match the input matrix in the call to \code{randomForest}
 #' @param cutoff the maximal number of unique points in each element of 'var' used in the
 #' partial dependence calculation
+#' @param interaction logical, if 'var' is a vector, does this specify an interaction or a list of bivariate partial dependence
 #' @param ci use the bias corrected infinitesimal jackknife from Wager, Hastie, and Efron (2014) implemented in randomForestCI, currently only works with regression
 #' @param confidence desired confidence for the returned interval (ignored if ci is false)
 #' @param empirical logical indicator of whether or not only values in the data should be sampled
@@ -142,6 +143,7 @@ partial_dependence.randomForest <- function(fit, df, var, cutoff = 10, interacti
 #' @param var a character vector of the predictors of interest, which must match the input matrix in the call to \code{randomForest}
 #' @param cutoff the maximal number of unique points in each element of 'var' used in the
 #' partial dependence calculation
+#' @param interaction logical, if 'var' is a vector, does this specify an interaction or a list of bivariate partial dependence
 #' @param ci use the bias corrected infinitesimal jackknife from Wager, Hastie, and Efron (2014)
 #' @param confidence desired confidence for the returned interval (ignored if ci is false)
 #' @param empirical logical indicator of whether or not only values in the data should be sampled
@@ -293,6 +295,7 @@ partial_dependence.RandomForest <- function(fit, var, cutoff = 10, interaction =
 #' the input matrix in the call to \code{rfsrc}
 #' @param cutoff the maximal number of unique points in each element of 'var' used in the
 #' partial dependence calculation
+#' @param interaction logical, if 'var' is a vector, does this specify an interaction or a list of bivariate partial dependence
 #' @param ci use the bias corrected infinitesimal jackknife from Wager, Hastie, and Efron (2014)
 #' @param confidence desired confidence for the returned interval (ignored if ci is false)
 #' @param empirical logical indicator of whether or not only values in the data should be sampled
