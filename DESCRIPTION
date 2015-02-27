@@ -12,6 +12,7 @@ Imports:
     ggplot2,
     assertthat,
     reshape2,
+    Rcpp (>= 0.11.1)
 Suggests:
     scales,
     doParallel,
@@ -21,4 +22,6 @@ Suggests:
     party,
     Matrix,
     testthat
+LinkingTo: Rcpp
+BugReports: https://github.com/zmjones/edarf
 

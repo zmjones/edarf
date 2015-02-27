@@ -1,0 +1,21 @@
+Package: irtpar
+Type: Package
+Title: Estimate Bayesian IRT Models in Parallel
+Version: 0.1
+Date: 2015-01-21
+Authors@R: person("Fridolin", "Linder", email = "fridolin.linder@gmail.com", 
+  role = c("aut", "cre"))
+Maintainer: Who to complain to <fridolin.linder@gmail.com>
+Description: This packages allows the estimation of IRT models in parallel. It 
+  is based on the algorithms described in Neiswanger et al. 2014.  
+License: MIT + file LICENSE
+Imports: 
+  foreach,
+  mvtnorm,
+  Rcpp (>= 0.11.1),
+  RcppArmadillo (>= 0.4.200.0),
+  rstan
+LinkingTo: Rcpp, RcppArmadillo
+Depends: RcppArmadillo
+BugReports: https://github.com/flinder/irtpar
+Suggests: testthat
