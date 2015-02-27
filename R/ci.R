@@ -83,14 +83,15 @@ var_est.RandomForest <- function(fit, df) {
 #' data(swiss)
 #'
 #' fit <- rfsrc(Fertility ~ ., swiss)
-#' pred <- predict(fit, newdata = swiss)
-#' fit$pd_membership <- pred$membership
-#' fit$pd_predicted <- pred$predicted
-#' 
 #' var_est(fit, swiss)
 #' }
 #' @export
 var_est.rfsrc <- function(fit, df) {
+    if (is.null(fit$pd_membership) | is.null(fit$pd_predicted)) {
+        pred <- predict(fit, newdata = df, outcome = "train")
+        fit$pd_membership <- pred$membership
+        fit$pd_predicted <- pred$predicted
+    }
     out <- matrix(NA, fit$n, fit$ntree)
     for (i in 1:fit$n) {
         for (j in 1:fit$ntree) {
