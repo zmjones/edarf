@@ -87,20 +87,14 @@ var_est.RandomForest <- function(fit, df) {
 #' }
 #' @export
 var_est.rfsrc <- function(fit, df) {
-    if (is.null(fit$pd_membership) | is.null(fit$pd_predicted)) {
-        pred <- predict(fit, newdata = df, outcome = "train")
-        fit$pd_membership <- pred$membership
-        fit$pd_predicted <- pred$predicted
-    }
-    out <- matrix(NA, fit$n, fit$ntree)
-    for (i in 1:fit$n) {
-        for (j in 1:fit$ntree) {
-            idx <- which(fit$pd_membership[, j] == fit$pd_membership[i, j])
-            out[i, j] <- weighted.mean(fit$yvar[idx], fit$inbag[idx, j])
-        }
-    }
-    data.frame("prediction" = fit$pd_predicted,
-               "variance" = inf_jackknife(out, fit$ntree, fit$inbag))
+  if (is.null(fit$pd_membership) | is.null(fit$pd_predicted)) {
+    pred <- predict(fit, newdata = df, outcome = "train")
+    fit$pd_membership <- pred$membership
+    fit$pd_predicted <- pred$predicted
+  }
+  out <- vestl(fit$n, fit$ntree, fit$pd_membership, fit$yvar, fit$inbag)
+  data.frame("prediction" = fit$pd_predicted,
+             "variance" = inf_jackknife(out, fit$ntree, fit$inbag))
 }
 #' Bias corrected infinitesimal jackknife variance estimator for predictions given a matrix of tree predictions
 #'

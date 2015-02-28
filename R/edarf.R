@@ -6,7 +6,7 @@
 #'
 #' @section Interaction Detection
 #' 
-#' @ Proximity
+#' @section Proximity
 #'
 #' @docType package
 #' @name edarf
