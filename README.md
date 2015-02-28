@@ -21,7 +21,7 @@ library(devtools)
 install_github("zmjones/edarf")
 ```
 
-### Usage
+### Partial Dependence
 
 ```{r}
 library(edarf)
@@ -62,7 +62,7 @@ plot_pd(pd_int, geom = "bar")
 ```
 ![](http://zmjones.com/static/images/iris_pd_int_bar.png)
 
-## regression
+### regression
 
 ```{r}
 data(swiss)
@@ -78,7 +78,7 @@ plot_pd(pd_int)
 ```
 ![](http://zmjones.com/static/images/swiss_pd_int_line.png)
 
-## survival
+### survival
 
 ```{r}
 library(randomForestSRC)
@@ -95,7 +95,7 @@ plot_pd(pd_int)
 ```
 ![](http://zmjones.com/static/images/veteran_pd_int_line.png)
 
-## multivariate
+### multivariate
 
 ```{r}
 data(mtcars)
@@ -112,3 +112,26 @@ plot_pd(pd_int)
 ```
 
 Multivariate two-way interaction plots not yet implemented.
+
+### variance estimation
+
+```{r}
+fit <- cforest(Fertility ~ ., swiss)
+out <- var_est(fit, swiss)
+
+cl <- qnorm(.05 / 2, lower.tail = FALSE)
+se <- sqrt(out$variance)
+out$low <- out$Fertility - cl * se
+out$high <- out$Fertility + cl * se
+out$actual_fertility <- swiss$Fertility
+
+library(ggplot2)
+ggplot(out, aes(actual_fertility, Fertility)) +
+    geom_point() +
+        geom_errorbar(aes(ymax = high, ymin = low), size = .5, width = .5) +
+            geom_abline(aes(intercept = 0, slope = 1), colour = "blue") +
+                labs(x = "Observed Fertility", y = "Predicted Fertility") +
+                    coord_cartesian(c(33, 95), c(33, 95)) +
+                        theme_bw()
+ggsave("~/Sites/zmjones.com/static/images/swiss_pred.png", width = 8, height = 4)
+```
