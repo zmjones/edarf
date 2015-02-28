@@ -23,7 +23,7 @@ Suggests:
     party,
     Matrix,
     testthat
-LinkingTo: Rcpp, RcppArmadillo
+LinkingTo: Rcpp, Rcpp Armadillo
 Depends: RcppArmadillo
 BugReports: https://github.com/zmjones/edarf
 
