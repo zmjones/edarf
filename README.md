@@ -116,22 +116,27 @@ Multivariate two-way interaction plots not yet implemented.
 ### variance estimation
 
 ```{r}
-fit <- cforest(Fertility ~ ., swiss)
-out <- var_est(fit, swiss)
+fit <- randomForest(hp ~ ., mtcars, keep.inbag = TRUE)
+out <- var_est(fit, mtcars)
+
+## all the below is handled internally if variance estimates are requested
+## for partial dependence, however, it is possible to use the variance estimator
+## with the fitted model alone as well (regression with randomForest, cforest, and rfsrc)
+
+colnames(out)[1] <- "hp"
 
 cl <- qnorm(.05 / 2, lower.tail = FALSE)
 se <- sqrt(out$variance)
-out$low <- out$Fertility - cl * se
-out$high <- out$Fertility + cl * se
-out$actual_fertility <- swiss$Fertility
+out$low <- out$hp - cl * se
+out$high <- out$hp + cl * se
+out$actual_hp <- mtcars$hp
 
 library(ggplot2)
-ggplot(out, aes(actual_fertility, Fertility)) +
+ggplot(out, aes(actual_hp, hp)) +
     geom_point() +
         geom_errorbar(aes(ymax = high, ymin = low), size = .5, width = .5) +
             geom_abline(aes(intercept = 0, slope = 1), colour = "blue") +
-                labs(x = "Observed Fertility", y = "Predicted Fertility") +
-                    coord_cartesian(c(33, 95), c(33, 95)) +
-                        theme_bw()
-ggsave("~/Sites/zmjones.com/static/images/swiss_pred.png", width = 8, height = 4)
+                labs(x = "Observed Horsepower", y = "Predicted Horsepower") +
+                    theme_bw()
 ```
+![](http://zmjones.com/static/images/mtcars_pred.png)
