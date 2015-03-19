@@ -25,7 +25,8 @@ variable_importance <- function(fit, ...) UseMethod("variable_importance")
 #' data(iris)
 #'
 #' fit <- randomForest(Species ~ ., iris, importance = TRUE)
-#' variable_importance(fit, "accuracy", TRUE)
+#' imp <- variable_importance(fit, "accuracy", TRUE)
+#' plot_imp(imp)
 #' }
 #' @export
 variable_importance.randomForest <- function(fit, type = "accuracy", class_levels) {
@@ -45,8 +46,12 @@ variable_importance.randomForest <- function(fit, type = "accuracy", class_level
         row.names(out) <- NULL
     } else
         stop("Invalid type or fit input combination")
+
+    out <- as.data.frame(out)
+    out$labels <- row.names(out)
+    row.names(out) <- NULL
     
-    attr(out, "class") <- "importance"
+    attr(out, "class") <- c("importance", "data.frame")
     attr(out, "type") <- type
     attr(out, "auc") <- FALSE
     attr(out, "class_levels") <- class_levels
@@ -68,7 +73,8 @@ variable_importance.randomForest <- function(fit, type = "accuracy", class_level
 #' data(iris)
 #'
 #' fit <- cforest(Species ~ ., iris, controls = cforest_control(mtry = 2))
-#' variable_importance(fit)
+#' imp <- variable_importance(fit)
+#' plot_imp(imp)
 #' }
 #' @export
 variable_importance.RandomForest <- function(fit, conditional = FALSE, auc = FALSE, ...) {
@@ -84,8 +90,10 @@ variable_importance.RandomForest <- function(fit, conditional = FALSE, auc = FAL
         out <- varimpAUC(fit, conditional = conditional, ...)
     else
         out <- varimp(fit, conditional = conditional, ...)
+
+    out <- data.frame("value" = out, "labels" = names(out), row.names = 1:length(out))
     
-    attr(out, "class") <- "importance"
+    attr(out, "class") <- c("importance", "data.frame")
     attr(out, "type") <- ""
     attr(out, "auc") <- auc
     attr(out, "class_levels") <- FALSE
@@ -121,7 +129,7 @@ variable_importance.rfsrc <- function(fit, type = "permute", class_levels = FALS
     else
         out <- fit$importance[, "all"]
     
-    attr(out, "class") <- "importance"
+    attr(out, "class") <- c("importance", "data.frame")
     attr(out, "type") <- type
     attr(out, "auc") <- FALSE
     attr(out, "class_levels") <- class_levels

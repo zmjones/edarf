@@ -26,7 +26,8 @@ library(party)
 data(iris)
 
 fit <- cforest(Species ~ ., iris, controls = cforest_control(mtry = 2))
-variable_importance(fit)
+imp <- variable_importance(fit)
+plot_imp(imp)
 }
 }
 

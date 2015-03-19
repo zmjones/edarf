@@ -113,3 +113,59 @@ plot_pd <- function(pd, geom = "line", title = "", facet_var) {
     }
     p + theme_bw()
 }
+#' Plot variable importance from random forests
+#'
+#' @import ggplot2
+#' @importFrom reshape2 melt
+#' @import assertthat
+#' @param pd object of class \code{c("importance", "data.frame")} as returned by
+#' \code{\link{variable_importance}}
+#' @param geom character describing type of plot desired: "point" or "bar"
+#' @param horizontal logical x-axis labels are horizontal if TRUE
+#' @param facet logical indicating whether to facet, only applicable when returning class-specific variable importance
+#' @param title title for the plot
+#'
+#' @return a ggplot2 object
+#' 
+#' @examples \dontrun{
+#' library(randomForest)
+#' data(iris)
+#' fit <- randomForest(Species ~ ., iris, importance = TRUE)
+#' imp <- variable_importance(fit, "accuracy", TRUE)
+#' plot_imp(imp, "bar")
+#' }
+#' @export
+plot_imp <- function(imp, geom = "point", horizontal = TRUE, facet = FALSE, title = "") {
+    atts <- attributes(imp)
+    if (atts$type == "local")
+        stop("cannot plot local importance")
+    if (atts$class_levels) 
+        imp <- melt(imp, "labels")
+    if (facet & atts$class_levels)
+        p <- ggplot(imp, aes(labels, value, group = variable)) + facet_wrap(~ variable)
+    else if (!facet & atts$class_levels & geom != "bar")
+        p <- ggplot(imp, aes(labels, value, colour = variable))
+    else if (!facet & geom == "bar" & atts$class_levels)
+        p <- ggplot(imp, aes(labels, value, fill = factor(variable)))
+    else
+        p <- ggplot(imp, aes(labels, value))
+
+    p <- p + theme_bw()
+
+    if (geom == "point")
+        p <- p + geom_point()
+    else if (geom == "bar" & !atts$class_levels)
+        p <- p + geom_bar(stat = "identity")
+    else if (geom == "bar" & atts$class_levels)
+        p <- p + geom_bar(stat = "identity", position = "dodge")
+    else
+        stop("invalid geom")
+
+    if (horizontal)
+        p <- p + theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5))
+    else
+        p <- p + coord_flip()
+    
+    p <- p + labs(y = "importance", x = "variables", title = title)
+    p
+}
