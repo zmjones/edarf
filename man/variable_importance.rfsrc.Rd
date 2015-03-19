@@ -16,7 +16,7 @@ this the \code{permute} argument must equal this value in the call to rfsrc}
 \item{class_levels}{logical, when TRUE class level specific importances are returned otherwise the overal importance is returned}
 }
 \value{
-a vector or dataframe of class "importance"
+a data.frame of class "importance"
 }
 \description{
 Extracts variable importances from a fitted \code{rfsrc}

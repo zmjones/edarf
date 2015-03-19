@@ -164,8 +164,6 @@ plot_imp <- function(imp, geom = "point", horizontal = TRUE, facet = FALSE, titl
 
     if (horizontal)
         p <- p + theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5))
-    else
-        p <- p + coord_flip()
     
     p <- p + labs(y = "importance", x = "variables", title = title)
     p

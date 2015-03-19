@@ -17,7 +17,7 @@ variable_importance <- function(fit, ...) UseMethod("variable_importance")
 #' @param class_levels logical, when TRUE class level specific importances are returned
 #' response variable must be a factor and importance = TRUE in the call to randomForest
 #'
-#' @return a vector or dataframe of class "importance"
+#' @return a data.frame of class "importance"
 #'
 #' @examples
 #' \dontrun{
@@ -47,9 +47,12 @@ variable_importance.randomForest <- function(fit, type = "accuracy", class_level
     } else
         stop("Invalid type or fit input combination")
 
-    out <- as.data.frame(out)
-    out$labels <- row.names(out)
-    row.names(out) <- NULL
+    if (is.matrix(out)) {
+        out <- as.data.frame(out)
+        out$labels <- row.names(out)
+        row.names(out) <- NULL
+    } else 
+        out <- data.frame(value = unname(out), labels = names(out))
     
     attr(out, "class") <- c("importance", "data.frame")
     attr(out, "type") <- type
@@ -65,7 +68,7 @@ variable_importance.randomForest <- function(fit, type = "accuracy", class_level
 #' @param conditional logical, if true the conditional permutation importance is estimated, if not the marginal
 #' @param ... further arguments to be passed to varimp or varimpAUC
 #'
-#' @return a vector or dataframe of class "importance"
+#' @return a data.frame of class "importance"
 #'
 #' @examples
 #' \dontrun{
@@ -109,7 +112,7 @@ variable_importance.RandomForest <- function(fit, conditional = FALSE, auc = FAL
 #' this the \code{permute} argument must equal this value in the call to rfsrc
 #' @param class_levels logical, when TRUE class level specific importances are returned otherwise the overal importance is returned
 #'
-#' @return a vector or dataframe of class "importance"
+#' @return a data.frame of class "importance"
 #'
 #' @examples
 #' \dontrun{
@@ -124,10 +127,15 @@ variable_importance.rfsrc <- function(fit, type = "permute", class_levels = FALS
     if (!type %in% as.character(fit$call))
         stop(paste("call rfsrc with importance =", type))
     
-    if (class_levels)
+    if (class_levels) {
         out <- fit$importance[, levels(fit$yvar)]
-    else
+        out <- as.data.frame(out)
+        out$labels <- row.names(out)
+        row.names(out) <- NULL
+    } else {
         out <- fit$importance[, "all"]
+        out <- data.frame(value = unname(out), labels = names(out))
+    }
     
     attr(out, "class") <- c("importance", "data.frame")
     attr(out, "type") <- type

@@ -15,7 +15,7 @@
 \item{...}{further arguments to be passed to varimp or varimpAUC}
 }
 \value{
-a vector or dataframe of class "importance"
+a data.frame of class "importance"
 }
 \description{
 Extracts variable importances from a fitted \code{cforest}
