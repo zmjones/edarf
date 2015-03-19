@@ -12,7 +12,7 @@ partial_dependence <- function(fit, ...) UseMethod("partial_dependence", fit)
 #' Partial dependence for randomForest objects
 #'
 #' Calculates the partial dependence of the response on an arbitrary dimensional set of predictors
-#' from a fitted random forest object from the randomForest packages
+#' from a fitted random forest object from the randomForest package
 #'
 #' @param fit an object of class 'randomForest' returned from \code{randomForest}
 #' @param df the dataframe used to fit the model
