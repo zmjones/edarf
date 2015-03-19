@@ -145,9 +145,10 @@ plot_imp <- function(imp, geom = "point", horizontal = TRUE, facet = FALSE, titl
         p <- ggplot(imp, aes(labels, value, group = variable)) + facet_wrap(~ variable)
     else if (!facet & atts$class_levels & geom != "bar")
         p <- ggplot(imp, aes(labels, value, colour = variable))
-    else if (!facet & geom == "bar" & atts$class_levels)
+    else if (!facet & geom == "bar" & atts$class_levels) {
         p <- ggplot(imp, aes(labels, value, fill = factor(variable)))
-    else
+        p <- p + scale_fill_discrete(name = "class")
+    } else
         p <- ggplot(imp, aes(labels, value))
 
     p <- p + theme_bw()
