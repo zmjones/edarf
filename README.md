@@ -35,7 +35,7 @@ install_github("zmjones/edarf")
 ## <a name="partial_dependence">Partial Dependence</a>
 ### <a name="classification">Classification</a>
 
-``{r}
+```{r}
 library(edarf)
 
 data(iris)
@@ -129,23 +129,23 @@ Multivariate two-way interaction plots not yet implemented.
 
 ```{r}
 fit <- randomForest(Species ~ ., iris, importance = TRUE)
-imp <- variable_importance(fit, "accuracy", TRUE)
+imp <- variable_importance(fit, type = "accuracy", class_levels = TRUE)
 plot_imp(imp)
 ```
 ![](http://zmjones.com/static/images/iris_imp_class.png)
 
 ```{r}
-plot_imp(imp, "bar", FALSE)
+plot_imp(imp, geom = "bar", horizontal = FALSE)
 ```
 ![](http://zmjones.com/static/images/iris_imp_class_bar.png)
 
 ```{r}
-plot_imp(imp, "bar", TRUE, TRUE)
+plot_imp(imp, geom = "bar", facet = TRUE)
 ```
 ![](http://zmjones.com/static/images/iris_imp_class_bar_facet.png)
 
 ```{r}
-imp <- variable_importance(fit, "accuracy", FALSE)
+imp <- variable_importance(fit, type = "accuracy", class_levels = FALSE)
 plot_imp(imp, horizontal = FALSE)
 ```
 ![](http://zmjones.com/static/images/iris_imp.png)
@@ -155,11 +155,11 @@ plot_imp(imp, horizontal = FALSE)
 ```{r}
 fit <- randomForest(hp ~ ., mtcars, keep.inbag = TRUE)
 out <- var_est(fit, mtcars)
+```
 
-## all the below is handled internally if variance estimates are requested
-## for partial dependence, however, it is possible to use the variance estimator
-## with the fitted model alone as well (regression with randomForest, cforest, and rfsrc)
+All the below is handled internally if variance estimates are requested, for `partial_dependence`, however, it is possible to use `var_est` with the fitted model alone as well (regression with `randomForest`, `cforest`, and `rfsrc`)
 
+```{r}
 colnames(out)[1] <- "hp"
 
 cl <- qnorm(.05 / 2, lower.tail = FALSE)
