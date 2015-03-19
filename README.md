@@ -12,7 +12,18 @@ We are planning on adding methods to make interpreting proximity and maximal sub
 
 Pull requests, bug reports, feature requests, etc. are welcome!
 
-### Installation
+## Contents
+
+ - [Installation](#install)
+ - [Partial Dependence](#partial_dependence)
+    + [Classification](#classification)
+    + [Regression](#regression)
+	+ [Survival](#survival)
+	+ [Multivariate](#multivariate)
+ - [Variable Importance](#variable_importance)
+ - [Variance Estimation](#variance_estimation)
+
+## <a name="install">Installation</a>
 
 It is not yet on CRAN, but you can install it from Github using [devtools](http://cran.r-project.org/web/packages/devtools/index.html). 
 
@@ -21,9 +32,10 @@ library(devtools)
 install_github("zmjones/edarf")
 ```
 
-### Partial Dependence
+## <a name="partial_dependence">Partial Dependence</a>
+### <a name="classification">Classification</a>
 
-```{r}
+``{r}
 library(edarf)
 
 data(iris)
@@ -62,7 +74,7 @@ plot_pd(pd_int, geom = "bar")
 ```
 ![](http://zmjones.com/static/images/iris_pd_int_bar.png)
 
-### regression
+### <a name="regression">Regression</a>
 
 ```{r}
 data(swiss)
@@ -78,7 +90,7 @@ plot_pd(pd_int)
 ```
 ![](http://zmjones.com/static/images/swiss_pd_int_line.png)
 
-### survival
+### <a name="survival">Survival</a>
 
 ```{r}
 library(randomForestSRC)
@@ -95,7 +107,7 @@ plot_pd(pd_int)
 ```
 ![](http://zmjones.com/static/images/veteran_pd_int_line.png)
 
-### multivariate
+### <a name="multivariate">Multivariate</a>
 
 ```{r}
 data(mtcars)
@@ -113,7 +125,32 @@ plot_pd(pd_int)
 
 Multivariate two-way interaction plots not yet implemented.
 
-### variance estimation
+## <a name="variable_importance">Variable Importance</a>
+
+```{r}
+fit <- randomForest(Species ~ ., iris, importance = TRUE)
+imp <- variable_importance(fit, "accuracy", TRUE)
+plot_imp(imp)
+```
+![](http://zmjones.com/static/images/iris_imp_class.png)
+
+```{r}
+plot_imp(imp, "bar", FALSE)
+```
+![](http://zmjones.com/static/images/iris_imp_class_bar.png)
+
+```{r}
+plot_imp(imp, "bar", TRUE, TRUE)
+```
+![](http://zmjones.com/static/images/iris_imp_class_bar_facet.png)
+
+```{r}
+imp <- variable_importance(fit, "accuracy", FALSE)
+plot_imp(imp, horizontal = FALSE)
+```
+![](http://zmjones.com/static/images/iris_imp.png)
+
+## <a name="variance_estimation">Variance Estimation</a>
 
 ```{r}
 fit <- randomForest(hp ~ ., mtcars, keep.inbag = TRUE)
