@@ -118,6 +118,7 @@ plot_pd <- function(pd, geom = "line", title = "", facet_var) {
 #' @import ggplot2
 #' @importFrom reshape2 melt
 #' @import assertthat
+#' 
 #' @param pd object of class \code{c("importance", "data.frame")} as returned by
 #' \code{\link{variable_importance}}
 #' @param geom character describing type of plot desired: "point" or "bar"
@@ -167,4 +168,58 @@ plot_imp <- function(imp, geom = "point", horizontal = TRUE, facet = FALSE, titl
     
     p <- p + labs(y = "importance", x = "variables", title = title)
     p
+}
+#' Plot (sparse) principle components of the proximity matrix
+#'
+#' @import ggplot2
+#'
+#' @param prox n x n matrix giving the proportion of times across all trees that observation i,j are in the same terminal node
+#' @param labels length n character vector giving observation labels
+#' @param size integer which gives the size of points or text labels
+#' @param color optional vector of length n which gives a factor with which to color the points
+#' @param color_label character legend title if color parameter is used
+#' @param title character plot title
+#' @param ... arguments to pass to \code{\link{prcomp}}
+#'
+#' @return a ggplot object
+#'
+#' @examples
+#' \dontrun{
+#' fit <- randomForest(hp ~ ., mtcars, proximity = TRUE)
+#' prox <- extract_proximity(fit)
+#' plot_prox(prox, labels = row.names(mtcars))
+#' 
+#' fit <- randomForest(Species ~ ., iris, proximity = TRUE)
+#' prox <- extract_proximity(fit)
+#' plot_prox(prox, color = iris$Species, color_label = "Species", size = 2)
+#' }
+#' 
+#' @export
+plot_prox <- function(prox, labels = NULL, size = 3, color = NULL, color_label = NULL, title = "", ...) {
+    if (is.numeric(color))
+        stop("gradient coloring not supported. add this outside of this function.")
+    pca <- prcomp(prox, ...)
+    nobs.factor <- sqrt(nrow(pca$x) - 1)
+    d <- pca$sdev
+    u <- sweep(pca$x, 2, 1 / (d * nobs.factor), '*')
+    v <- pca$rotation
+    prop_var <- 100 * pca$sdev[1:2]^2 / sum(pca$sdev^2)
+    plt <- as.data.frame(sweep(u[, 1:2], 2, d[1:2], '*'))
+    plt$ymax <- max(plt[, 2])
+    
+    if (is.null(color)) {
+        p <- ggplot(plt, aes(PC1, PC2, ymax = ymax))
+    } else {
+        plt$color <- color
+        rm(color)
+        p <- ggplot(plt, aes(PC1, PC2, color = color, ymax = ymax))
+        p <- p + scale_color_discrete(name = color_label)
+    }
+    if (is.null(labels))
+        p <- p + geom_point(position = "dodge", size = size)
+    else p <- p + geom_text(position = "dodge", label = labels, size = size)
+    p <- p + labs(x = paste0("PC1 (", round(prop_var[1], 0), "% explained var.)"),
+                  y = paste0("PC2 (", round(prop_var[2], 0), "% explained var.)"),
+                  title = title)
+    p + theme_bw()
 }

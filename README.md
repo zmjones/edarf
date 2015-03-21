@@ -24,6 +24,7 @@ Pull requests, bug reports, feature requests, etc. are welcome!
 	+ [Multivariate](#multivariate)
  - [Variable Importance](#variable_importance)
  - [Variance Estimation](#variance_estimation)
+ - [Proximity Matrix Visualization](#proximity)
 
 ## <a name="install">Installation</a>
 
@@ -154,7 +155,13 @@ plot_imp(imp, horizontal = FALSE)
 
 ## <a name="variance_estimation">Variance Estimation</a>
 
+To use `var_est` with `randomForest` we need [randomForestCI](http://github.com/swager/randomForestCI) and an updated (but not merged) version of [randomForest]([randomForest](http://github.com/swager/randomForest)) which are installed below with `devtools`.
+
 ```{r}
+library(devtools)
+install_github("swager/randomForest")
+install_github("swager/randomForestCI")
+
 fit <- randomForest(hp ~ ., mtcars, keep.inbag = TRUE)
 out <- var_est(fit, mtcars)
 ```
@@ -179,3 +186,20 @@ ggplot(out, aes(actual_hp, hp)) +
                     theme_bw()
 ```
 ![](http://zmjones.com/static/images/mtcars_pred.png)
+
+## <a name="proximity">Proximity Matrix Visualization</a>
+
+```{r}
+fit <- randomForest(hp ~ ., mtcars, proximity = TRUE)
+prox <- extract_proximity(fit)
+plot_prox(prox, labels = row.names(mtcars))
+```
+![](http://zmjones.com/static/images/prox_mtcars.png)
+
+```{r}
+fit <- randomForest(Species ~ ., iris, proximity = TRUE)
+prox <- extract_proximity(fit)
+plot_prox(prox, color = iris$Species, color_label = "Species", size = 2)
+```
+
+![](http://zmjones.com/static/images/prox_iris.png)

@@ -12,6 +12,7 @@ extract_proximity <- function(fit, ...) UseMethod("extract_proximity")
 #' @param fit object of class randomForest called with proximity or oob.prox = TRUE
 #'
 #' @return an n by n matrix
+#' @export
 extract_proximity.randomForest <- function(fit) {
     if (is.null(fit$proximity))
         stop("call randomForest with proximity or oob.prox = TRUE")
@@ -23,6 +24,7 @@ extract_proximity.randomForest <- function(fit) {
 #' @param newdata a data.frame with the same columns as the training data
 #'
 #' @return an n by n matrix
+#' @export
 extract_proximity.RandomForest <- function(fit, newdata = NULL) {
     proximity(out, newdata)
 }
@@ -31,6 +33,7 @@ extract_proximity.RandomForest <- function(fit, newdata = NULL) {
 #' @param fit object of class 'rfsrc' from \code{rfsrc}
 #'
 #' @return an n by n matirx
+#' @export
 extract_proximity.rfsrc <- function(fit) {
     if (is.null(fit$proximity))
         stop("call rfsrc with proximity equal to TRUE, \"inbag\", \"oob\", or \"all\"")
