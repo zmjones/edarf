@@ -4,10 +4,14 @@
 \alias{extract_proximity.rfsrc}
 \title{Extract proximity matrix from objects returned from \code{rfsrc}}
 \usage{
-\method{extract_proximity}{rfsrc}(fit)
+\method{extract_proximity}{rfsrc}(fit, newdata = NULL, ...)
 }
 \arguments{
 \item{fit}{object of class 'rfsrc' from \code{rfsrc}}
+
+\item{newdata}{new data with the same columns as the data used for \code{fit}}
+
+\item{...}{additional arguments to pass to predict.rfsrc}
 }
 \value{
 an n by n matirx

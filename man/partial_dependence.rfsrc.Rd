@@ -6,7 +6,7 @@
 \usage{
 \method{partial_dependence}{rfsrc}(fit, var, cutoff = 10,
   interaction = FALSE, ci = TRUE, confidence = 0.95, empirical = TRUE,
-  parallel = FALSE, type = "")
+  parallel = FALSE, type = "", ...)
 }
 \arguments{
 \item{fit}{an object of class 'rfsrc' returned from \code{rfsrc}}
@@ -28,6 +28,8 @@ partial dependence calculation}
 \item{parallel}{logical indicator of whether a parallel backend should be used if registered}
 
 \item{type}{with classification, default "" gives most probable class for classification and "prob" gives class probabilities}
+
+\item{...}{additional arguments to be passed to nothing}
 }
 \value{
 a dataframe with columns for each predictor in `var` and the fitted value for

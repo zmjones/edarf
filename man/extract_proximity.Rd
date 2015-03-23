@@ -4,10 +4,12 @@
 \alias{extract_proximity}
 \title{Methods to extract proximity matrices from random forests}
 \usage{
-extract_proximity(fit, ...)
+extract_proximity(fit, newdata)
 }
 \arguments{
 \item{fit}{object of class 'RandomForest', 'randomForest', or 'rfsrc'}
+
+\item{newdata}{new data with the same columns as the data used for \code{fit}}
 
 \item{...}{arguments to be passed to \code{extract_proximity}}
 }

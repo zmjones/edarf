@@ -4,12 +4,14 @@
 \alias{extract_proximity.RandomForest}
 \title{Extract proximity matrix from objects returned from \code{cforest}}
 \usage{
-\method{extract_proximity}{RandomForest}(fit, newdata = NULL)
+\method{extract_proximity}{RandomForest}(fit, newdata = NULL, ...)
 }
 \arguments{
 \item{fit}{object of class 'RandomForest' from \code{cforest}}
 
 \item{newdata}{a data.frame with the same columns as the training data}
+
+\item{...}{additional arguments to pass to proximity}
 }
 \value{
 an n by n matrix

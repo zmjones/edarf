@@ -16,6 +16,8 @@ variable_importance <- function(fit, ...) UseMethod("variable_importance")
 #' if type is "accuracy" importance must be set to TRUE in the call to randomForest
 #' @param class_levels logical, when TRUE class level specific importances are returned
 #' response variable must be a factor and importance = TRUE in the call to randomForest
+#' @param ... further arguments to be passed to nothing
+#'
 #'
 #' @return a data.frame of class "importance"
 #'
@@ -29,7 +31,7 @@ variable_importance <- function(fit, ...) UseMethod("variable_importance")
 #' plot_imp(imp)
 #' }
 #' @export
-variable_importance.randomForest <- function(fit, type = "accuracy", class_levels) {
+variable_importance.randomForest <- function(fit, type = "accuracy", class_levels, ...) {
     if (ncol(fit$importance) == 1 & type != "gini")
         stop("set importance = TRUE in call to randomForest")
     if (is.null(fit$localImportance) & type == "local")
@@ -113,6 +115,7 @@ variable_importance.RandomForest <- function(fit, conditional = FALSE, auc = FAL
 #' @param type character equal to "permute", "random", "permute.ensemble", or "random.ensemble"
 #' this the \code{permute} argument must equal this value in the call to rfsrc
 #' @param class_levels logical, when TRUE class level specific importances are returned otherwise the overal importance is returned
+#' @param ... further arguments to be passed to nothing
 #'
 #' @return a data.frame of class "importance"
 #'
@@ -125,7 +128,7 @@ variable_importance.RandomForest <- function(fit, conditional = FALSE, auc = FAL
 #' variable_importance(fit, "random", TRUE)
 #' }
 #' @export
-variable_importance.rfsrc <- function(fit, type = "permute", class_levels = FALSE) {
+variable_importance.rfsrc <- function(fit, ..., type = "permute", class_levels = FALSE) {
     if (!type %in% as.character(fit$call))
         stop(paste("call rfsrc with importance =", type))
     

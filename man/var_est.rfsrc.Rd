@@ -4,12 +4,14 @@
 \alias{var_est.rfsrc}
 \title{Variance estimation for rfsrc objects from package \code{randomForestSRC}}
 \usage{
-\method{var_est}{rfsrc}(fit, df)
+\method{var_est}{rfsrc}(fit, df, ...)
 }
 \arguments{
 \item{fit}{an predict object of class 'rfsrc' returned from \code{rfsrc}}
 
 \item{df}{dataframe to be used for prediction}
+
+\item{...}{additional arguments to be passed to predict.rfsrc}
 }
 \value{
 a dataframe with two columns: 'prediction' and 'variance', where the former is the prediction calculated using the inbag data, and the variance is calculated using the bias corrected infinitesimal bootstrap from Wager, Efron, and Tibsharani (2014).

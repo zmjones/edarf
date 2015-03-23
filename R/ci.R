@@ -16,6 +16,7 @@ var_est <- function(fit, df) UseMethod("var_est", fit)
 #'
 #' @param fit an object of class 'randomForest' returned from \code{randomForest} with \code{keep.inbag = TRUE}
 #' @param df dataframe to be used for prediction
+#' @param ... additional arguments to be passed to predict.randomForest
 #'
 #' @return a dataframe with two columns: 'prediction' and 'variance', where the former is the prediction calculated using the inbag data, and the variance is calculated using the bias corrected infinitesimal bootstrap from Wager, Efron, and Tibsharani (2014).
 #'
@@ -28,21 +29,23 @@ var_est <- function(fit, df) UseMethod("var_est", fit)
 #' var_est(fit, swiss)
 #' }
 #' @export
-var_est.randomForest <- function(fit, df) {
+var_est.randomForest <- function(fit, df, ...) {
     info <- installed.packages(fields = c("Package", "Version"))
     info <- info[, c("Package", "Version")]
     if (!"randomForestCI" %in% info)
         stop("install randomForestCI from http://github.com/swager/randomForestCI")
     if (!info[info[, 1] == "randomForest", "Version"] == "4.6-11")
         stop("install fixed randomForest from http://github.com/swager/randomForest")
-    out <- randomForestCI::randomForestInfJack(fit, df)
-    colnames(out) <- c("prediction", "variance")
-    out
+    pred <- predict(fit, newdata = df, predict.all = TRUE, ...)
+    data.frame("prediction" = pred$aggregate,
+               "variance" = inf_jackknife(pred$individual, fit$ntree, fit$inbag))
+    
 }
 #' Variance estimation for RandomForest objects from package \code{party}
 #'
 #' Calculates the variance of predictions from regression using RandomForest using a slightly modified version of the code from randomForestCI (\url{https://github.com/swager/randomForestCI})
 #'
+#' @import party
 #' @param fit an object of class 'RandomForest' returned from \code{cforest}
 #' @param df dataframe to be used for prediction
 #'
@@ -58,7 +61,7 @@ var_est.randomForest <- function(fit, df) {
 #' }
 #' @export
 var_est.RandomForest <- function(fit, df) {
-    new_df <- party:::newinputs(fit, df)
+    new_df <- initVariableFrame(df)
     pred <- sapply(1:length(fit@ensemble), function(i) {
         sapply(.Call("R_predictRF_weights",
                      fit@ensemble[i], fit@where[i], fit@weights[i], new_df, 0, FALSE, PACKAGE = "party"),
@@ -66,7 +69,7 @@ var_est.RandomForest <- function(fit, df) {
     })
     data.frame("prediction" = predict(fit, newdata = df),
                "variance" = inf_jackknife(pred, length(fit@ensemble),
-                   Matrix::Matrix(do.call(cbind, fit@weights), sparse = TRUE)))
+                   Matrix(do.call(cbind, fit@weights), sparse = TRUE)))
 }
 #' Variance estimation for rfsrc objects from package \code{randomForestSRC}
 #'
@@ -74,6 +77,7 @@ var_est.RandomForest <- function(fit, df) {
 #'
 #' @param fit an predict object of class 'rfsrc' returned from \code{rfsrc}
 #' @param df dataframe to be used for prediction
+#' @param ... additional arguments to be passed to predict.rfsrc
 #'
 #' @return a dataframe with two columns: 'prediction' and 'variance', where the former is the prediction calculated using the inbag data, and the variance is calculated using the bias corrected infinitesimal bootstrap from Wager, Efron, and Tibsharani (2014).
 #'
@@ -86,9 +90,9 @@ var_est.RandomForest <- function(fit, df) {
 #' var_est(fit, swiss)
 #' }
 #' @export
-var_est.rfsrc <- function(fit, df) {
+var_est.rfsrc <- function(fit, df, ...) {
   if (is.null(fit$pd_membership) | is.null(fit$pd_predicted)) {
-    pred <- predict(fit, newdata = df, outcome = "train")
+    pred <- predict(fit, newdata = df, outcome = "train", ...)
     fit$pd_membership <- pred$membership
     fit$pd_predicted <- pred$predicted
   }
@@ -125,7 +129,7 @@ inf_jackknife <- function(pred, B, N) {
     ## covariance between number of times obs. i appears in b and difference between tree
     ## and mean across trees (across in bag and out bag)
     C <- N %*% t(pred_center) - Matrix(N_avg, nrow(N), 1) %*%
-        Matrix::Matrix(owSums(pred_center), 1, nrow(pred_center))
+        Matrix(rowSums(pred_center), 1, nrow(pred_center))
     raw_IJ <- colSums(C^2) / B^2
     N_var <- mean(rowMeans(N^2) - N_avg^2)
     boot_var <- rowMeans(pred_center^2)

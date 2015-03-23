@@ -25,6 +25,7 @@ partial_dependence <- function(fit, ...) UseMethod("partial_dependence", fit)
 #' @param empirical logical indicator of whether or not only values in the data should be sampled
 #' @param parallel logical indicator of whether a parallel backend should be used if registered
 #' @param type with classification, default "" gives most probable class for classification and "prob" gives class probabilities
+#' @param ... additional arguments to be passed to nothing
 #'
 #' @return a dataframe with columns for each predictor in `var` and the fitted value for
 #' each set of values taken by the values of 'var' averaged within the values of predictors
@@ -57,7 +58,7 @@ partial_dependence <- function(fit, ...) UseMethod("partial_dependence", fit)
 #' @export
 partial_dependence.randomForest <- function(fit, df, var, cutoff = 10, interaction = FALSE,
                                             ci = TRUE, confidence = .95,
-                                            empirical = TRUE, parallel = FALSE, type = "") {
+                                            empirical = TRUE, parallel = FALSE, type = "", ...) {
     pkg <- "randomForest"
     y_class <- attr(fit$terms, "dataClasses")[1] ## what type is y
     if (!y_class %in% c("integer", "numeric") & ci) ci <- FALSE
@@ -150,6 +151,7 @@ partial_dependence.randomForest <- function(fit, df, var, cutoff = 10, interacti
 #' @param empirical logical indicator of whether or not only values in the data should be sampled
 #' @param parallel logical indicator of whether a parallel backend should be used if registered
 #' @param type with classification, default "" gives most probable class for classification and "prob" gives class probabilities
+#' @param ... additional arguments to be passed to nothing
 #'
 #' @return a dataframe with columns for each predictor in `var` and the fitted value for
 #' each set of values taken by the values of 'var' averaged within the values of predictors
@@ -190,7 +192,7 @@ partial_dependence.randomForest <- function(fit, df, var, cutoff = 10, interacti
 #' @export
 partial_dependence.RandomForest <- function(fit, var, cutoff = 10, interaction = FALSE,
                                             ci = TRUE, confidence = .95,
-                                            empirical = TRUE, parallel = FALSE, type = "") {
+                                            empirical = TRUE, parallel = FALSE, type = "", ...) {
     pkg <- "party"
     ## get y from the fit object
     y <- get("response", fit@data@env)
@@ -303,6 +305,7 @@ partial_dependence.RandomForest <- function(fit, var, cutoff = 10, interaction =
 #' @param empirical logical indicator of whether or not only values in the data should be sampled
 #' @param parallel logical indicator of whether a parallel backend should be used if registered
 #' @param type with classification, default "" gives most probable class for classification and "prob" gives class probabilities
+#' @param ... additional arguments to be passed to nothing
 #'
 #' @return a dataframe with columns for each predictor in `var` and the fitted value for
 #' each set of values taken by the values of 'var' averaged within the values of predictors
@@ -337,7 +340,7 @@ partial_dependence.RandomForest <- function(fit, var, cutoff = 10, interaction =
 #' @export
 partial_dependence.rfsrc <- function(fit, var, cutoff = 10, interaction = FALSE,
                                      ci = TRUE, confidence = .95,
-                                     empirical = TRUE, parallel = FALSE, type = "") {
+                                     empirical = TRUE, parallel = FALSE, type = "", ...) {
     pkg <- "randomForestSRC"
     y <- fit$yvar
     if (!(class(y) %in% c("numeric", "integer"))) ci <- FALSE
