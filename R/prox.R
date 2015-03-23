@@ -2,6 +2,7 @@
 #'
 #' Extracts proximity matrices from random forest objects from the party, randomForest or randomForestSRC packages
 #'
+#' @importFrom stats predict
 #' @param fit object of class 'RandomForest', 'randomForest', or 'rfsrc'
 #' @param newdata new data with the same columns as the data used for \code{fit}
 #' @param ... arguments to be passed to \code{extract_proximity}

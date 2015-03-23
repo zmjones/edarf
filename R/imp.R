@@ -31,7 +31,7 @@ variable_importance <- function(fit, ...) UseMethod("variable_importance")
 #' plot_imp(imp)
 #' }
 #' @export
-variable_importance.randomForest <- function(fit, type = "accuracy", class_levels, ...) {
+variable_importance.randomForest <- function(fit, type = "accuracy", class_levels = FALSE, ...) {
     if (ncol(fit$importance) == 1 & type != "gini")
         stop("set importance = TRUE in call to randomForest")
     if (is.null(fit$localImportance) & type == "local")
@@ -44,15 +44,16 @@ variable_importance.randomForest <- function(fit, type = "accuracy", class_level
     else if (type == "gini")
         out <- fit$importance[, "MeanDecreaseGini"]
     else if (type == "local") {
-        out <- fit$localImportance
-        row.names(out) <- NULL
+        out <- t(fit$localImportance)
     } else
         stop("Invalid type or fit input combination")
 
     if (is.matrix(out)) {
         out <- as.data.frame(out)
-        out$labels <- row.names(out)
-        row.names(out) <- NULL
+        if (type != "local") {
+            out$labels <- row.names(out)
+            row.names(out) <- NULL
+        }
     } else 
         out <- data.frame(value = unname(out), labels = names(out))
     
@@ -85,8 +86,7 @@ variable_importance.randomForest <- function(fit, type = "accuracy", class_level
 #' }
 #' @export
 variable_importance.RandomForest <- function(fit, conditional = FALSE, auc = FALSE, ...) {
-    if (auc & !(class(fit@responses@variables[, 1]) == "factor" &
-                    length(levels(fit@responses@variables[, 1])) == 2))
+    if (auc & !(nrow(unique(fit@responses@variables)) == 2))
         stop("auc only applicable to binary classification")
     
     if (conditional)
@@ -94,9 +94,9 @@ variable_importance.RandomForest <- function(fit, conditional = FALSE, auc = FAL
     else conditional <- FALSE
 
     if (auc)
-        out <- varimpAUC(fit, conditional = conditional, ...)
+        out <- party::varimpAUC(fit, conditional = conditional, ...)
     else
-        out <- varimp(fit, conditional = conditional, ...)
+        out <- party::varimp(fit, conditional = conditional, ...)
 
     out <- data.frame("value" = out, "labels" = names(out), row.names = 1:length(out))
     
@@ -128,7 +128,7 @@ variable_importance.RandomForest <- function(fit, conditional = FALSE, auc = FAL
 #' variable_importance(fit, "random", TRUE)
 #' }
 #' @export
-variable_importance.rfsrc <- function(fit, ..., type = "permute", class_levels = FALSE) {
+variable_importance.rfsrc <- function(fit, type = "permute", class_levels = FALSE, ...) {
     if (!type %in% as.character(fit$call))
         stop(paste("call rfsrc with importance =", type))
     

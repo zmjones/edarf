@@ -4,17 +4,15 @@
 \alias{fix_classes}
 \title{Matches column classes of the input data frame to the output}
 \usage{
-fix_classes(var, df, pred)
+fix_classes(df, pred)
 }
 \arguments{
-\item{var}{character vector of column names to match}
-
 \item{df}{imput dataframe}
 
 \item{pred}{output dataframe}
 }
 \value{
-dataframe \code{pred} with \code{var} column classes matched to those in \code{df}
+dataframe \code{pred} with column classes matched to those in \code{df}
 }
 \description{
 Matches column classes of the input data frame to the output

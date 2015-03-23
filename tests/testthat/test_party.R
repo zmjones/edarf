@@ -1,7 +1,8 @@
 library(party)
-data(swiss)
-data(iris)
-data(mtcars)
+data("swiss")
+data("iris")
+data("mtcars")
+data("readingSkills", package = "party")
 
 ## regression
 ## regression, ci
@@ -67,7 +68,7 @@ test_that("regression with interactions", {
     expect_that(colnames(pd), equals(c("Education", "Agriculture", "Fertility")))
     expect_that(pd$Fertility, is_a("numeric"))
     expect_that(pd$Education, is_a("integer"))
-    expect_that(pd$Agriculture, is_a("integer"))
+    expect_that(pd$Agriculture, is_a("numeric"))
 })
 
 test_that("regression with interactions and ci", {
@@ -75,7 +76,7 @@ test_that("regression with interactions and ci", {
                              interaction = TRUE, ci = TRUE)
     expect_that(pd, is_a("data.frame"))
     expect_that(pd$Education, is_a("integer"))
-    expect_that(pd$Agriculture, is_a("integer"))
+    expect_that(pd$Agriculture, is_a("numeric"))
     expect_that(pd$variance, is_a("numeric"))
     expect_that(pd$low, is_a("numeric"))
     expect_that(pd$high, is_a("numeric"))
@@ -150,7 +151,7 @@ test_that("multivariate regression", {
     expect_that(pd, is_a("data.frame"))
     expect_that(colnames(pd), equals(c("mpg", "hp", "qsec")))
     expect_that(pd$mpg, is_a("numeric"))
-    expect_that(pd$hp, is_a("integer"))
+    expect_that(pd$hp, is_a("numeric"))
     expect_that(pd$qsec, is_a("numeric"))
 })
 
@@ -169,7 +170,58 @@ test_that("multivariate regression and interaction", {
     expect_that(pd, is_a("data.frame"))
     expect_that(colnames(pd), equals(c("mpg", "cyl", "hp", "qsec")))
     expect_that(pd$mpg, is_a("numeric"))
-    expect_that(pd$cyl, is_a("integer"))
+    expect_that(pd$cyl, is_a("numeric"))
     expect_that(pd$hp, is_a("numeric"))
     expect_that(pd$qsec, is_a("numeric"))
+})
+
+## marginal accuracy
+## conditional  accuracy
+## marginal auc
+## conditional auc
+
+fit <- cforest(score ~ ., data = readingSkills, control = cforest_unbiased(mtry = 2, ntree = 50))
+
+test_that("extractor works with marginal accuracy", {
+    imp <- variable_importance(fit)
+    expect_that(imp, is_a("data.frame"))
+    expect_that(nrow(imp), equals(3))
+})
+
+test_that("extractor works with conditional accuracy", {
+    imp <- variable_importance(fit, conditional = TRUE)
+    expect_that(imp, is_a("data.frame"))
+    expect_that(nrow(imp), equals(3))
+})
+
+readingSkills$score <- ifelse(readingSkills$score > mean(readingSkills$score), 1, 0)
+fit <- cforest(score ~ ., data = readingSkills, control = cforest_unbiased(mtry = 2, ntree = 50))
+
+test_that("extractor works with marginal auc", {
+    imp <- variable_importance(fit, auc = TRUE)
+    expect_that(imp, is_a("data.frame"))
+    expect_that(nrow(imp), equals(3))
+})
+
+test_that("extractor works with conditional auc", {
+    imp <- variable_importance(fit, auc = TRUE, conditional = TRUE)
+    expect_that(imp, is_a("data.frame"))
+    expect_that(nrow(imp), equals(3))
+})
+
+## proximity
+## proximity newdata
+
+test_that("extractor works with proximity", {
+    prox <- extract_proximity(fit)
+    expect_that(prox, is_a("matrix"))
+    expect_that(dim(prox), equals(c(200, 200)))
+    expect_that(unname(diag(prox)), equals(rep(1, 200)))
+})
+
+test_that("extractor works with proximity and newdata", {
+    prox <- extract_proximity(fit, readingSkills[1:10, ])
+    expect_that(prox, is_a("matrix"))
+    expect_that(dim(prox), equals(c(10, 10)))
+    expect_that(unname(diag(prox)), equals(rep(1, 10)))
 })

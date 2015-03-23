@@ -4,6 +4,7 @@
 #' from a fitted random forest object from the party, randomForest, or randomForestSRC packages
 #'
 #' @importFrom foreach foreach %dopar% %do% %:% getDoParWorkers
+#' @importFrom stats predict
 #' @param fit object of class 'RandomForest', 'randomForest', or 'rfsrc'
 #' @param ... arguments to be passed to \code{partial_dependence}
 #'
@@ -127,13 +128,14 @@ partial_dependence.randomForest <- function(fit, df, var, cutoff = 10, interacti
         pred$low <- pred[, names(y_class)] - cl * se
         pred$high <- pred[, names(y_class)] + cl * se
     }
-    if (length(var) == 1 & type != "prob") pred <- fix_classes(c(var, names(y_class)), df, pred)
+
     attr(pred, "class") <- c("pd", "data.frame")
     attr(pred, "prob") <- type == "prob"
     attr(pred, "interaction") <- length(var) > 1
     attr(pred, "multivariate") <- FALSE
     attr(pred, "var") <- var
     attr(pred, "ci") <- ci
+    pred <- fix_classes(df, pred)
     pred
 }
 #' Partial dependence for RandomForest objects from package \code{party}
@@ -212,6 +214,9 @@ partial_dependence.RandomForest <- function(fit, var, cutoff = 10, interaction =
     inner_loop <- function(df, rng, idx, var, var_class) {
         ## fix var predictiors
         df[, var] <- rng[idx, ]
+        ## fixme
+        ## should figure out what is generating the coercion
+        ## that necessitates the below code
         if (length(var) == 1) {
             if (class(df[, var]) != var_class) class(df[, var]) <- var_class
         } else if (any(sapply(df[, var], class) != var_class)) {
@@ -248,6 +253,9 @@ partial_dependence.RandomForest <- function(fit, var, cutoff = 10, interaction =
     }
     i <- x <- idx <- out <- NULL ## initialize to avoid R CMD check errors
     if (is.data.frame(rng)) {
+        ## fixme
+        ## should figure out what is generating the coercion
+        ## that necessitates the below code
         if (length(var) > 1) {
             var_class <- sapply(df[, var], class)
         } else var_class <- class(df[, var])
@@ -255,7 +263,7 @@ partial_dependence.RandomForest <- function(fit, var, cutoff = 10, interaction =
         pred <- as.data.frame(do.call(rbind, lapply(pred, unlist)), stringsAsFactors = FALSE)
         colnames(pred)[1:length(var)] <- var
         if (type != "prob" & (!ci | !(class(y[, 1]) %in% c("numeric", "integer"))) & ncol(y) == 1)
-            colnames(pred)[ncol(pred)] <- colnames(y)
+            colnames(pred)[ncol(pred)] <- colnames(y)        
     } else {
         pred <- foreach(x = var, .packages = pkg) %:%
             foreach(idx = 1:nrow(rng[[x]]), .combine = rbind) %op% inner_loop(df, rng[[x]], idx, x, class(df[, x]))
@@ -287,6 +295,7 @@ partial_dependence.RandomForest <- function(fit, var, cutoff = 10, interaction =
     attr(pred, "multivariate") <- dim(y)[2] != 1
     attr(pred, "var") <- var
     attr(pred, "ci") <- ci
+    pred <- fix_classes(df, pred)
     pred
 }
 #' Partial dependence for rfsrc objects from package \code{randomForestSRC}
@@ -345,7 +354,7 @@ partial_dependence.rfsrc <- function(fit, var, cutoff = 10, interaction = FALSE,
     y <- fit$yvar
     if (!(class(y) %in% c("numeric", "integer"))) ci <- FALSE
     if (length(var) == 1) interaction <- FALSE
-    df <- data.frame(fit$xvar, y)
+    df <- data.frame(fit$xvar, y) ## rfsrc casts integers to numerics
     if (!is.data.frame(y)) colnames(df)[ncol(df)] <- fit$yvar.names
     if (interaction) {
         rng <- expand.grid(lapply(var, function(x) ivar_points(df, x, cutoff, empirical)))
@@ -398,11 +407,9 @@ partial_dependence.rfsrc <- function(fit, var, cutoff = 10, interaction = FALSE,
     }
     if (((length(var) > 1 & interaction) | length(var) == 1) &
         (!ci & !(type == "prob")) & !is.data.frame(fit$yvar)) {
-        pred <- fix_classes(c(var, fit$yvar.names), df, pred)
     } else if (is.data.frame(fit$yvar)) {
         if (length(var) == 1 | interaction) {
             colnames(pred)[ncol(pred)] <- "chf"
-            pred[, -ncol(pred)] <- fix_classes(var, df, pred[, -ncol(pred)])
         } else colnames(pred)[ncol(pred) - 1] <- "chf"
     } else if (ci & class(y) %in% c("numeric", "integer")) {
         if (length(var) == 1 | interaction) colnames(pred)[ncol(pred) - 1] <- fit$yvar.names
@@ -418,6 +425,7 @@ partial_dependence.rfsrc <- function(fit, var, cutoff = 10, interaction = FALSE,
     attr(pred, "multivariate") <- FALSE
     attr(pred, "var") <- var
     attr(pred, "ci") <- ci
+    pred <- fix_classes(df, pred)
     pred
 }
 #' Creates a prediction vector for variables to decrease computation time
@@ -445,22 +453,27 @@ ivar_points <- function(df, x, cutoff = 10, empirical = TRUE) {
 }
 #' Matches column classes of the input data frame to the output
 #'
-#' @param var character vector of column names to match
 #' @param df imput dataframe
 #' @param pred output dataframe
 #'
-#' @return dataframe \code{pred} with \code{var} column classes matched to those in \code{df}
+#' @return dataframe \code{pred} with column classes matched to those in \code{df}
 #'
 #' @export
-fix_classes <- function(var, df, pred) {
-    for (x in var) {
-        if (class(df[, x]) == "factor")
-            pred[, x] <- factor(pred[, x])
-        else if (class(df[, x]) == "numeric") {
-            if (any(df[, x] %% 1 != 0))
+fix_classes <- function(df, pred) {
+    for (x in colnames(pred)) {
+        if (x %in% colnames(df)) {
+            if (class(df[, x]) == "factor")
+                pred[, x] <- factor(pred[, x])
+            else if (class(df[, x]) == "numeric") {
                 pred[, x] <- as.numeric(pred[, x])
-            else pred[, x] <- as.integer(pred[, x])
-        } 
+            } else if (class(df[, x]) == "integer") {
+                pred[, x] <- as.integer(pred[, x])
+            } else if (class(df[, x]) == "character") {
+                pred[, x] <- as.character(pred[, x])
+            } else  {
+                stop("column of unsupported type input")
+            }
+        }
     }
     pred
 }

@@ -4,18 +4,18 @@
 \alias{variable_importance.rfsrc}
 \title{Variable importance for rfsrc objects}
 \usage{
-\method{variable_importance}{rfsrc}(fit, ..., type = "permute",
-  class_levels = FALSE)
+\method{variable_importance}{rfsrc}(fit, type = "permute",
+  class_levels = FALSE, ...)
 }
 \arguments{
 \item{fit}{an object of class 'rfsrc' returned from \code{rfsrc}}
-
-\item{...}{further arguments to be passed to nothing}
 
 \item{type}{character equal to "permute", "random", "permute.ensemble", or "random.ensemble"
 this the \code{permute} argument must equal this value in the call to rfsrc}
 
 \item{class_levels}{logical, when TRUE class level specific importances are returned otherwise the overal importance is returned}
+
+\item{...}{further arguments to be passed to nothing}
 }
 \value{
 a data.frame of class "importance"

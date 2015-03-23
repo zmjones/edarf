@@ -22,6 +22,5 @@ Suggests:
     doParallel,
     testthat
 LinkingTo: Rcpp, RcppArmadillo
-Depends: RcppArmadillo
 BugReports: https://github.com/zmjones/edarf
 
