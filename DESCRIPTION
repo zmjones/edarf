@@ -13,15 +13,14 @@ Imports:
     assertthat,
     reshape2,
     Rcpp (>= 0.11.1),
-    RcppArmadillo (>= 0.4.200.0)
-Suggests:
-    scales,
-    doParallel,
+    Matrix,
     randomForestCI,
     randomForest,
     randomForestSRC,
-    party,
-    Matrix,
+    party
+Suggests:
+    scales,
+    doParallel,
     testthat
 LinkingTo: Rcpp, RcppArmadillo
 Depends: RcppArmadillo

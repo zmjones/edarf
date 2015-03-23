@@ -93,6 +93,7 @@ partial_dependence.randomForest <- function(fit, df, var, cutoff = 10, interacti
         } else stop("invalid response type")
         c(rng[idx, ], pred)
     }
+    i <- x <- idx <- out <- NULL ## initialize to avoid R CMD check errors
     ## loop over points in prediction grid (rng)
     if (is.data.frame(rng)) {
         pred <- foreach(i = 1:nrow(rng), .packages = pkg) %op% inner_loop(df, rng, i)
@@ -243,6 +244,7 @@ partial_dependence.RandomForest <- function(fit, var, cutoff = 10, interaction =
         } else pred <- colMeans(do.call(rbind, predict(fit, newdata = df)))
         c(rng[idx, ], pred)
     }
+    i <- x <- idx <- out <- NULL ## initialize to avoid R CMD check errors
     if (is.data.frame(rng)) {
         if (length(var) > 1) {
             var_class <- sapply(df[, var], class)
@@ -367,6 +369,7 @@ partial_dependence.rfsrc <- function(fit, var, cutoff = 10, interaction = FALSE,
         } else stop("invalid response type")
         c(rng[idx, ], pred)
     }
+    i <- x <- idx <- out <- NULL ## initialize to avoid R CMD check errors
     if (is.data.frame(rng)) {
         pred <- foreach(i = 1:nrow(rng), .packages = pkg) %op% inner_loop(df, rng, i, var)
         pred <- as.data.frame(do.call(rbind, lapply(pred, unlist)), stringsAsFactors = FALSE)

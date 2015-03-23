@@ -8,6 +8,9 @@ plot_imp(imp, geom = "point", horizontal = TRUE, facet = FALSE,
   title = "")
 }
 \arguments{
+\item{imp}{object of class \code{c("importance", "data.frame")} as returned by
+\code{\link{variable_importance}}}
+
 \item{geom}{character describing type of plot desired: "point" or "bar"}
 
 \item{horizontal}{logical x-axis labels are horizontal if TRUE}
@@ -15,9 +18,6 @@ plot_imp(imp, geom = "point", horizontal = TRUE, facet = FALSE,
 \item{facet}{logical indicating whether to facet, only applicable when returning class-specific variable importance}
 
 \item{title}{title for the plot}
-
-\item{pd}{object of class \code{c("importance", "data.frame")} as returned by
-\code{\link{variable_importance}}}
 }
 \value{
 a ggplot2 object

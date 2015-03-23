@@ -6,11 +6,10 @@
 #' @param pd object of class \code{c("pd", "data.frame")} as returned by
 #' \code{\link{partial_dependence}}
 #' @param geom character describing type of plot desired: "bar", "line", or "area"
+#' @param title title for the plot
 #' @param facet_var A character vector indicating the variable that should be used
 #' to facet on if inteaction is plotted. If not specified the variable with less 
 #' unique values is chosen.
-#' @param title title for the plot
-#'
 #' @return a ggplot2 object
 #' 
 #' @examples \dontrun{
@@ -43,11 +42,11 @@ plot_pd <- function(pd, geom = "line", title = "", facet_var) {
             df <- melt(pd, id.vars = 1)
             colnames(df) <- c("x", "Class", "Probability")
             if (geom == "area") {
-                p <- ggplot(df, aes(x, Probability, fill = Class))
+                p <- ggplot(df, aes_string("x", "Probability", fill = "class"))
                 p <- p + geom_area(position = "fill")
                 p <- p + scale_fill_grey()
             } else if (geom == "line") {
-                p <- ggplot(df, aes(x, Probability, colour = Class))
+                p <- ggplot(df, aes_string("x", "Probability", colour = "Class"))
                 p <- p + geom_line() + geom_point()
             } else stop("Unsupported geom")
             p <- p + labs(x = colnames(pd)[1], title = title)
@@ -56,7 +55,7 @@ plot_pd <- function(pd, geom = "line", title = "", facet_var) {
             df <- melt(pd, id.vars = 1)
             colnames(df) <- c("x", "Outcome", "value")
             df$Outcome <- paste0("Outcome: ", df$Outcome)
-            p <- ggplot(df, aes(x, value, group = Outcome))
+            p <- ggplot(df, aes_string("x", "value", group = "Outcome"))
             p <- p + geom_line() + geom_point()
             p <- p + facet_wrap(~ Outcome, scales = "free")
             p <- p + labs(x = colnames(pd)[1], title = title, y = "Predicted Outcome")
@@ -68,11 +67,14 @@ plot_pd <- function(pd, geom = "line", title = "", facet_var) {
             n_unique <- apply(pd[, atts$var], 2, function(x) length(unique(x)))
             facet_var <- names(which.min(n_unique))
         }
-        if (!(is.numeric(pd[, facet_var]))) stop("Non-numeric facetting variable")
-        ordering <- as.character(unique(sort(pd[, facet_var])))
-        labels <- paste0(facet_var, " = ", ordering)
-        pd[, facet_var] <- factor(pd[, facet_var], levels = ordering,
-                                  labels = labels)
+        if ((class(pd[, facet_var]) %in% c("numeric", "integer"))) {
+            ordering <- as.character(unique(sort(pd[, facet_var])))
+            labels <- paste0(facet_var, " = ", ordering)
+            pd[, facet_var] <- factor(pd[, facet_var], levels = ordering,
+                                      labels = labels)
+        } else if (class(pd[, facet_var]) == "character") {
+            pd[, facet_var] <- as.factor(pd[, facet_var])
+        }
         plot_var <- atts$var[atts$var != facet_var]
         if (atts$prob) {
             df <- melt(pd, id.vars = atts$var)
@@ -96,7 +98,7 @@ plot_pd <- function(pd, geom = "line", title = "", facet_var) {
             p <- ggplot(pd, aes_string(x = plot_var, y = y, group = facet_var))
             p <- p + facet_wrap(as.formula(paste0("~", facet_var)))
             p <- p + geom_line() + geom_point()
-            if (atts$ci) p <- p + geom_ribbon(aes(ymin = low, ymax = high), alpha = .25)
+            if (atts$ci) p <- p + geom_ribbon(aes_string(ymin = "low", ymax = "high"), alpha = .25)
             p <- p + labs(x = plot_var,
                           y = paste("Predicted", y),
                           title = title)
@@ -119,7 +121,7 @@ plot_pd <- function(pd, geom = "line", title = "", facet_var) {
 #' @importFrom reshape2 melt
 #' @import assertthat
 #' 
-#' @param pd object of class \code{c("importance", "data.frame")} as returned by
+#' @param imp object of class \code{c("importance", "data.frame")} as returned by
 #' \code{\link{variable_importance}}
 #' @param geom character describing type of plot desired: "point" or "bar"
 #' @param horizontal logical x-axis labels are horizontal if TRUE
@@ -143,14 +145,14 @@ plot_imp <- function(imp, geom = "point", horizontal = TRUE, facet = FALSE, titl
     if (atts$class_levels) 
         imp <- melt(imp, "labels")
     if (facet & atts$class_levels)
-        p <- ggplot(imp, aes(labels, value, group = variable)) + facet_wrap(~ variable)
+        p <- ggplot(imp, aes_string("labels", "value", group = "variable")) + facet_wrap(~ variable)
     else if (!facet & atts$class_levels & geom != "bar")
-        p <- ggplot(imp, aes(labels, value, colour = variable))
+        p <- ggplot(imp, aes_string("labels", "value", colour = "variable"))
     else if (!facet & geom == "bar" & atts$class_levels) {
-        p <- ggplot(imp, aes(labels, value, fill = factor(variable)))
+        p <- ggplot(imp, aes_string("labels", "value", fill = factor("variable")))
         p <- p + scale_fill_discrete(name = "class")
     } else
-        p <- ggplot(imp, aes(labels, value))
+        p <- ggplot(imp, aes_string("labels", "value"))
 
     p <- p + theme_bw()
 
@@ -208,11 +210,11 @@ plot_prox <- function(prox, labels = NULL, size = 3, color = NULL, color_label =
     plt$ymax <- max(plt[, 2])
     
     if (is.null(color)) {
-        p <- ggplot(plt, aes(PC1, PC2, ymax = ymax))
+        p <- ggplot(plt, aes_string("PC1", "PC2", ymax = "ymax"))
     } else {
         plt$color <- color
         rm(color)
-        p <- ggplot(plt, aes(PC1, PC2, color = color, ymax = ymax))
+        p <- ggplot(plt, aes_string("PC1", "PC2", color = "color", ymax = "ymax"))
         p <- p + scale_color_discrete(name = color_label)
     }
     if (is.null(labels))

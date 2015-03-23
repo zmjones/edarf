@@ -20,6 +20,7 @@ extract_proximity.randomForest <- function(fit) {
 }
 #' Extract proximity matrix from objects returned from \code{cforest}
 #'
+#' @importFrom party proximity
 #' @param fit object of class 'RandomForest' from \code{cforest}
 #' @param newdata a data.frame with the same columns as the training data
 #'

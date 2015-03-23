@@ -117,18 +117,18 @@ var_est.rfsrc <- function(fit, df) {
 #' }
 #' @export
 inf_jackknife <- function(pred, B, N) {
-    pred_center <- pred - Matrix::rowMeans(pred)  ## difference between tree prediction
+    pred_center <- pred - rowMeans(pred)  ## difference between tree prediction
     ## and mean across trees
-    N_avg <- Matrix::rowMeans(N) ## proportion of times i appears in B (all b)
+    N_avg <- rowMeans(N) ## proportion of times i appears in B (all b)
     n <- sum(N) / B ## portion of obs. sampled at each b, same as sum(N_avg), equals no. obs. w/ bootstrap,
     ## and is < no. obs. w/ subsampling
     ## covariance between number of times obs. i appears in b and difference between tree
     ## and mean across trees (across in bag and out bag)
-    C <- N %*% t(pred_center) - Matrix::Matrix(N_avg, nrow(N), 1) %*%
-        Matrix::Matrix(Matrix::rowSums(pred_center), 1, nrow(pred_center))
-    raw_IJ <- Matrix::colSums(C^2) / B^2
-    N_var <- mean(Matrix::rowMeans(N^2) - N_avg^2)
-    boot_var <- Matrix::rowMeans(pred_center^2)
+    C <- N %*% t(pred_center) - Matrix(N_avg, nrow(N), 1) %*%
+        Matrix::Matrix(owSums(pred_center), 1, nrow(pred_center))
+    raw_IJ <- colSums(C^2) / B^2
+    N_var <- mean(rowMeans(N^2) - N_avg^2)
+    boot_var <- rowMeans(pred_center^2)
     bias_correct <- n * N_var * boot_var / B
     raw_IJ - bias_correct
 }

@@ -12,6 +12,8 @@
 
 \item{conditional}{logical, if true the conditional permutation importance is estimated, if not the marginal}
 
+\item{auc}{logical, whether to use varimpAUC instead of varimp}
+
 \item{...}{further arguments to be passed to varimp or varimpAUC}
 }
 \value{

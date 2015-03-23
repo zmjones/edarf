@@ -64,8 +64,10 @@ variable_importance.randomForest <- function(fit, type = "accuracy", class_level
 #'
 #' Extracts variable importances from a fitted \code{cforest}
 #'
+#' @importFrom party varimp varimpAUC
 #' @param fit an object of class 'randomForest' returned from \code{randomForest}
 #' @param conditional logical, if true the conditional permutation importance is estimated, if not the marginal
+#' @param auc logical, whether to use varimpAUC instead of varimp
 #' @param ... further arguments to be passed to varimp or varimpAUC
 #'
 #' @return a data.frame of class "importance"
