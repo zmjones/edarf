@@ -20,4 +20,9 @@ Calculates the variance of predictions from a random forest using the bias corre
 jackknife from Wager, Efron, and Tibsharani (2014) using a fitted random forest object from the
 party, randomForest, or randomForestSRC packages
 }
+\references{
+Wager, Hastie, and Efron, "Confidence intervals for random forests: the jackknife and the infinitesimal jackknife," \emph{Journal of Machine Learning Research}, 2014.
+
+https://github.com/swager/randomForestCI
+}
 

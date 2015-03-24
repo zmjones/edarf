@@ -203,6 +203,9 @@ plot_imp <- function(imp, geom = "point", horizontal = TRUE, facet = FALSE, titl
 }
 #' Plot (sparse) principle components of the proximity matrix
 #'
+#' @references https://github.com/vqv/ggbiplot
+#' @references Gabriel, "The biplot graphic display of matrices with application to principal component analysis," \emph{Biometrika}, 1971
+#'
 #' @import ggplot2
 #'
 #' @param prox n x n matrix giving the proportion of times across all trees that observation i,j are in the same terminal node

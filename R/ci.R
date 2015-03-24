@@ -4,6 +4,9 @@
 #' jackknife from Wager, Efron, and Tibsharani (2014) using a fitted random forest object from the
 #' party, randomForest, or randomForestSRC packages
 #'
+#' @references Wager, Hastie, and Efron, "Confidence intervals for random forests: the jackknife and the infinitesimal jackknife," \emph{Journal of Machine Learning Research}, 2014.
+#' @references https://github.com/swager/randomForestCI
+#'
 #' @importFrom Matrix Matrix rowSums rowMeans colSums
 #' @import party
 #' 

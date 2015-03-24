@@ -165,12 +165,11 @@ plot_imp(imp, horizontal = FALSE)
 
 ## <a name="variance_estimation">Variance Estimation</a>
 
-To use `var_est` with `randomForest` we need [randomForestCI](http://github.com/swager/randomForestCI) and an updated (but not merged) version of [randomForest]([randomForest](http://github.com/swager/randomForest)) which are installed below with `devtools`.
+To use `var_est` with `randomForest` we need an updated (but not merged) version of [randomForest]([randomForest](http://github.com/swager/randomForest)) which is installed below with `devtools`.
 
 ```{r}
 library(devtools)
 install_github("swager/randomForest")
-install_github("swager/randomForestCI")
 
 fit <- randomForest(hp ~ ., mtcars, keep.inbag = TRUE)
 out <- var_est(fit, mtcars)
