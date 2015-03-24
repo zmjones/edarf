@@ -58,7 +58,8 @@ partial_dependence.randomForest <- function(fit, df, var, cutoff = 10, interacti
                                             ci = TRUE, confidence = .95,
                                             empirical = TRUE, parallel = FALSE, type = "", ...) {
     pkg <- "randomForest"
-    y_class <- attr(fit$terms, "dataClasses")[1] ## what type is y
+    y_class <- class(fit$y)
+    target <- colnames(df)[sapply(1:ncol(df), function(x) any(df[, x] == fit$y))]
     if (!y_class %in% c("integer", "numeric") & ci) ci <- FALSE
     if (length(var) == 1) interaction <- FALSE
     ## get the prediction grid for whatever var is
@@ -99,7 +100,7 @@ partial_dependence.randomForest <- function(fit, df, var, cutoff = 10, interacti
         pred <- as.data.frame(do.call(rbind, lapply(pred, unlist)), stringsAsFactors = FALSE)
         colnames(pred)[1:length(var)] <- var
         if (type != "prob" & (!ci | !(y_class %in% c("numeric", "integer"))))
-            colnames(pred)[ncol(pred)] <- names(y_class)
+            colnames(pred)[ncol(pred)] <- target
     } else {
         pred <- foreach(x = rng, .packages = pkg) %:%
             foreach(idx = 1:nrow(x), .combine = rbind) %op% inner_loop(df, x, idx)
@@ -108,7 +109,7 @@ partial_dependence.randomForest <- function(fit, df, var, cutoff = 10, interacti
         pred <- foreach(i = 1:length(pred), .combine = rbind) %do% {
             out <- data.frame(pred[[i]], "variable" = var[i], stringsAsFactors = FALSE)
             if (type != "prob")
-                colnames(out)[1:2] <- c("value", names(y_class))
+                colnames(out)[1:2] <- c("value", target)
             else colnames(out)[1] <- "value"
             out$value <- as.numeric(out$value)
             out
@@ -118,17 +119,20 @@ partial_dependence.randomForest <- function(fit, df, var, cutoff = 10, interacti
         ## should check to see what is up. not sure what to do with categorical predictors
     }
     if (ci & y_class %in% c("integer", "numeric")) {
-        if (length(var) == 1 | interaction) colnames(pred)[ncol(pred) - 1] <- names(y_class)
+        if (length(var) == 1 | interaction) colnames(pred)[ncol(pred) - 1] <- target
         ## compute 1 - confidence intervals
         cl <- qnorm((1 - confidence) / 2, lower.tail = FALSE)
         se <- sqrt(pred$variance)
-        pred$low <- pred[, names(y_class)] - cl * se
-        pred$high <- pred[, names(y_class)] + cl * se
+        pred$low <- pred[, target] - cl * se
+        pred$high <- pred[, target] + cl * se
     }
 
     attr(pred, "class") <- c("pd", "data.frame")
+    ## this is bad and i don't like it, randomForest apparently doesn't record the target column
+    ## name anywhere which is frustrating
+    attr(pred, "target") <- target
     attr(pred, "prob") <- type == "prob"
-    attr(pred, "interaction") <- length(var) > 1
+    attr(pred, "interaction") <- length(var) > 1 & interaction
     attr(pred, "multivariate") <- FALSE
     attr(pred, "var") <- var
     attr(pred, "ci") <- ci
@@ -234,8 +238,9 @@ partial_dependence.RandomForest <- function(fit, df = NULL, var, cutoff = 10, in
         pred$high <- pred[, colnames(y)] + cl * se
     }
     attr(pred, "class") <- c("pd", "data.frame")
+    attr(pred, "target") <- colnames(y)
     attr(pred, "prob") <- type == "prob"
-    attr(pred, "interaction") <- length(var) > 1
+    attr(pred, "interaction") <- length(var) > 1 & interaction
     attr(pred, "multivariate") <- dim(y)[2] != 1
     attr(pred, "var") <- var
     attr(pred, "ci") <- ci
@@ -315,9 +320,16 @@ partial_dependence.rfsrc <- function(fit, df, var, cutoff = 10, interaction = FA
         pred$low <- pred[, fit$yvar.names] - cl * se
         pred$high <- pred[, fit$yvar.names] + cl * se
     }
+
+    if (length(fit$yvar.names) > 1)
+        target <- "chf"
+    else
+        target <- fit$yvar.names
+    
     attr(pred, "class") <- c("pd", "data.frame")
+    attr(pred, "target") <- target
     attr(pred, "prob") <- type == "prob"
-    attr(pred, "interaction") <- length(var) > 1
+    attr(pred, "interaction") <- interaction & length(var) > 1
     attr(pred, "multivariate") <- FALSE
     attr(pred, "var") <- var
     attr(pred, "ci") <- ci

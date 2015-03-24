@@ -24,7 +24,7 @@
 plot_pd <- function(pd, geom = "line", title = "", facet_var) {
     atts <- attributes(pd)
     ## One predictor Plots
-    if (!atts$interaction) {
+    if (!atts$interaction & length(atts$var) == 1) {
         if (!atts$prob & !atts$multivariate) {
             ## Numeric Y or Majority class
             p <- ggplot(pd, aes_string(colnames(pd)[1], colnames(pd)[2]))
@@ -42,7 +42,7 @@ plot_pd <- function(pd, geom = "line", title = "", facet_var) {
             df <- melt(pd, id.vars = 1)
             colnames(df) <- c("x", "Class", "Probability")
             if (geom == "area") {
-                p <- ggplot(df, aes_string("x", "Probability", fill = "class"))
+                p <- ggplot(df, aes_string("x", "Probability", fill = "Class"))
                 p <- p + geom_area(position = "fill")
                 p <- p + scale_fill_grey()
             } else if (geom == "line") {
@@ -60,6 +60,36 @@ plot_pd <- function(pd, geom = "line", title = "", facet_var) {
             p <- p + facet_wrap(~ Outcome, scales = "free")
             p <- p + labs(x = colnames(pd)[1], title = title, y = "Predicted Outcome")
         }
+    } else if (!atts$interaction & length(atts$var) > 1) {
+        if (!atts$prob & !atts$ci) {
+            p <- ggplot(pd, aes_string("value", atts$target, group = "variable"))
+            if (geom == "line") {
+                p <- p + geom_line() + geom_point()
+            } else if (geom == "bar") {
+                p <- p + geom_bar(stat = "identity")
+            } else {
+                stop("unsupported geom for this partial_dependence input")
+            }
+        } else if (atts$prob & !atts$ci) {
+            df <- melt(pd, id.vars = c("value", "variable"), value.name = "Probability",
+                       variable.name = "Class")
+            if (geom == "area") {
+                p <- ggplot(df, aes_string("value", "Probability", fill = "Class"))
+                p <- p + geom_area(position = "fill")
+                p <- p + scale_fill_grey()
+            } else if (geom == "line") {
+                p <- ggplot(df, aes_string("value", "Probability", colour = "Class"))
+                p <- p + geom_line() + geom_point()
+            } else stop("Unsupported geom")
+        } else if (atts$ci & !atts$prob) {
+            p <- ggplot(pd, aes_string("value", atts$target))
+            p <- p + geom_line() + geom_point()
+            p <- p + geom_ribbon(aes_string(ymin = "low", y = atts$target, ymax = "high"), alpha = .25)
+        } else {
+            stop("some sort of error")
+        }
+        p <- p + facet_wrap(~ variable, scales = "free")
+        p <- p + labs(x = "Predictor Scale", y = "Response Scale", title = title)
     } else if (atts$interaction) {
         ## Interaction Plots
         if (length(atts$var) > 2) stop("Only two-way interactions supported")

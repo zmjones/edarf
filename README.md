@@ -44,7 +44,7 @@ library(edarf)
 data(iris)
 library(randomForest)
 fit <- randomForest(Species ~ ., iris)
-pd <- partial_dependence(fit, iris, "Petal.Width", type = "prob")
+pd <- partial_dependence(fit, df = iris, var = "Petal.Width", type = "prob")
 plot_pd(pd, geom = "line")
 ```
 ![](http://zmjones.com/static/images/iris_pd_line.png)
@@ -55,13 +55,14 @@ plot_pd(pd, geom = "area")
 ![](http://zmjones.com/static/images/iris_pd_area.png)
 
 ```{r}
-pd <- partial_dependence(fit, iris, "Petal.Width")
+pd <- partial_dependence(fit, df = iris, var = "Petal.Width")
 plot_pd(pd, geom = "bar")
 ```
 ![](http://zmjones.com/static/images/iris_pd_bar.png)
 
 ```{r}
-pd_int <- partial_dependence(fit, iris, c("Petal.Width", "Sepal.Length"), interaction = TRUE, type = "prob")
+pd_int <- partial_dependence(fit, df = iris, var = c("Petal.Width", "Sepal.Length"),
+                             interaction = TRUE, type = "prob")
 plot_pd(pd_int, geom = "line")
 ```
 ![](http://zmjones.com/static/images/iris_pd_int_line.png)
@@ -72,26 +73,40 @@ plot_pd(pd_int, geom = "area")
 ![](http://zmjones.com/static/images/iris_pd_int_area.png)
 
 ```{r}
-pd_int <- partial_dependence(fit, iris, c("Petal.Width", "Sepal.Length"), interaction = TRUE)
+pd_int <- partial_dependence(fit, df = iris, var = c("Petal.Width", "Sepal.Length"), interaction = TRUE)
 plot_pd(pd_int, geom = "bar")
 ```
 ![](http://zmjones.com/static/images/iris_pd_int_bar.png)
+
+```{r}
+pd_lst <- partial_dependence(fit, df = iris, var = c("Petal.Width", "Sepal.Length"),
+                             interaction = FALSE, type = "prob")
+plot_pd(pd_lst, geom = "line")
+```
+![](http://zmjones.com/static/images/iris_pd_lst_line.png)
 
 ### <a name="regression">Regression</a>
 
 ```{r}
 data(swiss)
 fit <- randomForest(Fertility ~ ., swiss, keep.inbag = TRUE)
-pd <- partial_dependence(fit, swiss, "Education")
+pd <- partial_dependence(fit, df = swiss, var = "Education")
 plot_pd(pd)
 ```
 ![](http://zmjones.com/static/images/swiss_pd_line.png)
 
 ```{r}
-pd_int <- partial_dependence(fit, swiss, c("Education", "Catholic"), interaction = TRUE)
+pd_int <- partial_dependence(fit, df = swiss, var = c("Education", "Catholic"), interaction = TRUE)
 plot_pd(pd_int)
 ```
 ![](http://zmjones.com/static/images/swiss_pd_int_line.png)
+
+```{r}
+pd_lst <- partial_dependence(fit, df = swiss, var = c("Education", "Catholic"),
+                             interaction = FALSE, ci = TRUE)
+plot_pd(pd_lst)
+```
+![](http://zmjones.com/static/images/swiss_pd_lst_line.png)
 
 ### <a name="survival">Survival</a>
 
@@ -99,13 +114,13 @@ plot_pd(pd_int)
 library(randomForestSRC)
 data(veteran)
 fit <- rfsrc(Surv(time, status) ~ ., veteran)
-pd <- partial_dependence(fit, "age")
+pd <- partial_dependence(fit, var = "age")
 plot_pd(pd)
 ```
 ![](http://zmjones.com/static/images/veteran_pd_line.png)
 
 ```{r}
-pd_int <- partial_dependence(fit, c("age", "diagtime"))
+pd_int <- partial_dependence(fit, var = c("age", "diagtime"))
 plot_pd(pd_int)
 ```
 ![](http://zmjones.com/static/images/veteran_pd_int_line.png)
@@ -116,17 +131,12 @@ plot_pd(pd_int)
 data(mtcars)
 library(party)
 fit <- cforest(hp + qsec ~ ., mtcars, controls = cforest_control(mtry = 2))
-pd <- partial_dependence(fit, "mpg")
+pd <- partial_dependence(fit, var = "mpg")
 plot_pd(pd)
 ```
 ![](http://zmjones.com/static/images/mtcars_pd_line.png)
 
-```{r}
-pd_int <- partial_dependence(fit, c("mpg", "cyl"), interaction = TRUE)
-plot_pd(pd_int)
-```
-
-Multivariate two-way interaction plots not yet implemented.
+Multivariate two-way interaction plots not yet implemented. See [Issue #19](https://github.com/zmjones/edarf/issues/19).
 
 ## <a name="variable_importance">Variable Importance</a>
 
