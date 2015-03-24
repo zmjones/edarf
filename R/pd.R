@@ -59,7 +59,8 @@ partial_dependence.randomForest <- function(fit, df, var, cutoff = 10, interacti
                                             empirical = TRUE, parallel = FALSE, type = "", ...) {
     pkg <- "randomForest"
     y_class <- class(fit$y)
-    target <- colnames(df)[sapply(1:ncol(df), function(x) any(df[, x] == fit$y))]
+    target <- colnames(df)[sapply(1:ncol(df), function(x) all(df[, x] == fit$y))]
+    target <- target[!is.na(target)]
     if (!y_class %in% c("integer", "numeric") & ci) ci <- FALSE
     if (length(var) == 1) interaction <- FALSE
     ## get the prediction grid for whatever var is
