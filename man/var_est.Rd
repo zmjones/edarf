@@ -2,79 +2,22 @@
 % Please edit documentation in R/ci.R
 \name{var_est}
 \alias{var_est}
-\alias{var_est.RandomForest}
-\alias{var_est.randomForest}
-\alias{var_est.rfsrc}
 \title{Variance estimates for predicted values from random forests}
 \usage{
 var_est(fit, df)
-
-\method{var_est}{randomForest}(fit, df, ...)
-
-\method{var_est}{RandomForest}(fit, df)
-
-\method{var_est}{rfsrc}(fit, df, ...)
 }
 \arguments{
 \item{fit}{object of class 'RandomForest', 'randomForest', or 'rfsrc' (must be regression)}
 
 \item{df}{dataframe to be used for prediction}
-
-\item{...}{additional arguments to be passed to predict.randomForest}
-
-\item{fit}{an object of class 'randomForest' returned from \code{randomForest} with \code{keep.inbag = TRUE}}
-
-\item{df}{dataframe to be used for prediction}
-
-\item{fit}{an object of class 'RandomForest' returned from \code{cforest}}
-
-\item{df}{dataframe to be used for prediction}
-
-\item{fit}{an predict object of class 'rfsrc' returned from \code{rfsrc}}
-
-\item{df}{dataframe to be used for prediction}
-
-\item{...}{additional arguments to be passed to predict.rfsrc}
 }
 \value{
-a dataframe with two columns: 'prediction' and 'variance', where the former is the prediction calculated using the inbag data, and the variance is calculated using the bias corrected infinitesimal bootstrap from Wager, Efron, and Tibsharani (2014).
-
-a dataframe with two columns: 'prediction' and 'variance', where the former is the prediction calculated using the inbag data, and the variance is calculated using the bias corrected infinitesimal bootstrap from Wager, Efron, and Tibsharani (2014).
-
-a dataframe with two columns: 'prediction' and 'variance', where the former is the prediction calculated using the inbag data, and the variance is calculated using the bias corrected infinitesimal bootstrap from Wager, Efron, and Tibsharani (2014).
+a data.frame of length n with one column 'prediction' which contains the ensemble prediction
+and a column 'variance' which contains the estimated variance
 }
 \description{
 Calculates the variance of predictions from a random forest using the bias corrected infinitesimal
 jackknife from Wager, Efron, and Tibsharani (2014) using a fitted random forest object from the
 party, randomForest, or randomForestSRC packages
-
-Calculates the variance of predictions from regression using randomForest by calling randomForestCI (\url{https://github.com/swager/randomForestCI})
-
-Calculates the variance of predictions from regression using RandomForest using a slightly modified version of the code from randomForestCI (\url{https://github.com/swager/randomForestCI})
-
-Calculates the variance of predictions from regression using RandomForest using a slightly modified version of the code from randomForestCI (\url{https://github.com/swager/randomForestCI})
-}
-\examples{
-\dontrun{
-library(randomForest)
-data(swiss)
-
-fit <- randomForest(Fertility ~ ., swiss, keep.inbag = TRUE)
-var_est(fit, swiss)
-}
-\dontrun{
-library(party)
-data(swiss)
-
-fit <- cforest(Fertility ~ ., swiss, controls = cforest_control(mtry = 2))
-var_est(fit, swiss)
-}
-\dontrun{
-library(randomForestSRC)
-data(swiss)
-
-fit <- rfsrc(Fertility ~ ., swiss)
-var_est(fit, swiss)
-}
 }
 

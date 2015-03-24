@@ -2,69 +2,23 @@
 % Please edit documentation in R/imp.R
 \name{variable_importance}
 \alias{variable_importance}
-\alias{variable_importance.RandomForest}
-\alias{variable_importance.randomForest}
-\alias{variable_importance.rfsrc}
 \title{Variable importance using random forests}
 \usage{
-variable_importance(fit, ...)
-
-\method{variable_importance}{randomForest}(fit, type = "accuracy",
-  class_levels = FALSE, ...)
-
-\method{variable_importance}{RandomForest}(fit, conditional = FALSE,
-  auc = FALSE, ...)
-
-\method{variable_importance}{rfsrc}(fit, type = "permute",
-  class_levels = FALSE, ...)
+variable_importance(fit, type, class_levels = FALSE, ...)
 }
 \arguments{
 \item{fit}{object of class 'RandomForest', 'randomForest', or 'rfsrc'}
 
+\item{type}{character, for randomForest equal to "accuracy", "gini", or "local"
+if type is "accuracy" importance must be set to TRUE in the call to randomForest
+for RandomForest (class for cforest) may be equal to "conditional" and/or "auc" (type may have length two), which will return the conditional/or auc importance}
+
+\item{class_levels}{logical if possible return class specific importance, i.e. how much does the loss increase for each class from perturbing each feature in turn}
+
 \item{...}{arguments to be passed to \code{variable_importance}}
-
-\item{type}{character equal to "accuracy", "gini", or "local"
-if type is "accuracy" importance must be set to TRUE in the call to randomForest}
-
-\item{class_levels}{logical, when TRUE class level specific importances are returned
-response variable must be a factor and importance = TRUE in the call to randomForest}
-
-\item{conditional}{logical, if true the conditional permutation importance is estimated, if not the marginal}
-
-\item{auc}{logical, whether to use varimpAUC instead of varimp}
-
-\item{fit}{an object of class 'randomForest' returned from \code{randomForest}}
-
-\item{...}{further arguments to be passed to nothing}
-
-\item{fit}{an object of class 'randomForest' returned from \code{randomForest}}
-
-\item{...}{further arguments to be passed to varimp or varimpAUC}
-
-\item{fit}{an object of class 'rfsrc' returned from \code{rfsrc}}
-
-\item{type}{character equal to "permute", "random", "permute.ensemble", or "random.ensemble"
-this the \code{permute} argument must equal this value in the call to rfsrc}
-
-\item{class_levels}{logical, when TRUE class level specific importances are returned otherwise the overal importance is returned}
-
-\item{...}{further arguments to be passed to nothing}
-}
-\value{
-a data.frame of class "importance"
-
-a data.frame of class "importance"
-
-a data.frame of class "importance"
 }
 \description{
 Extracts variable importance for a set of predictors from a fitted random forest object from the party, randomForest, or randomForestSRC package
-
-Extracts variable importances from a fitted \code{randomForest}
-
-Extracts variable importances from a fitted \code{cforest}
-
-Extracts variable importances from a fitted \code{rfsrc}
 }
 \examples{
 \dontrun{
@@ -74,21 +28,6 @@ data(iris)
 fit <- randomForest(Species ~ ., iris, importance = TRUE)
 imp <- variable_importance(fit, "accuracy", TRUE)
 plot_imp(imp)
-}
-\dontrun{
-library(party)
-data(iris)
-
-fit <- cforest(Species ~ ., iris, controls = cforest_control(mtry = 2))
-imp <- variable_importance(fit)
-plot_imp(imp)
-}
-\dontrun{
-library(randomForestSRC)
-data(iris)
-
-fit <- rfsrc(Species ~ ., iris, importance = "random")
-variable_importance(fit, "random", TRUE)
 }
 }
 

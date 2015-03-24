@@ -2,18 +2,9 @@
 % Please edit documentation in R/prox.R
 \name{extract_proximity}
 \alias{extract_proximity}
-\alias{extract_proximity.RandomForest}
-\alias{extract_proximity.randomForest}
-\alias{extract_proximity.rfsrc}
 \title{Methods to extract proximity matrices from random forests}
 \usage{
 extract_proximity(fit, newdata)
-
-\method{extract_proximity}{randomForest}(fit, newdata = NULL, ...)
-
-\method{extract_proximity}{RandomForest}(fit, newdata = NULL, ...)
-
-\method{extract_proximity}{rfsrc}(fit, newdata = NULL, ...)
 }
 \arguments{
 \item{fit}{object of class 'RandomForest', 'randomForest', or 'rfsrc'}
@@ -21,39 +12,11 @@ extract_proximity(fit, newdata)
 \item{newdata}{new data with the same columns as the data used for \code{fit}}
 
 \item{...}{arguments to be passed to \code{extract_proximity}}
-
-\item{fit}{object of class randomForest called with proximity or oob.prox = TRUE}
-
-\item{newdata}{new data with the same columns as the data used for \code{fit}}
-
-\item{...}{additional arguments to pass to predict.randomForest}
-
-\item{fit}{object of class 'RandomForest' from \code{cforest}}
-
-\item{newdata}{a data.frame with the same columns as the training data}
-
-\item{...}{additional arguments to pass to proximity}
-
-\item{fit}{object of class 'rfsrc' from \code{rfsrc}}
-
-\item{newdata}{new data with the same columns as the data used for \code{fit}}
-
-\item{...}{additional arguments to pass to predict.rfsrc}
 }
 \value{
-an n by n matrix
-
-an n by n matrix
-
-an n by n matirx
+an n x n matrix where position i, j gives the proportion of times observation i and j are in the same teriminal node across all trees
 }
 \description{
 Extracts proximity matrices from random forest objects from the party, randomForest or randomForestSRC packages
-
-Extract proximity matrix from \code{randomForest} objects
-
-Extract proximity matrix from objects returned from \code{cforest}
-
-Extract proximity matrix from objects returned from \code{rfsrc}
 }
 

@@ -23,7 +23,7 @@ data("veteran")
 fit <- rfsrc(Fertility ~ ., swiss)
 
 test_that("regression", {
-    pd <- partial_dependence(fit, "Education", ci = FALSE)
+    pd <- partial_dependence(fit, var = "Education", ci = FALSE)
     expect_that(pd, is_a("data.frame"))
     expect_that(colnames(pd), equals(c("Education", "Fertility")))
     expect_that(pd$Fertility, is_a("numeric"))
@@ -32,7 +32,7 @@ test_that("regression", {
 })
 
 test_that("regression and ci", {
-    pd <- partial_dependence(fit, "Education", ci = TRUE)
+    pd <- partial_dependence(fit, var = "Education", ci = TRUE)
     expect_that(pd, is_a("data.frame"))
     expect_that(colnames(pd), equals(c("Education", "Fertility", "variance", "low", "high")))
     expect_that(pd$Fertility, is_a("numeric"))
@@ -44,7 +44,7 @@ test_that("regression and ci", {
 })
 
 test_that("regression, ci, and vector input", {
-    pd <- partial_dependence(fit, c("Education", "Agriculture"), interaction = FALSE)
+    pd <- partial_dependence(fit, var = c("Education", "Agriculture"), interaction = FALSE)
     expect_that(pd, is_a("data.frame"))
     expect_that(colnames(pd), equals(c("value", "Fertility", "variance", "variable", "low", "high")))
     expect_that(pd$Fertility, is_a("numeric"))
@@ -56,7 +56,7 @@ test_that("regression, ci, and vector input", {
 })
 
 test_that("regression and vector input", {
-    pd <- partial_dependence(fit, c("Education", "Agriculture"),
+    pd <- partial_dependence(fit, var = c("Education", "Agriculture"),
                              interaction = FALSE, ci = FALSE)
     expect_that(pd, is_a("data.frame"))
     expect_that(colnames(pd), equals(c("value", "Fertility", "variable")))
@@ -66,7 +66,7 @@ test_that("regression and vector input", {
 })
 
 test_that("regression and interaction", {
-    pd <- partial_dependence(fit, c("Education", "Agriculture"),
+    pd <- partial_dependence(fit, var = c("Education", "Agriculture"),
                              interaction = TRUE, ci = FALSE)
     expect_that(pd, is_a("data.frame"))
     expect_that(colnames(pd), equals(c("Education", "Agriculture", "Fertility")))
@@ -77,7 +77,7 @@ test_that("regression and interaction", {
 })
 
 test_that("regression, interactions, and ci", {
-    pd <- partial_dependence(fit, c("Education", "Agriculture"),
+    pd <- partial_dependence(fit, var = c("Education", "Agriculture"),
                              interaction = TRUE, ci = TRUE)
     expect_that(pd, is_a("data.frame"))
     ## expect_that(pd$Education, is_a("integer"))
@@ -92,14 +92,14 @@ test_that("regression, interactions, and ci", {
 fit <- rfsrc(Species ~ ., iris)
 
 test_that("classification", {
-    pd <- partial_dependence(fit, "Petal.Width")
+    pd <- partial_dependence(fit, var = "Petal.Width")
     expect_that(pd, is_a("data.frame"))
     expect_that(colnames(pd), equals(c("Petal.Width", "Species")))
     expect_that(pd$Species, is_a("factor"))
 })
 
 test_that("classification and vector input", {
-    pd <- partial_dependence(fit, c("Petal.Width", "Petal.Length"))
+    pd <- partial_dependence(fit, var = c("Petal.Width", "Petal.Length"))
     expect_that(pd, is_a("data.frame"))
     expect_that(colnames(pd), equals(c("value", "Species", "variable")))
     expect_that(pd$value, is_a("numeric"))
@@ -108,7 +108,7 @@ test_that("classification and vector input", {
 })
 
 test_that("classification and interaction", {
-    pd <- partial_dependence(fit, c("Petal.Width", "Petal.Length"), interaction = TRUE)
+    pd <- partial_dependence(fit, var = c("Petal.Width", "Petal.Length"), interaction = TRUE)
     expect_that(pd, is_a("data.frame"))
     expect_that(colnames(pd), equals(c("Petal.Width", "Petal.Length", "Species")))
     expect_that(pd$Petal.Width, is_a("numeric"))
@@ -117,7 +117,7 @@ test_that("classification and interaction", {
 })
 
 test_that("classification and prob output", {
-    pd <- partial_dependence(fit, "Petal.Width", type = "prob")
+    pd <- partial_dependence(fit, var = "Petal.Width", type = "prob")
     expect_that(pd, is_a("data.frame"))
     expect_that(colnames(pd), equals(c("Petal.Width", "setosa", "versicolor", "virginica")))
     expect_that(pd$Petal.Width, is_a("numeric"))
@@ -127,7 +127,7 @@ test_that("classification and prob output", {
 })
 
 test_that("classification, vector input, and prob output", {
-    pd <- partial_dependence(fit, c("Petal.Width", "Petal.Length"), type = "prob")
+    pd <- partial_dependence(fit, var = c("Petal.Width", "Petal.Length"), type = "prob")
     expect_that(pd, is_a("data.frame"))
     expect_that(colnames(pd), equals(c("value", "setosa", "versicolor", "virginica", "variable")))
     expect_that(pd$value, is_a("numeric"))
@@ -138,7 +138,7 @@ test_that("classification, vector input, and prob output", {
 })
 
 test_that("classification, interaction, and prob output", {
-    pd <- partial_dependence(fit, c("Petal.Width", "Petal.Length"), interaction = TRUE, type = "prob")
+    pd <- partial_dependence(fit, var = c("Petal.Width", "Petal.Length"), interaction = TRUE, type = "prob")
     expect_that(pd, is_a("data.frame"))
     expect_that(colnames(pd), equals(c("Petal.Width", "Petal.Length", "setosa", "versicolor", "virginica")))
     expect_that(pd$Petal.Width, is_a("numeric"))
@@ -152,7 +152,7 @@ test_that("classification, interaction, and prob output", {
 fit <- rfsrc(Surv(time, status) ~ ., veteran)
 
 test_that("survival", {
-    pd <- partial_dependence(fit, "age")
+    pd <- partial_dependence(fit, var = "age")
     expect_that(pd, is_a("data.frame"))
     expect_that(colnames(pd), equals(c("age", "chf")))
     expect_that(pd$age, is_a("integer"))
@@ -160,7 +160,7 @@ test_that("survival", {
 })
 
 test_that("survival and vector input", {
-    pd <- partial_dependence(fit, c("age", "diagtime"))
+    pd <- partial_dependence(fit, var = c("age", "diagtime"))
     expect_that(pd, is_a("data.frame"))
     expect_that(colnames(pd), equals(c("value", "chf", "variable")))
     expect_that(pd$value, is_a("numeric"))
@@ -169,7 +169,7 @@ test_that("survival and vector input", {
 })
 
 test_that("survival and interaction", {
-    pd <- partial_dependence(fit, c("age", "diagtime"), interaction = TRUE)
+    pd <- partial_dependence(fit, var = c("age", "diagtime"), interaction = TRUE)
     expect_that(pd, is_a("data.frame"))
     expect_that(colnames(pd), equals(c("age", "diagtime", "chf")))
     expect_that(pd$age, is_a("integer"))

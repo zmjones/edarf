@@ -5,33 +5,24 @@
 #'
 #' @importFrom foreach foreach %dopar% %do% %:% getDoParWorkers
 #' @importFrom stats predict
+#' 
 #' @param fit object of class 'RandomForest', 'randomForest', or 'rfsrc'
-#' @param ... arguments to be passed to \code{partial_dependence}
-#'
-#' @rdname partial_dependence
-#' @export
-partial_dependence <- function(fit, ...) UseMethod("partial_dependence", fit)
-#' Partial dependence for randomForest objects
-#'
-#' Calculates the partial dependence of the response on an arbitrary dimensional set of predictors
-#' from a fitted random forest object from the randomForest package
-#'
-#' @param fit an object of class 'randomForest' returned from \code{randomForest}
-#' @param df the dataframe used to fit the model
-#' @param var a character vector of the predictors of interest, which must match the input matrix in the call to \code{randomForest}
+#' @param df the data.frame used to fit the model, only needed for randomForest
+#' @param var a character vector of the predictors of interest, which must match the input matrix
 #' @param cutoff the maximal number of unique points in each element of 'var' used in the
 #' partial dependence calculation
 #' @param interaction logical, if 'var' is a vector, does this specify an interaction or a list of bivariate partial dependence
-#' @param ci use the bias corrected infinitesimal jackknife from Wager, Hastie, and Efron (2014) implemented in randomForestCI, currently only works with regression
+#' @param ci use the bias corrected infinitesimal jackknife from Wager, Hastie, and Efron (2014), currently only works with regression
 #' @param confidence desired confidence for the returned interval (ignored if ci is false)
 #' @param empirical logical indicator of whether or not only values in the data should be sampled
 #' @param parallel logical indicator of whether a parallel backend should be used if registered
 #' @param type with classification, default "" gives most probable class for classification and "prob" gives class probabilities
-#' @param ... additional arguments to be passed to nothing
+#' @param ... additional arguments to be passed
 #'
-#' @return a dataframe with columns for each predictor in `var` and the fitted value for
-#' each set of values taken by the values of 'var' averaged within the values of predictors
-#' in the model but not in `var`. The dataframe also has class "pd" with attributes "class", "prob", "multivariate", and "interaction", which are used by the plot method.
+#' @return a data.frame with the partial dependence of 'var'
+#' if 'var' has length = 1 then the output will be a data.frame with a column for the predicted value at each value of 'var', averaged over the values of all other predictors.
+#' if 'var' has length > 1 and interaction is false the out is returned in melted form, i.e. there is a column 'value''variable', and the predicted value for that combination.
+#' if 'var' has length > 1 and interaction is true then the output will be a data.frame with a column for each element of 'var' and the predicted value for each combination.
 #'
 #' @examples
 #' \dontrun{
@@ -57,8 +48,11 @@ partial_dependence <- function(fit, ...) UseMethod("partial_dependence", fit)
 #' pd <- partial_dependence(fit, swiss, "Education", ci = TRUE)
 #' pd_int <- partial_dependence(fit, swiss, c("Education", "Catholic"), interaction = TRUE, ci = TRUE)
 #' }
-#' @rdname partial_dependence
-#' @method partial_dependence randomForest
+#'
+#' @export
+partial_dependence <- function(fit, df, var, cutoff = 10, interaction = FALSE,
+                               ci = TRUE, confidence = .95, empirical = TRUE, parallel = FALSE,
+                               type = "", ...) UseMethod("partial_dependence", fit)
 #' @export
 partial_dependence.randomForest <- function(fit, df, var, cutoff = 10, interaction = FALSE,
                                             ci = TRUE, confidence = .95,
@@ -141,63 +135,8 @@ partial_dependence.randomForest <- function(fit, df, var, cutoff = 10, interacti
     pred <- fix_classes(df, pred)
     pred
 }
-#' Partial dependence for RandomForest objects from package \code{party}
-#'
-#' Calculates the partial dependence of the response on an arbitrary dimensional set of predictors
-#' from a fitted random forest object from the \code{party} package
-#'
-#' @param fit an object of class 'RandomForest' returned from \code{cforest}
-#' @param var a character vector of the predictors of interest, which must match the input matrix in the call to \code{randomForest}
-#' @param cutoff the maximal number of unique points in each element of 'var' used in the
-#' partial dependence calculation
-#' @param interaction logical, if 'var' is a vector, does this specify an interaction or a list of bivariate partial dependence
-#' @param ci use the bias corrected infinitesimal jackknife from Wager, Hastie, and Efron (2014)
-#' @param confidence desired confidence for the returned interval (ignored if ci is false)
-#' @param empirical logical indicator of whether or not only values in the data should be sampled
-#' @param parallel logical indicator of whether a parallel backend should be used if registered
-#' @param type with classification, default "" gives most probable class for classification and "prob" gives class probabilities
-#' @param ... additional arguments to be passed to nothing
-#'
-#' @return a dataframe with columns for each predictor in `var` and the fitted value for
-#' each set of values taken by the values of 'var' averaged within the values of predictors
-#' in the model but not in `var`. The dataframe also has class "pd" with attributes "class", "prob", "multivariate", and "interaction", which are used by the plot method.
-#'
-#' @examples
-#' \dontrun{
-#' library(party)
-#' library(edarf)
-#' ## library(doParallel)
-#' ## library(parallel)
-#' ## registerDoParallel(makeCluster(detectCores()))
-#'
-#' ## Classification
-#' 
-#' data(iris)
-#' 
-#' fit <- cforest(Species ~ ., iris, controls = cforest_unbiased(mtry = 2))
-#' pd <- partial_dependence(fit, "Petal.Width")
-#' pd_int <- partial_dependence(fit, c("Petal.Width", "Sepal.Length"), interaction = TRUE)
-#'
-#' ## Regression
-#'
-#' data(swiss)
-#'
-#' fit <- cforest(Fertility ~ ., swiss, controls = cforest_control(mtry = 2))
-#' pd <- partial_dependence(fit, "Education")
-#' pd_int <- partial_dependence(fit, c("Education", "Catholic"), interaction = TRUE)
-#'
-#' ## Multivariate
-#' 
-#' data(mtcars)
-#'
-#' fit <- cforest(hp + qsec ~ ., mtcars, controls = cforest_control(mtry = 2))
-#' pd <- partial_dependence(fit, "mpg")
-#' pd_int <- partial_dependence(fit, c("mpg", "cyl"), interaction = TRUE)
-#' }
-#' @rdname partial_dependence
-#' @method partial_dependence RandomForest
 #' @export
-partial_dependence.RandomForest <- function(fit, var, cutoff = 10, interaction = FALSE,
+partial_dependence.RandomForest <- function(fit, df = NULL, var, cutoff = 10, interaction = FALSE,
                                             ci = TRUE, confidence = .95,
                                             empirical = TRUE, parallel = FALSE, type = "", ...) {
     pkg <- "party"
@@ -303,58 +242,8 @@ partial_dependence.RandomForest <- function(fit, var, cutoff = 10, interaction =
     pred <- fix_classes(df, pred)
     pred
 }
-#' Partial dependence for rfsrc objects from package \code{randomForestSRC}
-#'
-#' Calculates the partial dependence of the response on an arbitrary dimensional set of predictors
-#' from a fitted random forest object from the \code{randomForestSRC} package
-#'
-#' @param fit an object of class 'rfsrc' returned from \code{rfsrc}
-#' @param var a character vector of the predictors of interest, which must match 
-#' the input matrix in the call to \code{rfsrc}
-#' @param cutoff the maximal number of unique points in each element of 'var' used in the
-#' partial dependence calculation
-#' @param interaction logical, if 'var' is a vector, does this specify an interaction or a list of bivariate partial dependence
-#' @param ci use the bias corrected infinitesimal jackknife from Wager, Hastie, and Efron (2014)
-#' @param confidence desired confidence for the returned interval (ignored if ci is false)
-#' @param empirical logical indicator of whether or not only values in the data should be sampled
-#' @param parallel logical indicator of whether a parallel backend should be used if registered
-#' @param type with classification, default "" gives most probable class for classification and "prob" gives class probabilities
-#' @param ... additional arguments to be passed to nothing
-#'
-#' @return a dataframe with columns for each predictor in `var` and the fitted value for
-#' each set of values taken by the values of 'var' averaged within the values of predictors
-#' in the model but not in `var`. The dataframe also has class "pd" with attributes "class", "prob", "multivariate", and "interaction", which are used by the plot method.
-#'
-#' @examples
-#' \dontrun{
-#' library(randomForestSRC)
-#' library(edarf)
-#' ## library(doParallel)
-#' ## library(parallel)
-#' ## registerDoParallel(makeCluster(detectCores()))
-#'
-#' ## Classification
-#' data(iris)
-#' fit <- rfsrc(Species ~ ., iris)
-#' pd <- partial_dependence(fit, "Petal.Width")
-#' pd_int <- partial_dependence(fit, c("Petal.Width", "Sepal.Length"))
-#'
-#' ## Regression
-#' data(swiss)
-#' fit <- rfsrc(Fertility ~ ., swiss)
-#' pd <- partial_dependence(fit, "Education")
-#' pd_int <- partial_dependence(fit, c("Education", "Catholic"))
-#'
-#' ## Survival
-#' data(veteran)
-#' fit <- rfsrc(Surv(time, status) ~ ., veteran)
-#' pd <- partial_dependence(fit_rfsrc, "age")
-#' pd_int <- partial_dependence(fit_rfsrc, c("age", "diagtime"))
-#' }
-#' @rdname partial_dependence
-#' @method partial_dependence rfsrc
 #' @export
-partial_dependence.rfsrc <- function(fit, var, cutoff = 10, interaction = FALSE,
+partial_dependence.rfsrc <- function(fit, df, var, cutoff = 10, interaction = FALSE,
                                      ci = TRUE, confidence = .95,
                                      empirical = TRUE, parallel = FALSE, type = "", ...) {
     pkg <- "randomForestSRC"

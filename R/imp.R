@@ -3,24 +3,11 @@
 #' Extracts variable importance for a set of predictors from a fitted random forest object from the party, randomForest, or randomForestSRC package
 #'
 #' @param fit object of class 'RandomForest', 'randomForest', or 'rfsrc'
-#' @param ... arguments to be passed to \code{variable_importance}
-#'
-#' @rdname variable_importance
-#' @export
-variable_importance <- function(fit, ...) UseMethod("variable_importance")
-#' Variable importance for randomForest objects
-#'
-#' Extracts variable importances from a fitted \code{randomForest}
-#'
-#' @param fit an object of class 'randomForest' returned from \code{randomForest}
-#' @param type character equal to "accuracy", "gini", or "local"
+#' @param type character, for randomForest equal to "accuracy", "gini", or "local"
 #' if type is "accuracy" importance must be set to TRUE in the call to randomForest
-#' @param class_levels logical, when TRUE class level specific importances are returned
-#' response variable must be a factor and importance = TRUE in the call to randomForest
-#' @param ... further arguments to be passed to nothing
-#'
-#'
-#' @return a data.frame of class "importance"
+#' for RandomForest (class for cforest) may be equal to "conditional" and/or "auc" (type may have length two), which will return the conditional/or auc importance
+#' @param class_levels logical if possible return class specific importance, i.e. how much does the loss increase for each class from perturbing each feature in turn
+#' @param ... arguments to be passed to \code{variable_importance}
 #'
 #' @examples
 #' \dontrun{
@@ -31,8 +18,8 @@ variable_importance <- function(fit, ...) UseMethod("variable_importance")
 #' imp <- variable_importance(fit, "accuracy", TRUE)
 #' plot_imp(imp)
 #' }
-#' @rdname variable_importance
-#' @method variable_importance randomForest
+#' @export
+variable_importance <- function(fit, type, class_levels = FALSE, ...) UseMethod("variable_importance")
 #' @export
 variable_importance.randomForest <- function(fit, type = "accuracy", class_levels = FALSE, ...) {
     if (ncol(fit$importance) == 1 & type != "gini")
@@ -62,78 +49,26 @@ variable_importance.randomForest <- function(fit, type = "accuracy", class_level
     
     attr(out, "class") <- c("importance", "data.frame")
     attr(out, "type") <- type
-    attr(out, "auc") <- FALSE
     attr(out, "class_levels") <- class_levels
     out
 }
-#' Variable importance for RandomForest objects
-#'
-#' Extracts variable importances from a fitted \code{cforest}
-#'
-#' @importFrom party varimp varimpAUC
-#' @param fit an object of class 'randomForest' returned from \code{randomForest}
-#' @param conditional logical, if true the conditional permutation importance is estimated, if not the marginal
-#' @param auc logical, whether to use varimpAUC instead of varimp
-#' @param ... further arguments to be passed to varimp or varimpAUC
-#'
-#' @return a data.frame of class "importance"
-#'
-#' @examples
-#' \dontrun{
-#' library(party)
-#' data(iris)
-#'
-#' fit <- cforest(Species ~ ., iris, controls = cforest_control(mtry = 2))
-#' imp <- variable_importance(fit)
-#' plot_imp(imp)
-#' }
-#' @rdname variable_importance
-#' @method variable_importance RandomForest
 #' @export
-variable_importance.RandomForest <- function(fit, conditional = FALSE, auc = FALSE, ...) {
-    if (auc & !(nrow(unique(fit@responses@variables)) == 2))
+variable_importance.RandomForest <- function(fit, type = "", ...) {
+    if ("auc" %in% type & !(nrow(unique(fit@responses@variables)) == 2))
         stop("auc only applicable to binary classification")
     
-    if (conditional)
-        conditional <- TRUE
-    else conditional <- FALSE
-
-    if (auc)
-        out <- party::varimpAUC(fit, conditional = conditional, ...)
+    if ("auc" %in% type)
+        out <- party::varimpAUC(fit, conditional = "conditional" %in% type, ...)
     else
-        out <- party::varimp(fit, conditional = conditional, ...)
+        out <- party::varimp(fit, conditional = "conditional" %in% type, ...)
 
     out <- data.frame("value" = out, "labels" = names(out), row.names = 1:length(out))
     
     attr(out, "class") <- c("importance", "data.frame")
-    attr(out, "type") <- ""
-    attr(out, "auc") <- auc
+    attr(out, "type") <- type
     attr(out, "class_levels") <- FALSE
-    attr(out, "conditional") <- conditional
     out
 }
-#' Variable importance for rfsrc objects
-#'
-#' Extracts variable importances from a fitted \code{rfsrc}
-#'
-#' @param fit an object of class 'rfsrc' returned from \code{rfsrc}
-#' @param type character equal to "permute", "random", "permute.ensemble", or "random.ensemble"
-#' this the \code{permute} argument must equal this value in the call to rfsrc
-#' @param class_levels logical, when TRUE class level specific importances are returned otherwise the overal importance is returned
-#' @param ... further arguments to be passed to nothing
-#'
-#' @return a data.frame of class "importance"
-#'
-#' @examples
-#' \dontrun{
-#' library(randomForestSRC)
-#' data(iris)
-#'
-#' fit <- rfsrc(Species ~ ., iris, importance = "random")
-#' variable_importance(fit, "random", TRUE)
-#' }
-#' @rdname variable_importance
-#' @method variable_importance rfsrc
 #' @export
 variable_importance.rfsrc <- function(fit, type = "permute", class_levels = FALSE, ...) {
     if (!type %in% as.character(fit$call))

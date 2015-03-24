@@ -5,38 +5,20 @@
 #' party, randomForest, or randomForestSRC packages
 #'
 #' @importFrom Matrix Matrix rowSums rowMeans colSums
+#' @import party
+#' 
 #' @param fit object of class 'RandomForest', 'randomForest', or 'rfsrc' (must be regression)
 #' @param df dataframe to be used for prediction
 #'
-#' @rdname var_est
+#' @return a data.frame of length n with one column 'prediction' which contains the ensemble prediction
+#' and a column 'variance' which contains the estimated variance
+#'
 #' @export
 var_est <- function(fit, df) UseMethod("var_est", fit)
-#' Variance estimation for randomForest objects from package \code{randomForest}
-#'
-#' Calculates the variance of predictions from regression using randomForest by calling randomForestCI (\url{https://github.com/swager/randomForestCI})
-#'
-#' @param fit an object of class 'randomForest' returned from \code{randomForest} with \code{keep.inbag = TRUE}
-#' @param df dataframe to be used for prediction
-#' @param ... additional arguments to be passed to predict.randomForest
-#'
-#' @return a dataframe with two columns: 'prediction' and 'variance', where the former is the prediction calculated using the inbag data, and the variance is calculated using the bias corrected infinitesimal bootstrap from Wager, Efron, and Tibsharani (2014).
-#'
-#' @examples
-#' \dontrun{
-#' library(randomForest)
-#' data(swiss)
-#'
-#' fit <- randomForest(Fertility ~ ., swiss, keep.inbag = TRUE)
-#' var_est(fit, swiss)
-#' }
-#' @rdname var_est
-#' @method var_est randomForest
 #' @export
 var_est.randomForest <- function(fit, df, ...) {
     info <- installed.packages(fields = c("Package", "Version"))
     info <- info[, c("Package", "Version")]
-    if (!"randomForestCI" %in% info)
-        stop("install randomForestCI from http://github.com/swager/randomForestCI")
     if (!info[info[, 1] == "randomForest", "Version"] == "4.6-11")
         stop("install fixed randomForest from http://github.com/swager/randomForest")
     pred <- predict(fit, newdata = df, predict.all = TRUE, ...)
@@ -44,26 +26,6 @@ var_est.randomForest <- function(fit, df, ...) {
                "variance" = inf_jackknife(pred$individual, fit$ntree, fit$inbag))
     
 }
-#' Variance estimation for RandomForest objects from package \code{party}
-#'
-#' Calculates the variance of predictions from regression using RandomForest using a slightly modified version of the code from randomForestCI (\url{https://github.com/swager/randomForestCI})
-#'
-#' @import party
-#' @param fit an object of class 'RandomForest' returned from \code{cforest}
-#' @param df dataframe to be used for prediction
-#'
-#' @return a dataframe with two columns: 'prediction' and 'variance', where the former is the prediction calculated using the inbag data, and the variance is calculated using the bias corrected infinitesimal bootstrap from Wager, Efron, and Tibsharani (2014).
-#'
-#' @examples
-#' \dontrun{
-#' library(party)
-#' data(swiss)
-#'
-#' fit <- cforest(Fertility ~ ., swiss, controls = cforest_control(mtry = 2))
-#' var_est(fit, swiss)
-#' }
-#' @rdname var_est
-#' @method var_est RandomForest
 #' @export
 var_est.RandomForest <- function(fit, df) {
     new_df <- initVariableFrame(df)
@@ -76,26 +38,6 @@ var_est.RandomForest <- function(fit, df) {
                "variance" = inf_jackknife(pred, length(fit@ensemble),
                    Matrix(do.call(cbind, fit@weights), sparse = TRUE)))
 }
-#' Variance estimation for rfsrc objects from package \code{randomForestSRC}
-#'
-#' Calculates the variance of predictions from regression using RandomForest using a slightly modified version of the code from randomForestCI (\url{https://github.com/swager/randomForestCI})
-#'
-#' @param fit an predict object of class 'rfsrc' returned from \code{rfsrc}
-#' @param df dataframe to be used for prediction
-#' @param ... additional arguments to be passed to predict.rfsrc
-#'
-#' @return a dataframe with two columns: 'prediction' and 'variance', where the former is the prediction calculated using the inbag data, and the variance is calculated using the bias corrected infinitesimal bootstrap from Wager, Efron, and Tibsharani (2014).
-#'
-#' @examples
-#' \dontrun{
-#' library(randomForestSRC)
-#' data(swiss)
-#'
-#' fit <- rfsrc(Fertility ~ ., swiss)
-#' var_est(fit, swiss)
-#' }
-#' @rdname var_est
-#' @method var_est rfsrc
 #' @export
 var_est.rfsrc <- function(fit, df, ...) {
   if (is.null(fit$pd_membership) | is.null(fit$pd_predicted)) {
