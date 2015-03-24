@@ -8,6 +8,7 @@
 #' @param fit object of class 'RandomForest', 'randomForest', or 'rfsrc'
 #' @param ... arguments to be passed to \code{partial_dependence}
 #'
+#' @rdname partial_dependence
 #' @export
 partial_dependence <- function(fit, ...) UseMethod("partial_dependence", fit)
 #' Partial dependence for randomForest objects
@@ -56,6 +57,8 @@ partial_dependence <- function(fit, ...) UseMethod("partial_dependence", fit)
 #' pd <- partial_dependence(fit, swiss, "Education", ci = TRUE)
 #' pd_int <- partial_dependence(fit, swiss, c("Education", "Catholic"), interaction = TRUE, ci = TRUE)
 #' }
+#' @rdname partial_dependence
+#' @method partial_dependence randomForest
 #' @export
 partial_dependence.randomForest <- function(fit, df, var, cutoff = 10, interaction = FALSE,
                                             ci = TRUE, confidence = .95,
@@ -191,6 +194,8 @@ partial_dependence.randomForest <- function(fit, df, var, cutoff = 10, interacti
 #' pd <- partial_dependence(fit, "mpg")
 #' pd_int <- partial_dependence(fit, c("mpg", "cyl"), interaction = TRUE)
 #' }
+#' @rdname partial_dependence
+#' @method partial_dependence RandomForest
 #' @export
 partial_dependence.RandomForest <- function(fit, var, cutoff = 10, interaction = FALSE,
                                             ci = TRUE, confidence = .95,
@@ -346,6 +351,8 @@ partial_dependence.RandomForest <- function(fit, var, cutoff = 10, interaction =
 #' pd <- partial_dependence(fit_rfsrc, "age")
 #' pd_int <- partial_dependence(fit_rfsrc, c("age", "diagtime"))
 #' }
+#' @rdname partial_dependence
+#' @method partial_dependence rfsrc
 #' @export
 partial_dependence.rfsrc <- function(fit, var, cutoff = 10, interaction = FALSE,
                                      ci = TRUE, confidence = .95,

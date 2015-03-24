@@ -7,6 +7,7 @@
 #' @param newdata new data with the same columns as the data used for \code{fit}
 #' @param ... arguments to be passed to \code{extract_proximity}
 #'
+#' @rdname extract_proximity
 #' @export
 extract_proximity <- function(fit, newdata) UseMethod("extract_proximity")
 #' Extract proximity matrix from \code{randomForest} objects
@@ -16,6 +17,9 @@ extract_proximity <- function(fit, newdata) UseMethod("extract_proximity")
 #' @param ... additional arguments to pass to predict.randomForest
 #'
 #' @return an n by n matrix
+#'
+#' @rdname extract_proximity
+#' @method extract_proximity randomForest
 #' @export
 extract_proximity.randomForest <- function(fit, newdata = NULL, ...) {
     if (!is.null(newdata)) {
@@ -39,6 +43,9 @@ extract_proximity.randomForest <- function(fit, newdata = NULL, ...) {
 #' @param ... additional arguments to pass to proximity
 #'
 #' @return an n by n matrix
+#'
+#' @rdname extract_proximity
+#' @method extract_proximity RandomForest
 #' @export
 extract_proximity.RandomForest <- function(fit, newdata = NULL, ...) {
     proximity(fit, newdata, ...)
@@ -50,6 +57,9 @@ extract_proximity.RandomForest <- function(fit, newdata = NULL, ...) {
 #' @param ... additional arguments to pass to predict.rfsrc
 #'
 #' @return an n by n matirx
+#'
+#' @rdname extract_proximity
+#' @method extract_proximity rfsrc
 #' @export
 extract_proximity.rfsrc <- function(fit, newdata = NULL, ...) {
     if (!is.null(newdata)) {

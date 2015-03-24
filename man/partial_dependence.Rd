@@ -2,17 +2,201 @@
 % Please edit documentation in R/pd.R
 \name{partial_dependence}
 \alias{partial_dependence}
+\alias{partial_dependence.RandomForest}
+\alias{partial_dependence.randomForest}
+\alias{partial_dependence.rfsrc}
 \title{Partial dependence using random forests}
 \usage{
 partial_dependence(fit, ...)
+
+\method{partial_dependence}{randomForest}(fit, df, var, cutoff = 10,
+  interaction = FALSE, ci = TRUE, confidence = 0.95, empirical = TRUE,
+  parallel = FALSE, type = "", ...)
+
+\method{partial_dependence}{RandomForest}(fit, var, cutoff = 10,
+  interaction = FALSE, ci = TRUE, confidence = 0.95, empirical = TRUE,
+  parallel = FALSE, type = "", ...)
+
+\method{partial_dependence}{rfsrc}(fit, var, cutoff = 10,
+  interaction = FALSE, ci = TRUE, confidence = 0.95, empirical = TRUE,
+  parallel = FALSE, type = "", ...)
 }
 \arguments{
 \item{fit}{object of class 'RandomForest', 'randomForest', or 'rfsrc'}
 
 \item{...}{arguments to be passed to \code{partial_dependence}}
+
+\item{df}{the dataframe used to fit the model}
+
+\item{var}{a character vector of the predictors of interest, which must match the input matrix in the call to \code{randomForest}}
+
+\item{cutoff}{the maximal number of unique points in each element of 'var' used in the
+partial dependence calculation}
+
+\item{interaction}{logical, if 'var' is a vector, does this specify an interaction or a list of bivariate partial dependence}
+
+\item{ci}{use the bias corrected infinitesimal jackknife from Wager, Hastie, and Efron (2014) implemented in randomForestCI, currently only works with regression}
+
+\item{confidence}{desired confidence for the returned interval (ignored if ci is false)}
+
+\item{empirical}{logical indicator of whether or not only values in the data should be sampled}
+
+\item{parallel}{logical indicator of whether a parallel backend should be used if registered}
+
+\item{type}{with classification, default "" gives most probable class for classification and "prob" gives class probabilities}
+
+\item{fit}{an object of class 'randomForest' returned from \code{randomForest}}
+
+\item{...}{additional arguments to be passed to nothing}
+
+\item{fit}{an object of class 'RandomForest' returned from \code{cforest}}
+
+\item{var}{a character vector of the predictors of interest, which must match the input matrix in the call to \code{randomForest}}
+
+\item{cutoff}{the maximal number of unique points in each element of 'var' used in the
+partial dependence calculation}
+
+\item{interaction}{logical, if 'var' is a vector, does this specify an interaction or a list of bivariate partial dependence}
+
+\item{ci}{use the bias corrected infinitesimal jackknife from Wager, Hastie, and Efron (2014)}
+
+\item{confidence}{desired confidence for the returned interval (ignored if ci is false)}
+
+\item{empirical}{logical indicator of whether or not only values in the data should be sampled}
+
+\item{parallel}{logical indicator of whether a parallel backend should be used if registered}
+
+\item{type}{with classification, default "" gives most probable class for classification and "prob" gives class probabilities}
+
+\item{...}{additional arguments to be passed to nothing}
+
+\item{fit}{an object of class 'rfsrc' returned from \code{rfsrc}}
+
+\item{var}{a character vector of the predictors of interest, which must match
+the input matrix in the call to \code{rfsrc}}
+
+\item{cutoff}{the maximal number of unique points in each element of 'var' used in the
+partial dependence calculation}
+
+\item{interaction}{logical, if 'var' is a vector, does this specify an interaction or a list of bivariate partial dependence}
+
+\item{ci}{use the bias corrected infinitesimal jackknife from Wager, Hastie, and Efron (2014)}
+
+\item{confidence}{desired confidence for the returned interval (ignored if ci is false)}
+
+\item{empirical}{logical indicator of whether or not only values in the data should be sampled}
+
+\item{parallel}{logical indicator of whether a parallel backend should be used if registered}
+
+\item{type}{with classification, default "" gives most probable class for classification and "prob" gives class probabilities}
+
+\item{...}{additional arguments to be passed to nothing}
+}
+\value{
+a dataframe with columns for each predictor in `var` and the fitted value for
+each set of values taken by the values of 'var' averaged within the values of predictors
+in the model but not in `var`. The dataframe also has class "pd" with attributes "class", "prob", "multivariate", and "interaction", which are used by the plot method.
+
+a dataframe with columns for each predictor in `var` and the fitted value for
+each set of values taken by the values of 'var' averaged within the values of predictors
+in the model but not in `var`. The dataframe also has class "pd" with attributes "class", "prob", "multivariate", and "interaction", which are used by the plot method.
+
+a dataframe with columns for each predictor in `var` and the fitted value for
+each set of values taken by the values of 'var' averaged within the values of predictors
+in the model but not in `var`. The dataframe also has class "pd" with attributes "class", "prob", "multivariate", and "interaction", which are used by the plot method.
 }
 \description{
 Calculates the partial dependence of the response on an arbitrary dimensional set of predictors
 from a fitted random forest object from the party, randomForest, or randomForestSRC packages
+
+Calculates the partial dependence of the response on an arbitrary dimensional set of predictors
+from a fitted random forest object from the randomForest package
+
+Calculates the partial dependence of the response on an arbitrary dimensional set of predictors
+from a fitted random forest object from the \code{party} package
+
+Calculates the partial dependence of the response on an arbitrary dimensional set of predictors
+from a fitted random forest object from the \code{randomForestSRC} package
+}
+\examples{
+\dontrun{
+library(randomForest)
+library(edarf)
+## library(doParallel)
+## library(parallel)
+## registerDoParallel(makeCluster(detectCores()))
+
+## Classification
+
+data(iris)
+
+fit <- randomForest(Species ~ ., iris)
+pd <- partial_dependence(fit, iris, c("Petal.Width", "Sepal.Length"))
+pd_int <- partial_dependence(fit, iris, c("Petal.Width", "Sepal.Length"), interaction = TRUE)
+
+## Regression
+
+data(swiss)
+
+fit <- randomForest(Fertility ~ ., swiss, keep.inbag = TRUE)
+pd <- partial_dependence(fit, swiss, "Education", ci = TRUE)
+pd_int <- partial_dependence(fit, swiss, c("Education", "Catholic"), interaction = TRUE, ci = TRUE)
+}
+\dontrun{
+library(party)
+library(edarf)
+## library(doParallel)
+## library(parallel)
+## registerDoParallel(makeCluster(detectCores()))
+
+## Classification
+
+data(iris)
+
+fit <- cforest(Species ~ ., iris, controls = cforest_unbiased(mtry = 2))
+pd <- partial_dependence(fit, "Petal.Width")
+pd_int <- partial_dependence(fit, c("Petal.Width", "Sepal.Length"), interaction = TRUE)
+
+## Regression
+
+data(swiss)
+
+fit <- cforest(Fertility ~ ., swiss, controls = cforest_control(mtry = 2))
+pd <- partial_dependence(fit, "Education")
+pd_int <- partial_dependence(fit, c("Education", "Catholic"), interaction = TRUE)
+
+## Multivariate
+
+data(mtcars)
+
+fit <- cforest(hp + qsec ~ ., mtcars, controls = cforest_control(mtry = 2))
+pd <- partial_dependence(fit, "mpg")
+pd_int <- partial_dependence(fit, c("mpg", "cyl"), interaction = TRUE)
+}
+\dontrun{
+library(randomForestSRC)
+library(edarf)
+## library(doParallel)
+## library(parallel)
+## registerDoParallel(makeCluster(detectCores()))
+
+## Classification
+data(iris)
+fit <- rfsrc(Species ~ ., iris)
+pd <- partial_dependence(fit, "Petal.Width")
+pd_int <- partial_dependence(fit, c("Petal.Width", "Sepal.Length"))
+
+## Regression
+data(swiss)
+fit <- rfsrc(Fertility ~ ., swiss)
+pd <- partial_dependence(fit, "Education")
+pd_int <- partial_dependence(fit, c("Education", "Catholic"))
+
+## Survival
+data(veteran)
+fit <- rfsrc(Surv(time, status) ~ ., veteran)
+pd <- partial_dependence(fit_rfsrc, "age")
+pd_int <- partial_dependence(fit_rfsrc, c("age", "diagtime"))
+}
 }
 

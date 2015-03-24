@@ -5,6 +5,7 @@
 #' @param fit object of class 'RandomForest', 'randomForest', or 'rfsrc'
 #' @param ... arguments to be passed to \code{variable_importance}
 #'
+#' @rdname variable_importance
 #' @export
 variable_importance <- function(fit, ...) UseMethod("variable_importance")
 #' Variable importance for randomForest objects
@@ -30,6 +31,8 @@ variable_importance <- function(fit, ...) UseMethod("variable_importance")
 #' imp <- variable_importance(fit, "accuracy", TRUE)
 #' plot_imp(imp)
 #' }
+#' @rdname variable_importance
+#' @method variable_importance randomForest
 #' @export
 variable_importance.randomForest <- function(fit, type = "accuracy", class_levels = FALSE, ...) {
     if (ncol(fit$importance) == 1 & type != "gini")
@@ -84,6 +87,8 @@ variable_importance.randomForest <- function(fit, type = "accuracy", class_level
 #' imp <- variable_importance(fit)
 #' plot_imp(imp)
 #' }
+#' @rdname variable_importance
+#' @method variable_importance RandomForest
 #' @export
 variable_importance.RandomForest <- function(fit, conditional = FALSE, auc = FALSE, ...) {
     if (auc & !(nrow(unique(fit@responses@variables)) == 2))
@@ -127,6 +132,8 @@ variable_importance.RandomForest <- function(fit, conditional = FALSE, auc = FAL
 #' fit <- rfsrc(Species ~ ., iris, importance = "random")
 #' variable_importance(fit, "random", TRUE)
 #' }
+#' @rdname variable_importance
+#' @method variable_importance rfsrc
 #' @export
 variable_importance.rfsrc <- function(fit, type = "permute", class_levels = FALSE, ...) {
     if (!type %in% as.character(fit$call))

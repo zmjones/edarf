@@ -8,6 +8,7 @@
 #' @param fit object of class 'RandomForest', 'randomForest', or 'rfsrc' (must be regression)
 #' @param df dataframe to be used for prediction
 #'
+#' @rdname var_est
 #' @export
 var_est <- function(fit, df) UseMethod("var_est", fit)
 #' Variance estimation for randomForest objects from package \code{randomForest}
@@ -28,6 +29,8 @@ var_est <- function(fit, df) UseMethod("var_est", fit)
 #' fit <- randomForest(Fertility ~ ., swiss, keep.inbag = TRUE)
 #' var_est(fit, swiss)
 #' }
+#' @rdname var_est
+#' @method var_est randomForest
 #' @export
 var_est.randomForest <- function(fit, df, ...) {
     info <- installed.packages(fields = c("Package", "Version"))
@@ -59,6 +62,8 @@ var_est.randomForest <- function(fit, df, ...) {
 #' fit <- cforest(Fertility ~ ., swiss, controls = cforest_control(mtry = 2))
 #' var_est(fit, swiss)
 #' }
+#' @rdname var_est
+#' @method var_est RandomForest
 #' @export
 var_est.RandomForest <- function(fit, df) {
     new_df <- initVariableFrame(df)
@@ -89,6 +94,8 @@ var_est.RandomForest <- function(fit, df) {
 #' fit <- rfsrc(Fertility ~ ., swiss)
 #' var_est(fit, swiss)
 #' }
+#' @rdname var_est
+#' @method var_est rfsrc
 #' @export
 var_est.rfsrc <- function(fit, df, ...) {
   if (is.null(fit$pd_membership) | is.null(fit$pd_predicted)) {
