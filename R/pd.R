@@ -66,9 +66,10 @@ partial_dependence.randomForest <- function(fit, df, var, cutoff = 10, interacti
     ## get the prediction grid for whatever var is
     if (interaction)
         rng <- expand.grid(lapply(var, function(x) ivar_points(df, x, cutoff, empirical)))
-    else if (length(var) > 1 & !interaction)
+    else if (length(var) > 1 & !interaction) {
         rng <- lapply(var, function(x) data.frame(ivar_points(df, x, cutoff, empirical)))
-    else
+        names(rng) <- var
+    } else
         rng <- data.frame(ivar_points(df, var, cutoff, empirical))
     ## run the pd algo in parallel?
     '%op%' <- ifelse(getDoParWorkers() > 1 & parallel, foreach::'%dopar%', foreach::'%do%')
