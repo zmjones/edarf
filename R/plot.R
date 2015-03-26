@@ -153,6 +153,10 @@ plot_pd <- function(pd, geom = "line", title = "", facet_var) {
 #' 
 #' @param imp object of class \code{c("importance", "data.frame")} as returned by
 #' \code{\link{variable_importance}}
+#' @param labels character vector giving labels to variables,
+#' must have length equal to the number of rows in 'imp'
+#' @param sort character indicating if sorting of the output is to be done.
+#' can be "none", "ascending", or "descending"
 #' @param geom character describing type of plot desired: "point" or "bar"
 #' @param horizontal logical x-axis labels are horizontal if TRUE
 #' @param facet logical indicating whether to facet, only applicable when returning class-specific variable importance
@@ -165,15 +169,27 @@ plot_pd <- function(pd, geom = "line", title = "", facet_var) {
 #' data(iris)
 #' fit <- randomForest(Species ~ ., iris, importance = TRUE)
 #' imp <- variable_importance(fit, "accuracy", TRUE)
-#' plot_imp(imp, "bar")
+#' plot_imp(imp, geom = "bar")
 #' }
 #' @export
-plot_imp <- function(imp, geom = "point", horizontal = TRUE, facet = FALSE, title = "") {
+plot_imp <- function(imp, sort = "none", labels = NULL,
+                     geom = "point", horizontal = TRUE, facet = FALSE, title = "") {
     atts <- attributes(imp)
+    if (!is.null(labels) & length(labels) == nrow(imp))
+        imp$labels <- labels
     if (atts$type == "local")
         stop("cannot plot local importance")
-    if (atts$class_levels) 
+    if (atts$class_levels)
         imp <- melt(imp, "labels")
+    if (sort == "ascending")
+        imp$labels <- factor(imp$labels, levels = imp$labels[order(imp$value, decreasing = FALSE)])
+    else if (sort == "descending")
+        imp$labels <- factor(imp$labels, levels = imp$labels[order(imp$value, decreasing = TRUE)])
+    else if (sort == "none")
+        imp$labels <- as.factor(imp$labels)
+    else
+        stop("invalid input to sort argument")
+    
     if (facet & atts$class_levels)
         p <- ggplot(imp, aes_string("labels", "value", group = "variable")) + facet_wrap(~ variable)
     else if (!facet & atts$class_levels & geom != "bar")

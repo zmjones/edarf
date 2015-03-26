@@ -4,12 +4,18 @@
 \alias{plot_imp}
 \title{Plot variable importance from random forests}
 \usage{
-plot_imp(imp, geom = "point", horizontal = TRUE, facet = FALSE,
-  title = "")
+plot_imp(imp, sort = "none", labels = NULL, geom = "point",
+  horizontal = TRUE, facet = FALSE, title = "")
 }
 \arguments{
 \item{imp}{object of class \code{c("importance", "data.frame")} as returned by
 \code{\link{variable_importance}}}
+
+\item{sort}{character indicating if sorting of the output is to be done.
+can be "none", "ascending", or "descending"}
+
+\item{labels}{character vector giving labels to variables,
+must have length equal to the number of rows in 'imp'}
 
 \item{geom}{character describing type of plot desired: "point" or "bar"}
 
@@ -31,7 +37,7 @@ library(randomForest)
 data(iris)
 fit <- randomForest(Species ~ ., iris, importance = TRUE)
 imp <- variable_importance(fit, "accuracy", TRUE)
-plot_imp(imp, "bar")
+plot_imp(imp, geom = "bar")
 }
 }
 
