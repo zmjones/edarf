@@ -192,11 +192,13 @@ plot_imp <- function(imp, sort = "none", labels = NULL,
     
     if (facet & atts$class_levels)
         p <- ggplot(imp, aes_string("labels", "value", group = "variable")) + facet_wrap(~ variable)
-    else if (!facet & atts$class_levels & geom != "bar")
+    else if (!facet & atts$class_levels & geom != "bar") {
         p <- ggplot(imp, aes_string("labels", "value", colour = "variable"))
+        p <- p + scale_colour_discrete(name = "Class")
+    }
     else if (!facet & geom == "bar" & atts$class_levels) {
-        p <- ggplot(imp, aes_string("labels", "value", fill = factor("variable")))
-        p <- p + scale_fill_discrete(name = "class")
+        p <- ggplot(imp, aes_string("labels", "value", fill = "variable"))
+        p <- p + scale_fill_discrete(name = "Class")
     } else
         p <- ggplot(imp, aes_string("labels", "value"))
 
@@ -273,4 +275,65 @@ plot_prox <- function(prox, labels = NULL, size = 3, color = NULL, color_label =
                   y = paste0("PC2 (", round(prop_var[2], 0), "% explained var.)"),
                   title = title)
     p + theme_bw()
+}
+#' Plot predicted versus observed values
+#'
+#' @param predicted numeric vector of predictions
+#' @param observed numeric vector of observations
+#' @param variance numeric non-negative vector of estimated variances
+#' @param confidence numeric coverage probability desired,
+#' defaults to .95
+#' @param perfect_line logical whether to plot a blue 45 degree line
+#' on which perfect predictions would fall
+#' @param outlier_idx integer indices of outliers to be labelled
+#' between the predicted and observed value pairs are labeled an outlier
+#' @param labs character labels for points, applied to a subset determined by the
+#' 'outlier_criterion'
+#' @param xlab character label for the x-axis, defaults to "Observed"
+#' @param ylab character label for the y-axis, defaults to "Predicted"
+#' @param title character title defaults to ""
+#'
+#' @return a ggplot object
+#' @examples
+#' \dontrun{
+#' fit <- randomForest(hp ~ ., mtcars, keep.inbag = TRUE)
+#' out <- var_est(fit, mtcars)
+#' plot_pred(out$prediction, mtcars$hp, out$variance,
+#'           outlier_idx = which(abs(out$prediction - mtcars$hp) > .5 * sd(mtcars$hp)),
+#'           labs = row.names(mtcars))
+#' }
+#' @export
+plot_pred <- function(predicted, observed, variance = NULL, confidence = .95,
+                      perfect_line = TRUE, outlier_idx = NULL, labs = NULL,
+                      xlab = "Observed", ylab = "Predicted", title = "") {
+    if (!(is.numeric(predicted) & is.numeric(observed)))
+        stop("predicted, and observed must be numeric")
+    out <- data.frame("predicted" = predicted, "observed" = observed)
+    out$labs <- labs
+    if (!is.null(variance)) {
+        if (!(all(variance > 0)))
+            stop("The variance must be non-negative and numeric")
+        cl <- qnorm((1 - confidence) / 2, lower.tail = FALSE)
+        se <- sqrt(variance)
+        out$high <- out$predicted + cl * se
+        out$low <- out$predicted - cl * se
+    }
+    p <- ggplot(out, aes_string("observed", "predicted"))
+    p <- p + geom_point()
+    if (all(c("high", "low") %in% colnames(out)))
+        p <- p + geom_errorbar(data = out, aes_string(ymax = "high", ymin = "low"), size = .5, width = .5)
+    if (perfect_line)
+        p <- p + geom_abline(aes_string(intercept = 0, slope = 1), colour = "blue")
+    if (!is.null(outlier_idx)) {
+        out$ymax <- max(c(out$predicted))
+        if (!is.integer(outlier_idx))
+            stop("Invalid input for outlier_idx")
+        if (is.null(labs))
+            stop("Labels must be passed to label outliers")
+        p <- p + geom_text(data = out[outlier_idx, ],
+                           aes_string("observed", "predicted", label = "labs", ymax = "ymax"),
+                           size = 3, hjust = 0, vjust = 0, position = "dodge", parse = FALSE)
+    }
+    p <- p + labs(x = xlab, y = ylab, title = title)
+    p + theme_bw()    
 }
