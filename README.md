@@ -178,21 +178,9 @@ out <- var_est(fit, mtcars)
 All the below is handled internally if variance estimates are requested, for `partial_dependence`, however, it is possible to use `var_est` with the fitted model alone as well (regression with `randomForest`, `cforest`, and `rfsrc`)
 
 ```{r}
-colnames(out)[1] <- "hp"
-
-cl <- qnorm(.05 / 2, lower.tail = FALSE)
-se <- sqrt(out$variance)
-out$low <- out$hp - cl * se
-out$high <- out$hp + cl * se
-out$actual_hp <- mtcars$hp
-
-library(ggplot2)
-ggplot(out, aes(actual_hp, hp)) +
-    geom_point() +
-        geom_errorbar(aes(ymax = high, ymin = low), size = .5, width = .5) +
-            geom_abline(aes(intercept = 0, slope = 1), colour = "blue") +
-                labs(x = "Observed Horsepower", y = "Predicted Horsepower") +
-                    theme_bw()
+plot_pred(out$prediction, mtcars$hp, out$variance,
+          outlier_idx = which(rank(out$prediction - mtcars$hp) %in% 1:5), labs = row.names(out),
+          xlab = "Observed Horsepower", ylab = "Predicted Horsepower")
 ```
 ![](http://zmjones.com/static/images/mtcars_pred.png)
 
