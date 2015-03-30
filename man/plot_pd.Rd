@@ -4,13 +4,18 @@
 \alias{plot_pd}
 \title{Plot partial dependence from random forests}
 \usage{
-plot_pd(pd, geom = "line", title = "", facet_var)
+plot_pd(pd, geom = "line", xlab = NULL, ylab = NULL, title = "",
+  facet_var = NULL)
 }
 \arguments{
 \item{pd}{object of class \code{c("pd", "data.frame")} as returned by
 \code{\link{partial_dependence}}}
 
 \item{geom}{character describing type of plot desired: "bar", "line", or "area"}
+
+\item{xlab}{x-axis label, default depends on input}
+
+\item{ylab}{y-axis label, default depends on input}
 
 \item{title}{title for the plot}
 

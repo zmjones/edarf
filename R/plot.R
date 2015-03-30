@@ -6,6 +6,8 @@
 #' @param pd object of class \code{c("pd", "data.frame")} as returned by
 #' \code{\link{partial_dependence}}
 #' @param geom character describing type of plot desired: "bar", "line", or "area"
+#' @param xlab x-axis label, default depends on input
+#' @param ylab y-axis label, default depends on input
 #' @param title title for the plot
 #' @param facet_var A character vector indicating the variable that should be used
 #' to facet on if inteaction is plotted. If not specified the variable with less 
@@ -21,7 +23,7 @@
 #' plot_pd(pd, geom = "area")
 #' }
 #' @export
-plot_pd <- function(pd, geom = "line", title = "", facet_var) {
+plot_pd <- function(pd, geom = "line", xlab = NULL, ylab = NULL, title = "", facet_var = NULL) {
     atts <- attributes(pd)
     ## One predictor Plots
     if (!atts$interaction & length(atts$var) == 1) {
@@ -30,13 +32,15 @@ plot_pd <- function(pd, geom = "line", title = "", facet_var) {
             p <- ggplot(pd, aes_string(colnames(pd)[1], colnames(pd)[2]))
             if (geom == "line") {
                 p <- p + geom_point() + geom_line()
-                if (atts$ci) p <- p + geom_ribbon(aes_string(ymin = "low", ymax = "high"), alpha = .25)
+                if (atts$ci) p <- p + geom_errorbar(aes_string(ymin = "low", ymax = "high"), alpha = .25)
             } else if (geom == "bar")
                 p <- p + geom_bar(stat = "identity")
-            else stop("Unsupported geom")
-            p <- p + labs(y = paste("Predicted", colnames(pd)[2]),
-                          x = colnames(pd)[1],
-                          title = title)
+              else stop("Unsupported geom")
+            if (is.null(ylab))
+                ylab <- paste("Predicted", colnames(pd)[2])
+            if (is.null(xlab))
+                xlab <- colnames(pd)[1]
+            p <- p + labs(y = ylab, x = xlab, title = title)
         } else if (atts$prob & !atts$multivariate) {
             ## Predicted probabilities
             df <- melt(pd, id.vars = 1)
@@ -49,7 +53,11 @@ plot_pd <- function(pd, geom = "line", title = "", facet_var) {
                 p <- ggplot(df, aes_string("x", "Probability", colour = "Class"))
                 p <- p + geom_line() + geom_point()
             } else stop("Unsupported geom")
-            p <- p + labs(x = colnames(pd)[1], title = title)
+            if (is.null(ylab))
+                ylab <- "Probability"
+            if (is.null(xlab))
+                xlab <- colnames(pd)[1]
+            p <- p + labs(x = xlab, y = ylab, title = title)
         } else {
             ## Multivariate with single explanatory variable
             df <- melt(pd, id.vars = 1)
@@ -58,7 +66,11 @@ plot_pd <- function(pd, geom = "line", title = "", facet_var) {
             p <- ggplot(df, aes_string("x", "value", group = "Outcome"))
             p <- p + geom_line() + geom_point()
             p <- p + facet_wrap(~ Outcome, scales = "free")
-            p <- p + labs(x = colnames(pd)[1], title = title, y = "Predicted Outcome")
+            if (is.null(ylab))
+                ylab <- "Predicted Outcome"
+            if (is.null(xlab))
+                xlab <- colnames(pd)[1]
+            p <- p + labs(x = xlab, y = ylab, title = title)
         }
     } else if (!atts$interaction & length(atts$var) > 1) {
         if (!atts$prob & !atts$ci) {
@@ -84,16 +96,20 @@ plot_pd <- function(pd, geom = "line", title = "", facet_var) {
         } else if (atts$ci & !atts$prob) {
             p <- ggplot(pd, aes_string("value", atts$target))
             p <- p + geom_line() + geom_point()
-            p <- p + geom_ribbon(aes_string(ymin = "low", y = atts$target, ymax = "high"), alpha = .25)
+            p <- p + geom_errorbar(aes_string(ymin = "low", y = atts$target, ymax = "high"), alpha = .25)
         } else {
             stop("some sort of error")
         }
-        p <- p + facet_wrap(~ variable, scales = "free")
-        p <- p + labs(x = "Predictor Scale", y = "Response Scale", title = title)
+        p <- p + facet_wrap(as.formula(paste0("~ ", facet_var)), scales = "free")
+        if (is.null(ylab))
+            ylab <- "Predicted Outcome"
+        if (is.null(xlab))
+            xlab <- "Predictor Scale"
+        p <- p + labs(x = xlab, y = ylab, title = title)
     } else if (atts$interaction) {
         ## Interaction Plots
         if (length(atts$var) > 2) stop("Only two-way interactions supported")
-        if (!exists("facet_var", mode = "character")) {
+        if (!is.null(facet_var)) {
             n_unique <- apply(pd[, atts$var], 2, function(x) length(unique(x)))
             facet_var <- names(which.min(n_unique))
         }
@@ -128,7 +144,7 @@ plot_pd <- function(pd, geom = "line", title = "", facet_var) {
             p <- ggplot(pd, aes_string(x = plot_var, y = y, group = facet_var))
             p <- p + facet_wrap(as.formula(paste0("~", facet_var)))
             p <- p + geom_line() + geom_point()
-            if (atts$ci) p <- p + geom_ribbon(aes_string(ymin = "low", ymax = "high"), alpha = .25)
+            if (atts$ci) p <- p + geom_errorbar(aes_string(ymin = "low", ymax = "high"), alpha = .25)
             p <- p + labs(x = plot_var,
                           y = paste("Predicted", y),
                           title = title)
@@ -160,6 +176,8 @@ plot_pd <- function(pd, geom = "line", title = "", facet_var) {
 #' @param geom character describing type of plot desired: "point" or "bar"
 #' @param horizontal logical x-axis labels are horizontal if TRUE
 #' @param facet logical indicating whether to facet, only applicable when returning class-specific variable importance
+#' @param xlab x-axis label, default "Variables"
+#' @param ylab y-axis label, default "Importance"
 #' @param title title for the plot
 #'
 #' @return a ggplot2 object
@@ -173,7 +191,8 @@ plot_pd <- function(pd, geom = "line", title = "", facet_var) {
 #' }
 #' @export
 plot_imp <- function(imp, sort = "none", labels = NULL,
-                     geom = "point", horizontal = TRUE, facet = FALSE, title = "") {
+                     geom = "point", horizontal = TRUE, facet = FALSE,
+                     xlab = "Variables", ylab = "Importance", title = "") {
     atts <- attributes(imp)
     if (!is.null(labels) & length(labels) == nrow(imp))
         imp$labels <- labels
@@ -216,7 +235,7 @@ plot_imp <- function(imp, sort = "none", labels = NULL,
     if (horizontal)
         p <- p + theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5))
     
-    p <- p + labs(y = "importance", x = "variables", title = title)
+    p <- p + labs(y = ylab, x = xlab, title = title)
     p
 }
 #' Plot (sparse) principle components of the proximity matrix
@@ -321,7 +340,7 @@ plot_pred <- function(predicted, observed, variance = NULL, confidence = .95,
     p <- ggplot(out, aes_string("observed", "predicted"))
     p <- p + geom_point()
     if (all(c("high", "low") %in% colnames(out)))
-        p <- p + geom_errorbar(data = out, aes_string(ymax = "high", ymin = "low"), size = .5, width = .5)
+        p <- p + geom_errorbar(data = out, aes_string(ymax = "high", ymin = "low"), alpha = .25)
     if (perfect_line)
         p <- p + geom_abline(aes_string(intercept = 0, slope = 1), colour = "blue")
     if (!is.null(outlier_idx)) {
