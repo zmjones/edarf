@@ -246,7 +246,7 @@ partial_dependence.RandomForest <- function(fit, df = NULL, var, cutoff = 10, in
     attr(pred, "multivariate") <- dim(y)[2] != 1
     attr(pred, "var") <- var
     attr(pred, "ci") <- ci
-    pred <- fix_classes(df, pred, )
+    pred <- fix_classes(df, pred)
     pred
 }
 #' @export
