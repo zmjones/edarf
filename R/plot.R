@@ -9,9 +9,10 @@
 #' @param xlab x-axis label, default depends on input
 #' @param ylab y-axis label, default depends on input
 #' @param title title for the plot
-#' @param facet_var A character vector indicating the variable that should be used
-#' to facet on if inteaction is plotted. If not specified the variable with less 
+#' @param facet_var a character vector indicating the variable that should be used
+#' to facet on if interaction is plotted. If not specified the variable with less 
 #' unique values is chosen.
+#' @param scales can be "free", "free_x", "free_y" or "fixed", applicable when facetting
 #' @return a ggplot2 object
 #' 
 #' @examples \dontrun{
@@ -23,7 +24,8 @@
 #' plot_pd(pd, geom = "area")
 #' }
 #' @export
-plot_pd <- function(pd, geom = "line", xlab = NULL, ylab = NULL, title = "", facet_var = NULL) {
+plot_pd <- function(pd, geom = "line", xlab = NULL, ylab = NULL, title = "", facet_var = NULL,
+                    scales = "free_x") {
     atts <- attributes(pd)
     ## One predictor Plots
     if (!atts$interaction & length(atts$var) == 1) {
@@ -65,7 +67,7 @@ plot_pd <- function(pd, geom = "line", xlab = NULL, ylab = NULL, title = "", fac
             df$Outcome <- paste0("Outcome: ", df$Outcome)
             p <- ggplot(df, aes_string("x", "value", group = "Outcome"))
             p <- p + geom_line() + geom_point()
-            p <- p + facet_wrap(~ Outcome, scales = "free")
+            p <- p + facet_wrap(~ Outcome, scales = scales)
             if (is.null(ylab))
                 ylab <- "Predicted Outcome"
             if (is.null(xlab))
@@ -100,7 +102,7 @@ plot_pd <- function(pd, geom = "line", xlab = NULL, ylab = NULL, title = "", fac
         } else {
             stop("some sort of error")
         }
-        p <- p + facet_wrap(as.formula(paste0("~ ", facet_var)), scales = "free")
+        p <- p + facet_wrap(as.formula(paste0("~ ", facet_var)), scales = scales)
         if (is.null(ylab))
             ylab <- "Predicted Outcome"
         if (is.null(xlab))
@@ -137,12 +139,12 @@ plot_pd <- function(pd, geom = "line", xlab = NULL, ylab = NULL, title = "", fac
                                            colour = "Class"))
                 p <- p + geom_line() + geom_point()
             } else stop("Unsupported geom")
-            p <- p + facet_wrap(as.formula(paste0("~", facet_var)))
+            p <- p + facet_wrap(as.formula(paste0("~", facet_var)), scales = scales)
             p <- p + labs(x = plot_var, title = title)
         } else if (!atts$prob & class(pd[, 3]) == "numeric" & !atts$multivariate) {
             y <- colnames(pd)[3]
             p <- ggplot(pd, aes_string(x = plot_var, y = y, group = facet_var))
-            p <- p + facet_wrap(as.formula(paste0("~", facet_var)))
+            p <- p + facet_wrap(as.formula(paste0("~", facet_var)), scales = scales)
             p <- p + geom_line() + geom_point()
             if (atts$ci) p <- p + geom_errorbar(aes_string(ymin = "low", ymax = "high"), alpha = .25)
             p <- p + labs(x = plot_var,
@@ -176,6 +178,7 @@ plot_pd <- function(pd, geom = "line", xlab = NULL, ylab = NULL, title = "", fac
 #' @param geom character describing type of plot desired: "point" or "bar"
 #' @param horizontal logical x-axis labels are horizontal if TRUE
 #' @param facet logical indicating whether to facet, only applicable when returning class-specific variable importance
+#' @param scales can be "free", "free_x", "free_y" or "fixed", applicable when facetting
 #' @param xlab x-axis label, default "Variables"
 #' @param ylab y-axis label, default "Importance"
 #' @param title title for the plot
@@ -271,12 +274,13 @@ plot_prox <- function(prox, labels = NULL, size = 3, color = NULL, color_label =
     if (is.numeric(color))
         stop("gradient coloring not supported. add this outside of this function.")
     pca <- prcomp(prox, ...)
-    nobs.factor <- sqrt(nrow(pca$x) - 1)
+    nobs_factor <- sqrt(nrow(pca$x) - 1)
     d <- pca$sdev
-    u <- sweep(pca$x, 2, 1 / (d * nobs.factor), '*')
+    u <- sweep(pca$x, 2, 1 / (d * nobs_factor), '*')
     v <- pca$rotation
     prop_var <- 100 * pca$sdev[1:2]^2 / sum(pca$sdev^2)
     plt <- as.data.frame(sweep(u[, 1:2], 2, d[1:2], '*'))
+    plt <- plt * nobs_factor
     plt$ymax <- max(plt[, 2])
     
     if (is.null(color)) {
@@ -290,8 +294,8 @@ plot_prox <- function(prox, labels = NULL, size = 3, color = NULL, color_label =
     if (is.null(labels))
         p <- p + geom_point(position = "dodge", size = size)
     else p <- p + geom_text(position = "dodge", label = labels, size = size)
-    p <- p + labs(x = paste0("PC1 (", round(prop_var[1], 0), "% explained var.)"),
-                  y = paste0("PC2 (", round(prop_var[2], 0), "% explained var.)"),
+    p <- p + labs(x = paste0("Standardized PC1 (", round(prop_var[1], 0), "% explained var.)"),
+                  y = paste0("Standardized PC2 (", round(prop_var[2], 0), "% explained var.)"),
                   title = title)
     p + theme_bw()
 }

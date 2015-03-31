@@ -29,6 +29,8 @@ must have length equal to the number of rows in 'imp'}
 \item{ylab}{y-axis label, default "Importance"}
 
 \item{title}{title for the plot}
+
+\item{scales}{can be "free", "free_x", "free_y" or "fixed", applicable when facetting}
 }
 \value{
 a ggplot2 object
