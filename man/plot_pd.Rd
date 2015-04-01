@@ -20,7 +20,7 @@ plot_pd(pd, geom = "line", xlab = NULL, ylab = NULL, title = "",
 \item{title}{title for the plot}
 
 \item{facet_var}{a character vector indicating the variable that should be used
-to facet on if inteaction is plotted. If not specified the variable with less
+to facet on if interaction is plotted. If not specified the variable with less
 unique values is chosen.}
 
 \item{scales}{can be "free", "free_x", "free_y" or "fixed", applicable when facetting}

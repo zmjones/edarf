@@ -4,19 +4,30 @@
 \alias{plot_prox}
 \title{Plot (sparse) principle components of the proximity matrix}
 \usage{
-plot_prox(prox, labels = NULL, size = 3, color = NULL,
-  color_label = NULL, title = "", ...)
+plot_prox(prox, labels = NULL, uniform_size = 2, color = NULL,
+  color_label = NULL, shape = NULL, shape_label = NULL, size = 2,
+  size_label = NULL, xlab = NULL, ylab = NULL, title = "", ...)
 }
 \arguments{
 \item{prox}{n x n matrix giving the proportion of times across all trees that observation i,j are in the same terminal node}
 
 \item{labels}{length n character vector giving observation labels}
 
-\item{size}{integer which gives the size of points or text labels}
-
 \item{color}{optional vector of length n which gives a factor with which to color the points}
 
 \item{color_label}{character legend title if color parameter is used}
+
+\item{shape}{optional vector of length n which gives a factor with which to shape points (not applicable if labels used)}
+
+\item{shape_label}{character legend title if shape parameter is used}
+
+\item{size}{optional vector of length n which gives a factor with which size points or labels or a numeric of length 1 which gives the sizes of all the points}
+
+\item{size_label}{character legend title if size parameter used}
+
+\item{xlab}{character x-axis label}
+
+\item{ylab}{character y-axis label}
 
 \item{title}{character plot title}
 

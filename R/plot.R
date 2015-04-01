@@ -256,9 +256,14 @@ plot_imp <- function(imp, sort = "none", labels = NULL,
 #'
 #' @param prox n x n matrix giving the proportion of times across all trees that observation i,j are in the same terminal node
 #' @param labels length n character vector giving observation labels
-#' @param size integer which gives the size of points or text labels
 #' @param color optional vector of length n which gives a factor with which to color the points
 #' @param color_label character legend title if color parameter is used
+#' @param shape optional vector of length n which gives a factor with which to shape points (not applicable if labels used)
+#' @param shape_label character legend title if shape parameter is used
+#' @param size optional vector of length n which gives a factor with which size points or labels or a numeric of length 1 which gives the sizes of all the points
+#' @param size_label character legend title if size parameter used
+#' @param xlab character x-axis label
+#' @param ylab character y-axis label
 #' @param title character plot title
 #' @param ... arguments to pass to \code{\link{prcomp}}
 #'
@@ -276,33 +281,43 @@ plot_imp <- function(imp, sort = "none", labels = NULL,
 #' }
 #' 
 #' @export
-plot_prox <- function(prox, labels = NULL, size = 3, color = NULL, color_label = NULL, title = "", ...) {
+plot_prox <- function(prox, labels = NULL, uniform_size = 2,
+                      color = NULL, color_label = NULL,
+                      shape = NULL, shape_label = NULL,
+                      size = 2, size_label = NULL,
+                      xlab = NULL, ylab = NULL, title = "", ...) {
     if (is.numeric(color))
         stop("gradient coloring not supported. add this outside of this function.")
     pca <- prcomp(prox, ...)
     nobs_factor <- sqrt(nrow(pca$x) - 1)
     d <- pca$sdev
     u <- sweep(pca$x, 2, 1 / (d * nobs_factor), '*')
-    v <- pca$rotation
     prop_var <- 100 * pca$sdev[1:2]^2 / sum(pca$sdev^2)
     plt <- as.data.frame(sweep(u[, 1:2], 2, d[1:2], '*'))
     plt <- plt * nobs_factor
     plt$ymax <- max(plt[, 2])
     
-    if (is.null(color)) {
-        p <- ggplot(plt, aes_string("PC1", "PC2", ymax = "ymax"))
-    } else {
-        plt$color <- color
-        rm(color)
-        p <- ggplot(plt, aes_string("PC1", "PC2", color = "color", ymax = "ymax"))
+    plt$color <- color
+    plt$shape <- shape
+    plt$size <- size
+    
+    p <- ggplot(plt, aes_string("PC1", "PC2", color = "color", shape = "shape", size = "size", ymax = "ymax"))
+    if (!is.null(color))
         p <- p + scale_color_discrete(name = color_label)
-    }
+    if (!is.null(size)) 
+        p <- p + scale_size(name = size_label)
+    if (!is.null(shape))
+        p <- p + scale_shape(name = shape_label)
     if (is.null(labels))
-        p <- p + geom_point(position = "dodge", size = size)
-    else p <- p + geom_text(position = "dodge", label = labels, size = size)
-    p <- p + labs(x = paste0("Standardized PC1 (", round(prop_var[1], 0), "% explained var.)"),
-                  y = paste0("Standardized PC2 (", round(prop_var[2], 0), "% explained var.)"),
-                  title = title)
+        p <- p + geom_point(position = "dodge", size = uniform_size)
+    else
+        p <- p + geom_text(position = "dodge", label = labels, size = uniform_size)
+
+    if (is.null(xlab))
+        xlab <- paste0("Standardized PC1 (", round(prop_var[1], 0), "% explained var.)")
+    if (is.null(ylab))
+        ylab <- paste0("Standardized PC2 (", round(prop_var[2], 0), "% explained var.)")
+    p <- p + labs(x = xlab, y = ylab, title = title)
     p + theme_bw()
 }
 #' Plot predicted versus observed values
