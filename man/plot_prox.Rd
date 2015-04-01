@@ -4,24 +4,33 @@
 \alias{plot_prox}
 \title{Plot (sparse) principle components of the proximity matrix}
 \usage{
-plot_prox(prox, labels = NULL, uniform_size = 2, color = NULL,
-  color_label = NULL, shape = NULL, shape_label = NULL, size = 2,
-  size_label = NULL, xlab = NULL, ylab = NULL, title = "", ...)
+plot_prox(pca, labels = NULL, alpha = 1, alpha_label = NULL,
+  color = "black", color_label = NULL, shape = "1", shape_label = NULL,
+  size = 2, size_label = NULL, xlab = NULL, ylab = NULL, title = "",
+  ...)
 }
 \arguments{
-\item{prox}{n x n matrix giving the proportion of times across all trees that observation i,j are in the same terminal node}
+\item{pca}{a prcomp object, pca of an n x n matrix giving the proportion of times across all trees that observation i,j are in the same terminal node}
 
 \item{labels}{length n character vector giving observation labels}
 
-\item{color}{optional vector of length n which gives a factor with which to color the points}
+\item{alpha}{optional continuous vector of length n make points/labels transparent or
+a numeric of length 1 giving the alpha of all points/labels}
+
+\item{alpha_label}{character legend title if alpha parameter used}
+
+\item{color}{optional discrete vector of length n which colors the points/labels or
+a character vector giving the color of all points/labels}
 
 \item{color_label}{character legend title if color parameter is used}
 
-\item{shape}{optional vector of length n which gives a factor with which to shape points (not applicable if labels used)}
+\item{shape}{optional discrete vector of length n which shapes points (not applicable if labels used) or
+a character vector of length 1 which gives the shape of all points}
 
 \item{shape_label}{character legend title if shape parameter is used}
 
-\item{size}{optional vector of length n which gives a factor with which size points or labels or a numeric of length 1 which gives the sizes of all the points}
+\item{size}{optional continuous vector of length n which sizes points or labels or
+a numeric of length 1 which gives the sizes of all the points}
 
 \item{size_label}{character legend title if size parameter used}
 
@@ -30,8 +39,6 @@ plot_prox(prox, labels = NULL, uniform_size = 2, color = NULL,
 \item{ylab}{character y-axis label}
 
 \item{title}{character plot title}
-
-\item{...}{arguments to pass to \code{\link{prcomp}}}
 }
 \value{
 a ggplot object
@@ -43,11 +50,13 @@ Plot (sparse) principle components of the proximity matrix
 \dontrun{
 fit <- randomForest(hp ~ ., mtcars, proximity = TRUE)
 prox <- extract_proximity(fit)
+pca <- prcomp(prox, scale = TRUE)
 plot_prox(prox, labels = row.names(mtcars))
 
 fit <- randomForest(Species ~ ., iris, proximity = TRUE)
 prox <- extract_proximity(fit)
-plot_prox(prox, color = iris$Species, color_label = "Species", size = 2)
+pca <- prcomp(prox, scale = TRUE)
+plot_prox(pca, color = iris$Species, color_label = "Species", size = 2)
 }
 }
 \references{

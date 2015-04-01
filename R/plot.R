@@ -182,7 +182,6 @@ plot_pd <- function(pd, geom = "line", xlab = NULL, ylab = NULL, title = "", fac
 #' @param sort character indicating if sorting of the output is to be done.
 #' can be "none", "ascending", or "descending"
 #' @param geom character describing type of plot desired: "point" or "bar"
-#' @param horizontal logical x-axis labels are horizontal if TRUE
 #' @param facet logical indicating whether to facet, only applicable when returning class-specific variable importance
 #' @param scales can be "free", "free_x", "free_y" or "fixed", applicable when facetting
 #' @param xlab x-axis label, default "Variables"
@@ -200,7 +199,7 @@ plot_pd <- function(pd, geom = "line", xlab = NULL, ylab = NULL, title = "", fac
 #' }
 #' @export
 plot_imp <- function(imp, sort = "none", labels = NULL,
-                     geom = "point", horizontal = TRUE, facet = FALSE,
+                     geom = "point", facet = FALSE,
                      xlab = "Variables", ylab = "Importance", title = "") {
     atts <- attributes(imp)
     if (!is.null(labels) & length(labels) == nrow(imp))
@@ -230,8 +229,6 @@ plot_imp <- function(imp, sort = "none", labels = NULL,
     } else
         p <- ggplot(imp, aes_string("labels", "value"))
 
-    p <- p + theme_bw()
-
     if (geom == "point")
         p <- p + geom_point()
     else if (geom == "bar" & !atts$class_levels)
@@ -241,11 +238,8 @@ plot_imp <- function(imp, sort = "none", labels = NULL,
     else
         stop("invalid geom")
 
-    if (horizontal)
-        p <- p + theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5))
-    
     p <- p + labs(y = ylab, x = xlab, title = title)
-    p
+    p + coord_flip() + theme_bw()
 }
 #' Plot (sparse) principle components of the proximity matrix
 #'
@@ -254,18 +248,23 @@ plot_imp <- function(imp, sort = "none", labels = NULL,
 #'
 #' @import ggplot2
 #'
-#' @param prox n x n matrix giving the proportion of times across all trees that observation i,j are in the same terminal node
+#' @param pca a prcomp object, pca of an n x n matrix giving the proportion of times across all trees that observation i,j are in the same terminal node
 #' @param labels length n character vector giving observation labels
-#' @param color optional vector of length n which gives a factor with which to color the points
+#' @param alpha optional continuous vector of length n make points/labels transparent or
+#' a numeric of length 1 giving the alpha of all points/labels
+#' @param alpha_label character legend title if alpha parameter used
+#' @param color optional discrete vector of length n which colors the points/labels or
+#' a character vector giving the color of all points/labels
 #' @param color_label character legend title if color parameter is used
-#' @param shape optional vector of length n which gives a factor with which to shape points (not applicable if labels used)
+#' @param shape optional discrete vector of length n which shapes points (not applicable if labels used) or
+#' a character vector of length 1 which gives the shape of all points
 #' @param shape_label character legend title if shape parameter is used
-#' @param size optional vector of length n which gives a factor with which size points or labels or a numeric of length 1 which gives the sizes of all the points
+#' @param size optional continuous vector of length n which sizes points or labels or
+#' a numeric of length 1 which gives the sizes of all the points
 #' @param size_label character legend title if size parameter used
 #' @param xlab character x-axis label
 #' @param ylab character y-axis label
 #' @param title character plot title
-#' @param ... arguments to pass to \code{\link{prcomp}}
 #'
 #' @return a ggplot object
 #'
@@ -273,50 +272,72 @@ plot_imp <- function(imp, sort = "none", labels = NULL,
 #' \dontrun{
 #' fit <- randomForest(hp ~ ., mtcars, proximity = TRUE)
 #' prox <- extract_proximity(fit)
+#' pca <- prcomp(prox, scale = TRUE)
 #' plot_prox(prox, labels = row.names(mtcars))
 #' 
 #' fit <- randomForest(Species ~ ., iris, proximity = TRUE)
 #' prox <- extract_proximity(fit)
-#' plot_prox(prox, color = iris$Species, color_label = "Species", size = 2)
+#' pca <- prcomp(prox, scale = TRUE)
+#' plot_prox(pca, color = iris$Species, color_label = "Species", size = 2)
 #' }
 #' 
 #' @export
-plot_prox <- function(prox, labels = NULL, uniform_size = 2,
-                      color = NULL, color_label = NULL,
-                      shape = NULL, shape_label = NULL,
+plot_prox <- function(pca, labels = NULL,
+                      alpha = 1, alpha_label = NULL,
+                      color = "black", color_label = NULL,
+                      shape = "1", shape_label = NULL,
                       size = 2, size_label = NULL,
                       xlab = NULL, ylab = NULL, title = "", ...) {
     if (is.numeric(color))
         stop("gradient coloring not supported. add this outside of this function.")
-    pca <- prcomp(prox, ...)
     nobs_factor <- sqrt(nrow(pca$x) - 1)
     d <- pca$sdev
-    u <- sweep(pca$x, 2, 1 / (d * nobs_factor), '*')
+    u <- sweep(pca$x, 2, 1 / (d * nobs_factor), FUN = "*")
     prop_var <- 100 * pca$sdev[1:2]^2 / sum(pca$sdev^2)
-    plt <- as.data.frame(sweep(u[, 1:2], 2, d[1:2], '*'))
+    plt <- as.data.frame(sweep(u[, 1:2], 2, d[1:2], FUN = "*"))
     plt <- plt * nobs_factor
     plt$ymax <- max(plt[, 2])
-    
+
+    plt$alpha <- alpha
     plt$color <- color
     plt$shape <- shape
     plt$size <- size
     
-    p <- ggplot(plt, aes_string("PC1", "PC2", color = "color", shape = "shape", size = "size", ymax = "ymax"))
-    if (!is.null(color))
-        p <- p + scale_color_discrete(name = color_label)
-    if (!is.null(size)) 
-        p <- p + scale_size(name = size_label)
-    if (!is.null(shape))
-        p <- p + scale_shape(name = shape_label)
+    p <- ggplot(plt, aes_string("PC1", "PC2", color = "color", shape = "shape",
+                                alpha = "alpha", size = "size", ymax = "ymax"))
+    if (!is.null(color)) {
+        if (length(color) > 1)
+            p <- p + scale_color_discrete(name = color_label)
+        else
+            p <- p + scale_colour_discrete(guide = FALSE)
+    }
+    if (!is.null(size)) {
+        if (length(size) > 1)
+            p <- p + scale_size(name = size_label)
+        else
+            p <- p + scale_size(guide = FALSE)
+    }
+    if (!is.null(shape)) {
+        if (length(shape) > 1)
+            p <- p + scale_shape(name = shape_label)
+        else
+            p <- p + scale_shape(guide = FALSE)
+    }
+    if (!is.null(alpha)) {
+        if (length(alpha) > 1)
+            p <- p + scale_alpha(name = alpha_label)
+        else
+            p <- p + scale_alpha(guide = FALSE)
+    }
     if (is.null(labels))
-        p <- p + geom_point(position = "dodge", size = uniform_size)
+        p <- p + geom_point(position = "dodge")
     else
-        p <- p + geom_text(position = "dodge", label = labels, size = uniform_size)
+        p <- p + geom_text(position = "dodge", label = labels)
 
     if (is.null(xlab))
-        xlab <- paste0("Standardized PC1 (", round(prop_var[1], 0), "% explained var.)")
+        xlab <- paste0("PC1 (", round(prop_var[1], 0), "% explained var.)")
     if (is.null(ylab))
-        ylab <- paste0("Standardized PC2 (", round(prop_var[2], 0), "% explained var.)")
+        ylab <- paste0("PC2 (", round(prop_var[2], 0), "% explained var.)")
     p <- p + labs(x = xlab, y = ylab, title = title)
     p + theme_bw()
 }

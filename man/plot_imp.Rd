@@ -5,8 +5,7 @@
 \title{Plot variable importance from random forests}
 \usage{
 plot_imp(imp, sort = "none", labels = NULL, geom = "point",
-  horizontal = TRUE, facet = FALSE, xlab = "Variables",
-  ylab = "Importance", title = "")
+  facet = FALSE, xlab = "Variables", ylab = "Importance", title = "")
 }
 \arguments{
 \item{imp}{object of class \code{c("importance", "data.frame")} as returned by
@@ -19,8 +18,6 @@ can be "none", "ascending", or "descending"}
 must have length equal to the number of rows in 'imp'}
 
 \item{geom}{character describing type of plot desired: "point" or "bar"}
-
-\item{horizontal}{logical x-axis labels are horizontal if TRUE}
 
 \item{facet}{logical indicating whether to facet, only applicable when returning class-specific variable importance}
 
