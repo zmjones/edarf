@@ -140,16 +140,22 @@ plot_pd <- function(pd, geom = "line", xlab = NULL, ylab = NULL, title = "", fac
                 p <- p + geom_line() + geom_point()
             } else stop("Unsupported geom")
             p <- p + facet_wrap(as.formula(paste0("~", facet_var)), scales = scales)
-            p <- p + labs(x = plot_var, title = title)
+            if (is.null(xlab))
+                xlab <- plot_var
+            if (is.null(ylab))
+                ylab <- "Probability"
+            p <- p + labs(x = xlab, y = ylab, title = title)
         } else if (!atts$prob & class(pd[, 3]) == "numeric" & !atts$multivariate) {
             y <- colnames(pd)[3]
             p <- ggplot(pd, aes_string(x = plot_var, y = y, group = facet_var))
             p <- p + facet_wrap(as.formula(paste0("~", facet_var)), scales = scales)
             p <- p + geom_line() + geom_point()
             if (atts$ci) p <- p + geom_errorbar(aes_string(ymin = "low", ymax = "high"), alpha = .25)
-            p <- p + labs(x = plot_var,
-                          y = paste("Predicted", y),
-                          title = title)
+            if (is.null(xlab))
+                xlab <- plot_var
+            if (is.null(ylab))
+                ylab <- paste("Predicted", y)
+            p <- p + labs(x = xlab, y = ylab, title = title)
         } else if (class(pd[, 3]) == "factor" | class(pd[, 3]) == "character") {
             y <- colnames(pd)[3]
             p <- ggplot(pd, aes_string(x = plot_var, y = y, group = facet_var))
