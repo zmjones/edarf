@@ -241,7 +241,7 @@ plot_imp <- function(imp, sort = "none", labels = NULL,
     p <- p + labs(y = ylab, x = xlab, title = title)
     p + coord_flip() + theme_bw()
 }
-#' Plot (sparse) principle components of the proximity matrix
+#' Plot principle components of the proximity matrix
 #'
 #' @references https://github.com/vqv/ggbiplot
 #' @references Gabriel, "The biplot graphic display of matrices with application to principal component analysis," \emph{Biometrika}, 1971
@@ -249,6 +249,7 @@ plot_imp <- function(imp, sort = "none", labels = NULL,
 #' @import ggplot2
 #'
 #' @param pca a prcomp object, pca of an n x n matrix giving the proportion of times across all trees that observation i,j are in the same terminal node
+#' @param dims integer vector of length 2 giving indices for the dimensions of \code{pca} to be plotted
 #' @param labels length n character vector giving observation labels
 #' @param alpha optional continuous vector of length n make points/labels transparent or
 #' a numeric of length 1 giving the alpha of all points/labels
@@ -282,7 +283,7 @@ plot_imp <- function(imp, sort = "none", labels = NULL,
 #' }
 #' 
 #' @export
-plot_prox <- function(pca, labels = NULL,
+plot_prox <- function(pca, dims = 1:2, labels = NULL,
                       alpha = 1, alpha_label = NULL,
                       color = "black", color_label = NULL,
                       shape = "1", shape_label = NULL,
@@ -293,8 +294,8 @@ plot_prox <- function(pca, labels = NULL,
     nobs_factor <- sqrt(nrow(pca$x) - 1)
     d <- pca$sdev
     u <- sweep(pca$x, 2, 1 / (d * nobs_factor), FUN = "*")
-    prop_var <- 100 * pca$sdev[1:2]^2 / sum(pca$sdev^2)
-    plt <- as.data.frame(sweep(u[, 1:2], 2, d[1:2], FUN = "*"))
+    prop_var <- 100 * pca$sdev[dims]^2 / sum(pca$sdev^2)
+    plt <- as.data.frame(sweep(u[, dims], 2, d[dims], FUN = "*"))
     plt <- plt * nobs_factor
     plt$ymax <- max(plt[, 2])
 

@@ -2,15 +2,17 @@
 % Please edit documentation in R/plot.R
 \name{plot_prox}
 \alias{plot_prox}
-\title{Plot (sparse) principle components of the proximity matrix}
+\title{Plot principle components of the proximity matrix}
 \usage{
-plot_prox(pca, labels = NULL, alpha = 1, alpha_label = NULL,
+plot_prox(pca, dims = 1:2, labels = NULL, alpha = 1, alpha_label = NULL,
   color = "black", color_label = NULL, shape = "1", shape_label = NULL,
   size = 2, size_label = NULL, xlab = NULL, ylab = NULL, title = "",
   ...)
 }
 \arguments{
 \item{pca}{a prcomp object, pca of an n x n matrix giving the proportion of times across all trees that observation i,j are in the same terminal node}
+
+\item{dims}{integer vector of length 2 giving indices for the dimensions of \code{pca} to be plotted}
 
 \item{labels}{length n character vector giving observation labels}
 
@@ -44,7 +46,7 @@ a numeric of length 1 which gives the sizes of all the points}
 a ggplot object
 }
 \description{
-Plot (sparse) principle components of the proximity matrix
+Plot principle components of the proximity matrix
 }
 \examples{
 \dontrun{
