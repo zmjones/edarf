@@ -59,18 +59,19 @@ partial_dependence.randomForest <- function(fit, df, var, cutoff = 10, interacti
                                             empirical = TRUE, parallel = FALSE, type = "", ...) {
     pkg <- "randomForest"
     y_class <- class(fit$y)
-    target <- colnames(df)[sapply(1:ncol(df), function(x) all(df[, x] == fit$y))]
+    target <- colnames(df)[sapply(1:ncol(df), function(x) all.equal(df[, x], fit$y))]
     target <- target[!is.na(target)]
     if (!y_class %in% c("integer", "numeric") & ci) ci <- FALSE
     if (length(var) == 1) interaction <- FALSE
     ## get the prediction grid for whatever var is
-    if (interaction)
+    if (interaction) {
         rng <- expand.grid(lapply(var, function(x) ivar_points(df, x, cutoff, empirical)))
-    else if (length(var) > 1 & !interaction) {
+    } else if (length(var) > 1 & !interaction) {
         rng <- lapply(var, function(x) data.frame(ivar_points(df, x, cutoff, empirical)))
         names(rng) <- var
-    } else
+    } else {
         rng <- data.frame(ivar_points(df, var, cutoff, empirical))
+    }
     ## run the pd algo in parallel?
     '%op%' <- ifelse(getDoParWorkers() > 1 & parallel, foreach::'%dopar%', foreach::'%do%')
     inner_loop <- function(df, rng, idx, var) {
@@ -327,7 +328,7 @@ partial_dependence.rfsrc <- function(fit, df, var, cutoff = 10, interaction = FA
         target <- "chf"
     else
         target <- fit$yvar.names
-    
+
     attr(pred, "class") <- c("pd", "data.frame")
     attr(pred, "target") <- target
     attr(pred, "prob") <- type == "prob"
