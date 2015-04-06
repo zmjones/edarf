@@ -183,6 +183,7 @@ plot_pd <- function(pd, geom = "line", xlab = NULL, ylab = NULL, title = "", fac
 #' can be "none", "ascending", or "descending"
 #' @param geom character describing type of plot desired: "point" or "bar"
 #' @param facet logical indicating whether to facet, only applicable when returning class-specific variable importance
+#' @param zero_line logical indicating whether to plot a dashed line at 0
 #' @param scales can be "free", "free_x", "free_y" or "fixed", applicable when facetting
 #' @param xlab x-axis label, default "Variables"
 #' @param ylab y-axis label, default "Importance"
@@ -200,6 +201,7 @@ plot_pd <- function(pd, geom = "line", xlab = NULL, ylab = NULL, title = "", fac
 #' @export
 plot_imp <- function(imp, sort = "none", labels = NULL,
                      geom = "point", facet = FALSE,
+                     zero_line = NULL,
                      xlab = "Variables", ylab = "Importance", title = "") {
     atts <- attributes(imp)
     if (!is.null(labels) & length(labels) == nrow(imp))
@@ -237,6 +239,9 @@ plot_imp <- function(imp, sort = "none", labels = NULL,
         p <- p + geom_bar(stat = "identity", position = "dodge")
     else
         stop("invalid geom")
+
+    if (!is.null(zero_line))
+        p <- p + geom_hline(yintercept = 0, linetype = "dotted")
 
     p <- p + labs(y = ylab, x = xlab, title = title)
     p + coord_flip() + theme_bw()
