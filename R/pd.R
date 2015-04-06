@@ -59,7 +59,9 @@ partial_dependence.randomForest <- function(fit, df, var, cutoff = 10, interacti
                                             empirical = TRUE, parallel = FALSE, type = "", ...) {
     pkg <- "randomForest"
     y_class <- class(fit$y)
-    target <- colnames(df)[sapply(1:ncol(df), function(x) all.equal(df[, x], fit$y))]
+    check <- sapply(1:ncol(df), function(x)
+        all.equal(df[[x]], fit$y, use.names = FALSE, check.names = FALSE))
+    target <- colnames(df)[as.logical(check)]
     target <- target[!is.na(target)]
     if (!y_class %in% c("integer", "numeric") & ci) ci <- FALSE
     if (length(var) == 1) interaction <- FALSE
@@ -351,16 +353,16 @@ partial_dependence.rfsrc <- function(fit, df, var, cutoff = 10, interaction = FA
 #'
 #' @export
 ivar_points <- function(df, x, cutoff = 10, empirical = TRUE) {
-    rng <- unique(df[, x])
+    rng <- unique(df[[x]])
     rng <- rng[!is.na(rng)]
-    if (length(rng) > cutoff & !is.factor(df[, x])) {
+    if (length(rng) > cutoff & !is.factor(df[[x]])) {
         if (empirical == TRUE & cutoff < length(rng)) {
             rng_s <- sort(rng)[-c(1, length(rng))]
             rng <- c(sample(rng_s, (cutoff - 2)), range(rng))
         } else if (empirical == FALSE)
               rng <- seq(min(rng), max(rng), length.out = cutoff)
     }
-    class(rng) <- class(df[, x])
+    class(rng) <- class(df[[x]])
     return(rng)
 }
 #' Matches column classes of the input data frame to the output
@@ -374,13 +376,13 @@ ivar_points <- function(df, x, cutoff = 10, empirical = TRUE) {
 fix_classes <- function(df, pred) {
     for (x in colnames(pred)) {
         if (x %in% colnames(df)) {
-            if (class(df[, x]) == "factor")
+            if (class(df[[x]]) == "factor")
                 pred[, x] <- factor(pred[, x])
-            else if (class(df[, x]) == "numeric") {
+            else if (class(df[[x]]) == "numeric") {
                 pred[, x] <- as.numeric(pred[, x])
-            } else if (class(df[, x]) == "integer") {
+            } else if (class(df[[x]]) == "integer") {
                 pred[, x] <- as.integer(pred[, x])
-            } else if (class(df[, x]) == "character") {
+            } else if (class(df[[x]]) == "character") {
                 pred[, x] <- as.character(pred[, x])
             } else  {
                 stop("column of unsupported type input")
