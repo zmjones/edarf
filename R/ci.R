@@ -24,6 +24,8 @@ var_est.randomForest <- function(fit, df, ...) {
     info <- info[, c("Package", "Version")]
     if (!info[info[, 1] == "randomForest", "Version"] == "4.6-11")
         stop("install fixed randomForest from http://github.com/swager/randomForest")
+    if (is.null(fit$inbag))
+        stop("keep.inbag must be true in call to randomForest")
     pred <- predict(fit, newdata = df, predict.all = TRUE, ...)
     data.frame("prediction" = pred$aggregate,
                "variance" = inf_jackknife(pred$individual, fit$ntree, fit$inbag))
@@ -56,6 +58,8 @@ var_est.rfsrc <- function(fit, df, ...) {
 #'
 #' Essentially code from randomForestCI (\url{https://github.com/swager/randomForestCI}) with some modifications, and factored out so that it can be made more generic
 #'
+#' @importFrom Matrix rowMeans rowSums colSums
+#' 
 #' @param pred matrix with n rows and B columns, where n is the number of observations, and B the number of trees in the forest
 #' @param B number of trees
 #' @param N matrix with n rows and B columns, where each entry gives the number of times observation i appears in tree j
@@ -73,18 +77,18 @@ var_est.rfsrc <- function(fit, df, ...) {
 #' }
 #' @export
 inf_jackknife <- function(pred, B, N) {
-    pred_center <- pred - rowMeans(pred)  ## difference between tree prediction
+    pred_center <- pred - Matrix::rowMeans(pred)  ## difference between tree prediction
     ## and mean across trees
-    N_avg <- rowMeans(N) ## proportion of times i appears in B (all b)
+    N_avg <- Matrix::rowMeans(N) ## proportion of times i appears in B (all b)
     n <- sum(N) / B ## portion of obs. sampled at each b, same as sum(N_avg), equals no. obs. w/ bootstrap,
     ## and is < no. obs. w/ subsampling
     ## covariance between number of times obs. i appears in b and difference between tree
     ## and mean across trees (across in bag and out bag)
     C <- N %*% t(pred_center) - Matrix(N_avg, nrow(N), 1) %*%
-        Matrix(rowSums(pred_center), 1, nrow(pred_center))
-    raw_IJ <- colSums(C^2) / B^2
-    N_var <- mean(rowMeans(N^2) - N_avg^2)
-    boot_var <- rowMeans(pred_center^2)
+        Matrix(Matrix::rowSums(pred_center), 1, nrow(pred_center))
+    raw_IJ <- Matrix::colSums(C^2) / B^2
+    N_var <- mean(Matrix::rowMeans(N^2) - N_avg^2)
+    boot_var <- Matrix::rowMeans(pred_center^2)
     bias_correct <- n * N_var * boot_var / B
     raw_IJ - bias_correct
 }
