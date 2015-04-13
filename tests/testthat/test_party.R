@@ -14,6 +14,7 @@ data("readingSkills", package = "party")
 ## classification, vector var
 ## classification, interaction
 ## classification, prob
+## classification, prob, drop
 ## classification, vector var, prob
 ## classification, interaction, prob
 
@@ -40,7 +41,7 @@ test_that("confidence interval for regression", {
 })
 
 test_that("regression, vector input, and ci", {
-    pd <- partial_dependence(fit, var = c("Education", "Agriculture"), interaction = FALSE)
+    pd <- partial_dependence(fit, var = c("Education", "Agriculture"), interaction = FALSE, ci = TRUE)
     expect_that(pd, is_a("data.frame"))
     expect_that(colnames(pd), equals(c("value", "Fertility", "variance", "variable", "low", "high")))
     expect_that(pd$Fertility, is_a("numeric"))
@@ -117,6 +118,15 @@ test_that("classification and probability output", {
     expect_that(colnames(pd), equals(c("Petal.Width", "setosa", "versicolor", "virginica")))
     expect_that(pd$Petal.Width, is_a("numeric"))
     expect_that(pd$setosa, is_a("numeric"))
+    expect_that(pd$versicolor, is_a("numeric"))
+    expect_that(pd$virginica, is_a("numeric"))
+})
+
+test_that("classification with probability output and dropped levels", {
+    pd <- partial_dependence(fit, var = "Petal.Width", type = "prob", drop_levels = "setosa")
+    expect_that(pd, is_a("data.frame"))
+    expect_that(colnames(pd), equals(c("Petal.Width", "versicolor", "virginica")))
+    expect_that(pd$Petal.Width, is_a("numeric"))
     expect_that(pd$versicolor, is_a("numeric"))
     expect_that(pd$virginica, is_a("numeric"))
 })

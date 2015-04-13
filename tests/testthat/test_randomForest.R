@@ -12,6 +12,7 @@ data("iris")
 ## classification, vector var
 ## classification, interaction
 ## classification, prob
+## classification, prob, drop
 ## classification, vector var, prob
 ## classification, interaction, prob
 
@@ -19,7 +20,7 @@ data("iris")
 fit <- randomForest(Fertility ~ ., swiss, keep.inbag = TRUE)
 
 test_that("regression", {
-    pd <- partial_dependence(fit, swiss, "Education", ci = FALSE)
+    pd <- partial_dependence(fit, df = swiss, var = "Education", ci = FALSE)
     expect_that(pd, is_a("data.frame"))
     expect_that(colnames(pd), equals(c("Education", "Fertility")))
     expect_that(pd$Fertility, is_a("numeric"))
@@ -27,7 +28,7 @@ test_that("regression", {
 })
 
 test_that("regression and ci", {
-    pd <- partial_dependence(fit, swiss, "Education", ci = TRUE)
+    pd <- partial_dependence(fit, df = swiss, var = "Education", ci = TRUE)
     expect_that(pd, is_a("data.frame"))
     expect_that(colnames(pd), equals(c("Education", "Fertility", "variance", "low", "high")))
     expect_that(pd$Fertility, is_a("numeric"))
@@ -38,7 +39,7 @@ test_that("regression and ci", {
 })
 
 test_that("regression, ci, and vector input", {
-    pd <- partial_dependence(fit, swiss, c("Education", "Agriculture"), interaction = FALSE)
+    pd <- partial_dependence(fit, df = swiss, var = c("Education", "Agriculture"), ci = TRUE, interaction = FALSE)
     expect_that(pd, is_a("data.frame"))
     expect_that(colnames(pd), equals(c("value", "Fertility", "variance", "variable", "low", "high")))
     expect_that(pd$Fertility, is_a("numeric"))
@@ -50,7 +51,7 @@ test_that("regression, ci, and vector input", {
 })
 
 test_that("regression and vector input", {
-    pd <- partial_dependence(fit, swiss, c("Education", "Agriculture"),
+    pd <- partial_dependence(fit, df = swiss, var = c("Education", "Agriculture"),
                              interaction = FALSE, ci = FALSE)
     expect_that(pd, is_a("data.frame"))
     expect_that(colnames(pd), equals(c("value", "Fertility", "variable")))
@@ -60,7 +61,7 @@ test_that("regression and vector input", {
 })
 
 test_that("regression and interaction", {
-    pd <- partial_dependence(fit, swiss, c("Education", "Agriculture"),
+    pd <- partial_dependence(fit, df = swiss, var = c("Education", "Agriculture"),
                              interaction = TRUE, ci = FALSE)
     expect_that(pd, is_a("data.frame"))
     expect_that(colnames(pd), equals(c("Education", "Agriculture", "Fertility")))
@@ -70,7 +71,7 @@ test_that("regression and interaction", {
 })
 
 test_that("regression, interactions, and ci", {
-    pd <- partial_dependence(fit, swiss, c("Education", "Agriculture"),
+    pd <- partial_dependence(fit, df = swiss, var = c("Education", "Agriculture"),
                              interaction = TRUE, ci = TRUE)
     expect_that(pd, is_a("data.frame"))
     expect_that(pd$Education, is_a("integer"))
@@ -84,7 +85,7 @@ test_that("regression, interactions, and ci", {
 fit <- randomForest(Species ~ ., iris)
 
 test_that("classification", {
-    pd <- partial_dependence(fit, iris, "Petal.Width")
+    pd <- partial_dependence(fit, df = iris, var = "Petal.Width")
     expect_that(pd, is_a("data.frame"))
     expect_that(colnames(pd), equals(c("Petal.Width", "Species")))
     expect_that(pd$Species, is_a("factor"))
@@ -92,7 +93,7 @@ test_that("classification", {
 })
 
 test_that("classification and vector input", {
-    pd <- partial_dependence(fit, iris, c("Petal.Width", "Petal.Length"))
+    pd <- partial_dependence(fit, df = iris, var = c("Petal.Width", "Petal.Length"))
     expect_that(pd, is_a("data.frame"))
     expect_that(colnames(pd), equals(c("value", "Species", "variable")))
     expect_that(pd$Species, is_a("factor"))
@@ -101,7 +102,7 @@ test_that("classification and vector input", {
 })
 
 test_that("classification and interaction", {
-    pd <- partial_dependence(fit, iris, c("Petal.Width", "Petal.Length"), interaction = TRUE)
+    pd <- partial_dependence(fit, df = iris, var = c("Petal.Width", "Petal.Length"), interaction = TRUE)
     expect_that(pd, is_a("data.frame"))
     expect_that(colnames(pd), equals(c("Petal.Width", "Petal.Length", "Species")))
     expect_that(pd$Species, is_a("factor"))
@@ -110,14 +111,26 @@ test_that("classification and interaction", {
 })
 
 test_that("classification and probability output", {
-    pd <- partial_dependence(fit, iris, "Petal.Width", type = "prob")
+    pd <- partial_dependence(fit, df = iris, var = "Petal.Width", type = "prob")
     expect_that(pd, is_a("data.frame"))
     expect_that(colnames(pd), equals(c("Petal.Width", "setosa", "versicolor", "virginica")))
     expect_that(pd$Petal.Width, is_a("numeric"))
+    expect_that(pd$setosa, is_a("numeric"))
+    expect_that(pd$versicolor, is_a("numeric"))
+    expect_that(pd$virginica, is_a("numeric"))
+})
+
+test_that("classification with probability output and drop_levels", {
+    pd <- partial_dependence(fit, df = iris, var = "Petal.Width", type = "prob", drop_levels = "setosa")
+    expect_that(pd, is_a("data.frame"))
+    expect_that(colnames(pd), equals(c("Petal.Width", "versicolor", "virginica")))
+    expect_that(pd$Petal.Width, is_a("numeric"))
+    expect_that(pd$versicolor, is_a("numeric"))
+    expect_that(pd$virginica, is_a("numeric"))
 })
 
 test_that("classification, probability output, and vector input", {
-    pd <- partial_dependence(fit, iris, c("Petal.Width", "Petal.Length"), type = "prob")
+    pd <- partial_dependence(fit, df = iris, var = c("Petal.Width", "Petal.Length"), type = "prob")
     expect_that(pd, is_a("data.frame"))
     expect_that(colnames(pd), equals(c("value", "setosa", "versicolor", "virginica", "variable")))
     expect_that(pd$value, is_a("numeric"))
@@ -128,7 +141,8 @@ test_that("classification, probability output, and vector input", {
 })
 
 test_that("classification, probability output, and interaction", {
-    pd <- partial_dependence(fit, iris, c("Petal.Width", "Petal.Length"), type = "prob", interaction = TRUE)
+    pd <- partial_dependence(fit, df = iris, var = c("Petal.Width", "Petal.Length"),
+                             type = "prob", interaction = TRUE)
     expect_that(pd, is_a("data.frame"))
     expect_that(colnames(pd), equals(c("Petal.Width", "Petal.Length", "setosa", "versicolor", "virginica")))
     expect_that(pd$Petal.Width, is_a("numeric"))

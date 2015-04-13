@@ -12,11 +12,12 @@
 #' @param cutoff the maximal number of unique points in each element of 'var' used in the
 #' partial dependence calculation
 #' @param interaction logical, if 'var' is a vector, does this specify an interaction or a list of bivariate partial dependence
-#' @param ci use the bias corrected infinitesimal jackknife from Wager, Hastie, and Efron (2014), currently only works with regression
+#' @param ci use the bias corrected infinitesimal jackknife from Wager, Hastie, and Efron (2014), only works with regression
 #' @param confidence desired confidence for the returned interval (ignored if ci is false)
 #' @param empirical logical indicator of whether or not only values in the data should be sampled
 #' @param parallel logical indicator of whether a parallel backend should be used if registered
 #' @param type with classification, default "" gives most probable class for classification and "prob" gives class probabilities
+#' @param drop_levels character vector specifying levels of a factor to drop, spaces in levels should be replaced by dots
 #' @param ... additional arguments to be passed
 #'
 #' @return a data.frame with the partial dependence of 'var'
@@ -51,17 +52,19 @@
 #'
 #' @export
 partial_dependence <- function(fit, df, var, cutoff = 10, interaction = FALSE,
-                               ci = TRUE, confidence = .95, empirical = TRUE, parallel = FALSE,
-                               type = "", ...) UseMethod("partial_dependence", fit)
+                               ci = FALSE, confidence = .95, empirical = TRUE, parallel = FALSE,
+                               type = "", drop_levels = NULL, ...) UseMethod("partial_dependence", fit)
 #' @export
 partial_dependence.randomForest <- function(fit, df, var, cutoff = 10, interaction = FALSE,
-                                            ci = TRUE, confidence = .95,
-                                            empirical = TRUE, parallel = FALSE, type = "", ...) {
+                                            ci = FALSE, confidence = .95,
+                                            empirical = TRUE, parallel = FALSE, type = "",
+                                            drop_levels = NULL, ...) {
     pkg <- "randomForest"
     y_class <- class(fit$y)
-    check <- sapply(1:ncol(df), function(x)
+    check <- lapply(1:ncol(df), function(x)
         all.equal(df[[x]], fit$y, use.names = FALSE, check.names = FALSE))
-    target <- colnames(df)[as.logical(check)]
+    check <- sapply(check, function(x) any(is.logical(x)))
+    target <- colnames(df)[check]
     target <- target[!is.na(target)]
     if (!y_class %in% c("integer", "numeric") & ci) ci <- FALSE
     if (length(var) == 1) interaction <- FALSE
@@ -88,7 +91,14 @@ partial_dependence.randomForest <- function(fit, df, var, cutoff = 10, interacti
         } else if (y_class == "factor") {
             ## if y is a factor and class probs are requested (soft voting), get the probs
             ## and take their mean across all obs.
-            if (type == "prob") pred <- colMeans(predict(fit, newdata = df, type = type))
+            if (type == "prob") {
+                pred <- colMeans(predict(fit, newdata = df, type = type))
+                if (!is.null(drop_levels)) {
+                    if (!drop_levels %in% names(pred))
+                        stop("drop_levels not a level of y")
+                    pred <- pred[-which(names(pred) %in% drop_levels)]
+                }
+            }
             else if (type == "class" | type == "") {
                 ## if no class probs, then just find the maximal class
                 ## and if there are ties randomly pick one
@@ -146,8 +156,9 @@ partial_dependence.randomForest <- function(fit, df, var, cutoff = 10, interacti
 }
 #' @export
 partial_dependence.RandomForest <- function(fit, df = NULL, var, cutoff = 10, interaction = FALSE,
-                                            ci = TRUE, confidence = .95,
-                                            empirical = TRUE, parallel = FALSE, type = "", ...) {
+                                            ci = FALSE, confidence = .95,
+                                            empirical = TRUE, parallel = FALSE,
+                                            type = "", drop_levels = NULL, ...) {
     pkg <- "party"
     ## get y from the fit object
     y <- get("response", fit@data@env)
@@ -194,6 +205,11 @@ partial_dependence.RandomForest <- function(fit, df = NULL, var, cutoff = 10, in
                 if (type == "prob") {
                     pred <- colMeans(do.call(rbind, predict(fit, newdata = df, type = type)))
                     names(pred) <- gsub(paste0(names(y), "\\."), "", names(pred))
+                    if (!is.null(drop_levels)) {
+                        if (!drop_levels %in% names(pred))
+                            stop("drop_levels not a level of y")
+                        pred <- pred[-which(names(pred) %in% drop_levels)]
+                    }
                 } else if (type == "class" | type == "") {
                     ## if no class probs requested just find the name of the maximal class
                     ## and randomly pick one if there are ties
@@ -201,7 +217,20 @@ partial_dependence.RandomForest <- function(fit, df = NULL, var, cutoff = 10, in
                     if (length(pred) != 1) pred <- sample(pred, 1)
                 } else stop("invalid type parameter passed to predict.RandomForest*")
             } else stop("invalid response type")
-        } else pred <- colMeans(do.call(rbind, predict(fit, newdata = df)))
+        } else {
+            pred <- colMeans(do.call("rbind", predict(fit, newdata = df)))
+            facts <- names(y)[sapply(df[ names(y)], class) %in% c("character", "factor")]
+            matched <- grepl(paste("^", facts, "*.", sep = "", collapse = "|"), names(pred))
+            pattern <- paste(paste0("^", facts, "\\."), collapse = "|")
+            names(pred)[matched] <- gsub(pattern, "", names(pred)[matched])
+            if (!is.null(drop_levels)) {
+                if (any(grepl("\\s+", drop_levels)))
+                    stop("predict.RandomForest replaces spaces with periods in level names")
+                if (!drop_levels %in% names(pred))
+                    stop("drop_levels not a level of y")
+                pred <- pred[-which(names(pred) %in% drop_levels)]
+            }
+        }
         c(rng[idx, ], pred)
     }
     i <- x <- idx <- out <- NULL ## initialize to avoid R CMD check errors
@@ -254,8 +283,9 @@ partial_dependence.RandomForest <- function(fit, df = NULL, var, cutoff = 10, in
 }
 #' @export
 partial_dependence.rfsrc <- function(fit, df, var, cutoff = 10, interaction = FALSE,
-                                     ci = TRUE, confidence = .95,
-                                     empirical = TRUE, parallel = FALSE, type = "", ...) {
+                                     ci = FALSE, confidence = .95,
+                                     empirical = TRUE, parallel = FALSE,
+                                     type = "", drop_levels = NULL, ...) {
     pkg <- "randomForestSRC"
     y <- fit$yvar
     if (!(class(y) %in% c("numeric", "integer"))) ci <- FALSE
@@ -275,9 +305,14 @@ partial_dependence.rfsrc <- function(fit, df, var, cutoff = 10, interaction = FA
         fit$pd_membership <- pred$membership
         fit$pd_predicted <- pred$predicted
         if (class(y) == "factor") {
-            if (type == "prob")
+            if (type == "prob") {
                 pred <- colMeans(pred$predicted)
-            else if (type == "class" | type == "") {
+                if (!is.null(drop_levels)) {
+                    if (!drop_levels %in% names(pred))
+                        stop("drop_levels not a level of y")
+                    pred <- pred[-which(names(pred) %in% drop_levels)]
+                }
+            } else if (type == "class" | type == "") {
                 pred <- names(which.max(table(pred$class)))
                 if (length(pred) != 1) pred <- sample(pred, 1)
             }
@@ -339,7 +374,7 @@ partial_dependence.rfsrc <- function(fit, df, var, cutoff = 10, interaction = FA
     attr(pred, "var") <- var
     attr(pred, "ci") <- ci
     skip <- colnames(pred) %in% colnames(df)[sapply(df, class) %in% c("factor", "character")]
-    pred <- fix_classes(df, pred[, !skip])
+    pred <- fix_classes(df, pred)
     pred
 }
 #' Creates a prediction vector for variables to decrease computation time

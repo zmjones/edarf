@@ -44,7 +44,7 @@ test_that("regression and ci", {
 })
 
 test_that("regression, ci, and vector input", {
-    pd <- partial_dependence(fit, var = c("Education", "Agriculture"), interaction = FALSE)
+    pd <- partial_dependence(fit, var = c("Education", "Agriculture"), interaction = FALSE, ci = TRUE)
     expect_that(pd, is_a("data.frame"))
     expect_that(colnames(pd), equals(c("value", "Fertility", "variance", "variable", "low", "high")))
     expect_that(pd$Fertility, is_a("numeric"))
@@ -122,6 +122,15 @@ test_that("classification and prob output", {
     expect_that(colnames(pd), equals(c("Petal.Width", "setosa", "versicolor", "virginica")))
     expect_that(pd$Petal.Width, is_a("numeric"))
     expect_that(pd$setosa, is_a("numeric"))
+    expect_that(pd$versicolor, is_a("numeric"))
+    expect_that(pd$virginica, is_a("numeric"))
+})
+
+test_that("classification with prob output and drop_levels", {
+    pd <- partial_dependence(fit, var = "Petal.Width", type = "prob", drop_levels = "setosa")
+    expect_that(pd, is_a("data.frame"))
+    expect_that(colnames(pd), equals(c("Petal.Width", "versicolor", "virginica")))
+    expect_that(pd$Petal.Width, is_a("numeric"))
     expect_that(pd$versicolor, is_a("numeric"))
     expect_that(pd$virginica, is_a("numeric"))
 })

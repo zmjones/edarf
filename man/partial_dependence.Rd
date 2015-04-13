@@ -5,8 +5,8 @@
 \title{Partial dependence using random forests}
 \usage{
 partial_dependence(fit, df, var, cutoff = 10, interaction = FALSE,
-  ci = TRUE, confidence = 0.95, empirical = TRUE, parallel = FALSE,
-  type = "", ...)
+  ci = FALSE, confidence = 0.95, empirical = TRUE, parallel = FALSE,
+  type = "", drop_levels = NULL, ...)
 }
 \arguments{
 \item{fit}{object of class 'RandomForest', 'randomForest', or 'rfsrc'}
@@ -20,7 +20,7 @@ partial dependence calculation}
 
 \item{interaction}{logical, if 'var' is a vector, does this specify an interaction or a list of bivariate partial dependence}
 
-\item{ci}{use the bias corrected infinitesimal jackknife from Wager, Hastie, and Efron (2014), currently only works with regression}
+\item{ci}{use the bias corrected infinitesimal jackknife from Wager, Hastie, and Efron (2014), only works with regression}
 
 \item{confidence}{desired confidence for the returned interval (ignored if ci is false)}
 
@@ -29,6 +29,8 @@ partial dependence calculation}
 \item{parallel}{logical indicator of whether a parallel backend should be used if registered}
 
 \item{type}{with classification, default "" gives most probable class for classification and "prob" gives class probabilities}
+
+\item{drop_levels}{character vector specifying levels of a factor to drop, spaces in levels should be replaced by dots}
 
 \item{...}{additional arguments to be passed}
 }
