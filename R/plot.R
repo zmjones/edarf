@@ -308,9 +308,16 @@ plot_prox <- function(pca, dims = 1:2, labels = NULL,
     plt$color <- color
     plt$shape <- shape
     plt$size <- size
+
+    if (!is.null(labels)) {
+        plt$labels <- labels
+        p <- ggplot(plt, aes_string("PC1", "PC2", color = "color", shape = "shape",
+                                    alpha = "alpha", size = "size", ymax = "ymax", label = "labels"))
+    } else {
+        p <- ggplot(plt, aes_string("PC1", "PC2", color = "color", shape = "shape",
+                                    alpha = "alpha", size = "size", ymax = "ymax"))
+    }
     
-    p <- ggplot(plt, aes_string("PC1", "PC2", color = "color", shape = "shape",
-                                alpha = "alpha", size = "size", ymax = "ymax"))
     if (!is.null(color)) {
         if (length(color) > 1)
             p <- p + scale_color_discrete(name = color_label)
@@ -338,7 +345,7 @@ plot_prox <- function(pca, dims = 1:2, labels = NULL,
     if (is.null(labels))
         p <- p + geom_point(position = "dodge")
     else
-        p <- p + geom_text(position = "dodge", label = labels)
+        p <- p + geom_text(position = "dodge")
 
     if (is.null(xlab))
         xlab <- paste0("PC1 (", round(prop_var[1], 0), "% explained var.)")
