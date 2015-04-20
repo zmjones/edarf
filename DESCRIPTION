@@ -1,9 +1,11 @@
 Package: edarf
 Version: 0.1
-Date: 9/3/2014
+Date: 4/20/2015
 Title: Exploratory Data Analysis using Random Forests
-Description: Functions useful for exploratory data analysis using
-    random forests
+Description: A package with functions useful for exploratory data analysis using
+    random forests. The package can be used to compute bivariate and multivariate partial dependence,
+    variable importance, and interaction importance. It can also visualize all of the aforementioned
+    methods with ggplot2. It also contains functions for visualizing predictions and PCA of proximity matrices.
 Author: Zachary M. Jones <zmj@zmjones.com> and Fridolin Linder <fridolin.linder@gmail.com>
 Maintainer: Zachary M. Jones <zmj@zmjones.com>
 License: MIT + file LICENSE
@@ -14,10 +16,10 @@ Imports:
     reshape2,
     Rcpp (>= 0.11.1),
     Matrix,
-    party
+    party,
+    randomForestSRC
 Suggests:
     randomForest,
-    randomForestSRC,
     scales,
     doParallel,
     testthat

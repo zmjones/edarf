@@ -108,7 +108,7 @@ partial_dependence.randomForest <- function(fit, df, var, cutoff = 10, interacti
         } else stop("invalid response type")
         c(rng[idx, ], pred)
     }
-    i <- x <- idx <- out <- NULL ## initialize to avoid R CMD check errors
+    i <- x <- idx <- out <- nam <- NULL ## initialize to avoid R CMD check errors
     ## loop over points in prediction grid (rng)
     if (is.data.frame(rng)) {
         pred <- foreach(i = 1:nrow(rng), .packages = pkg) %op% inner_loop(df, rng, i, var)

@@ -201,7 +201,7 @@ plot_pd <- function(pd, geom = "line", xlab = NULL, ylab = NULL, title = "", fac
 #' @export
 plot_imp <- function(imp, sort = "none", labels = NULL,
                      geom = "point", facet = FALSE,
-                     zero_line = NULL,
+                     zero_line = NULL, scales = "free",
                      xlab = "Variables", ylab = "Importance", title = "") {
     atts <- attributes(imp)
     if (!is.null(labels) & length(labels) == nrow(imp))
@@ -219,17 +219,18 @@ plot_imp <- function(imp, sort = "none", labels = NULL,
     else
         stop("invalid input to sort argument")
     
-    if (facet & atts$class_levels)
-        p <- ggplot(imp, aes_string("labels", "value", group = "variable")) + facet_wrap(~ variable)
-    else if (!facet & atts$class_levels & geom != "bar") {
+    if (facet & atts$class_levels) {
+        p <- ggplot(imp, aes_string("labels", "value", group = "variable")) +
+            facet_wrap(~ variable, scales = "scales")
+    } else if (!facet & atts$class_levels & geom != "bar") {
         p <- ggplot(imp, aes_string("labels", "value", colour = "variable"))
         p <- p + scale_colour_discrete(name = "Class")
-    }
-    else if (!facet & geom == "bar" & atts$class_levels) {
+    } else if (!facet & geom == "bar" & atts$class_levels) {
         p <- ggplot(imp, aes_string("labels", "value", fill = "variable"))
         p <- p + scale_fill_discrete(name = "Class")
-    } else
+    } else {
         p <- ggplot(imp, aes_string("labels", "value"))
+    }
 
     if (geom == "point")
         p <- p + geom_point()
@@ -271,7 +272,7 @@ plot_imp <- function(imp, sort = "none", labels = NULL,
 #' @param xlab character x-axis label
 #' @param ylab character y-axis label
 #' @param title character plot title
-#'
+#' 
 #' @return a ggplot object
 #'
 #' @examples
@@ -293,7 +294,7 @@ plot_prox <- function(pca, dims = 1:2, labels = NULL,
                       color = "black", color_label = NULL,
                       shape = "1", shape_label = NULL,
                       size = 2, size_label = NULL,
-                      xlab = NULL, ylab = NULL, title = "", ...) {
+                      xlab = NULL, ylab = NULL, title = "") {
     if (is.numeric(color))
         stop("gradient coloring not supported. add this outside of this function.")
     nobs_factor <- sqrt(nrow(pca$x) - 1)
