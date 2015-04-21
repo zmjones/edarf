@@ -111,7 +111,7 @@ plot_pd <- function(pd, geom = "line", xlab = NULL, ylab = NULL, title = "", fac
     } else if (atts$interaction) {
         ## Interaction Plots
         if (length(atts$var) > 2) stop("Only two-way interactions supported")
-        if (!is.null(facet_var)) {
+        if (is.null(facet_var)) {
             n_unique <- apply(pd[, atts$var], 2, function(x) length(unique(x)))
             facet_var <- names(which.min(n_unique))
         }
