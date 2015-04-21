@@ -102,7 +102,7 @@ plot_pd <- function(pd, geom = "line", xlab = NULL, ylab = NULL, title = "", fac
         } else {
             stop("some sort of error")
         }
-        p <- p + facet_wrap(as.formula(paste0("~ ", facet_var)), scales = scales)
+        p <- p + facet_wrap(~ variable, scales = scales)
         if (is.null(ylab))
             ylab <- "Predicted Outcome"
         if (is.null(xlab))
