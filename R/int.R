@@ -3,6 +3,7 @@
 #' Computes the individual importance of a set of variables and compares it to the importance of the variables together
 #' @importFrom foreach foreach %dopar% %do% %:% getDoParWorkers
 #' @importFrom stats predict
+#' @importFrom party initVariableFrame
 #' 
 #' @param fit object of class 'RandomForest', 'randomForest', or 'rfsrc'
 #' @param var a character vector of the predictors of interest, which must match the input matrix
@@ -19,9 +20,14 @@
 #'
 #' fit <- randomForest(Species ~ ., iris)
 #' interaction_importance(fit, c("Petal.Width", "Petal.Length"), 10, data = iris)
+#'
+#' library(party)
+#' fit <- cforest(Species ~ ., iris, controls = cforest_unbiased(mtry = 2))
+#' interaction_importance(fit, c("Petal.Width", "Petal.Length"), 10, OOB = TRUE)
 #' }
 #' @export
-interaction_importance <- function(fit, var, nperm = 100, parallel = FALSE, ...) UseMethod("interaction_importance")
+interaction_importance <- function(fit, var, nperm = 100, parallel = FALSE, ...)
+    UseMethod("interaction_importance")
 #' @export
 interaction_importance.RandomForest <- function(fit, var, nperm = 100, parallel = FALSE,
                                                 OOB = TRUE, mincriterion = 0, ...) {
@@ -48,23 +54,26 @@ interaction_importance.RandomForest <- function(fit, var, nperm = 100, parallel 
         } else {
             oob <- rep(TRUE, length(y))
         }
-        p <- .Call("R_predict", tree, inp, mincriterion, -1L, PACKAGE = "party")
+        
+        p <- predict_tree(tree, inp, mincriterion)
         tree_loss <- loss(p, oob)
         var_idx <- which(var %in% colnames(inp@variables))
 
         for (k in 1:nperm) {
             row_idx <- k + (i - 1) * nperm
             for (j in 1:length(var)) {
-                p <- .Call("R_predict", tree, inp, mincriterion, as.integer(var_idx[j]), PACKAGE = "party")
+                p <- predict_tree(tree, inp, mincriterion, var[j])
                 perm_loss[row_idx, j] <- loss(p, oob) - tree_loss
             }
-            p_int <- .Call("R_predict", tree, inp, mincriterion, as.integer(var_idx), PACKAGE = "party")
+
+            p_int <- predict_tree(tree, inp, mincriterion, var)
             perm_loss[row_idx, length(var) + 1] <- loss(p_int, oob) - tree_loss
         }
         perm_loss[row_idx, ncol(perm_loss)] <- sum(perm_loss[i, var]) - perm_loss[i, length(var) + 1]
     }
     colMeans(perm_loss)
 }
+
 #' @export
 interaction_importance.rfsrc <- function(fit, var, nperm = 100, parallel = FALSE, data, ...) {
     capture.output(out <- randomForestSRC::find.interaction(fit, var, importance = "permute",
@@ -85,7 +94,6 @@ interaction_importance.randomForest <- function(fit, var, nperm = 100, parallel 
 
     ensemble_pred <- predict(fit, newdata = data, type = "response", predict.all = TRUE)$individual
     ensemble_weights <- fit$inbag
-    perm_rep <- vector("list", nperm)
 
     inner_loop <- function(fit, var, data) {
         perm_loss <- matrix(0, nrow = ntree, ncol = length(var) + 2)

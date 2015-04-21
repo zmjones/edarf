@@ -33,12 +33,7 @@ var_est.randomForest <- function(fit, df, ...) {
 }
 #' @export
 var_est.RandomForest <- function(fit, df) {
-    new_df <- initVariableFrame(df)
-    pred <- sapply(1:length(fit@ensemble), function(i) {
-        sapply(.Call("R_predictRF_weights",
-                     fit@ensemble[i], fit@where[i], fit@weights[i], new_df, 0, FALSE, PACKAGE = "party"),
-               function(w) w %*% fit@responses@predict_trafo / sum(w))
-    })
+    pred <- sapply(1:length(fit@ensemble), function(idx) predict(fit, newdata = df, subset = idx))
     data.frame("prediction" = predict(fit, newdata = df),
                "variance" = inf_jackknife(pred, length(fit@ensemble),
                    Matrix(do.call(cbind, fit@weights), sparse = TRUE)))
@@ -77,6 +72,8 @@ var_est.rfsrc <- function(fit, df, ...) {
 #' }
 #' @export
 inf_jackknife <- function(pred, B, N) {
+    if (!is.numeric(pred))
+        stop("predictions must be a numeric matrix")
     pred_center <- pred - Matrix::rowMeans(pred)  ## difference between tree prediction
     ## and mean across trees
     N_avg <- Matrix::rowMeans(N) ## proportion of times i appears in B (all b)

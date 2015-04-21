@@ -35,6 +35,12 @@ library(devtools)
 install_github("zmjones/edarf")
 ```
 
+For many of the features in our package to be useable with [party](http://github.com/rforge/party) we require the use of our [forked copy](http://github.com/zmjones/party).
+
+```{r}
+install_github("zmjones/party", subdir = "pkg")
+```
+
 ## <a name="partial_dependence">Partial Dependence</a>
 ### <a name="classification">Classification</a>
 
