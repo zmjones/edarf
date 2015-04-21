@@ -43,11 +43,15 @@ interaction_importance.RandomForest <- function(fit, var, nperm = 100, parallel 
         loss <- function(x, oob) mean((unlist(x) - y)[oob]^2)
     }
 
-    w <- fit@initweights
     perm_loss <- matrix(0, nrow = nperm * length(fit@ensemble), ncol = length(var) + 2)
     colnames(perm_loss) <- c(var, "joint", "difference")
 
-    for (i in 1:length(fit@ensemble)) {
+    '%op%' <- ifelse(foreach::getDoParWorkers() > 1 & parallel, foreach::'%dopar%', foreach::'%do%')
+
+    out <- foreach::foreach(i = 1:length(fit@ensemble), .combine = "rbind", .packages = "party") %op% {
+        perm_loss <- matrix(NA, nrow = nperm, ncol = length(var) + 2)
+        colnames(perm_loss) <- c(var, "joint", "difference")
+        
         tree <- fit@ensemble[[i]]
         if (OOB) {
             oob <- fit@weights[[i]] == 0
@@ -55,25 +59,18 @@ interaction_importance.RandomForest <- function(fit, var, nperm = 100, parallel 
             oob <- rep(TRUE, length(y))
         }
         
-        p <- predict_tree(tree, inp, mincriterion)
-        tree_loss <- loss(p, oob)
-        var_idx <- which(var %in% colnames(inp@variables))
-
-        for (k in 1:nperm) {
-            row_idx <- k + (i - 1) * nperm
-            for (j in 1:length(var)) {
-                p <- predict_tree(tree, inp, mincriterion, var[j])
-                perm_loss[row_idx, j] <- loss(p, oob) - tree_loss
-            }
-
-            p_int <- predict_tree(tree, inp, mincriterion, var)
-            perm_loss[row_idx, length(var) + 1] <- loss(p_int, oob) - tree_loss
-        }
-        perm_loss[row_idx, ncol(perm_loss)] <- sum(perm_loss[i, var]) - perm_loss[i, length(var) + 1]
+        tree_loss <- loss(predict_tree(tree, inp, mincriterion), oob)
+        perm_loss[, var] <- do.call("rbind",
+                                    lapply(1:nperm, function(j)
+                                        sapply(var, function(x)
+                                            loss(predict_tree(tree, inp, mincriterion, x), oob) - tree_loss)))
+        perm_loss[, "joint"] <- sapply(1:nperm, function(j)
+            loss(predict_tree(tree, inp, mincriterion, var), oob) - tree_loss)
+        perm_loss[, "difference"] <- rowSums(perm_loss[, var]) - perm_loss[, "joint"]
+        perm_loss
     }
-    colMeans(perm_loss)
+    colMeans(out)
 }
-
 #' @export
 interaction_importance.rfsrc <- function(fit, var, nperm = 100, parallel = FALSE, data, ...) {
     capture.output(out <- randomForestSRC::find.interaction(fit, var, importance = "permute",
@@ -91,7 +88,7 @@ interaction_importance.randomForest <- function(fit, var, nperm = 100, parallel 
 
     if (is.factor(y)) loss <- function(x, y) mean(x != y)
     else loss <- function(x, y) mean((x - y)^2)
-
+    
     ensemble_pred <- predict(fit, newdata = data, type = "response", predict.all = TRUE)$individual
     ensemble_weights <- fit$inbag
 
