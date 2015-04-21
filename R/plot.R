@@ -201,7 +201,7 @@ plot_pd <- function(pd, geom = "line", xlab = NULL, ylab = NULL, title = "", fac
 #' @export
 plot_imp <- function(imp, sort = "none", labels = NULL,
                      geom = "point", facet = FALSE,
-                     zero_line = NULL, scales = "free",
+                     zero_line = NULL,
                      xlab = "Variables", ylab = "Importance", title = "") {
     atts <- attributes(imp)
     if (!is.null(labels) & length(labels) == nrow(imp))
@@ -221,7 +221,7 @@ plot_imp <- function(imp, sort = "none", labels = NULL,
     
     if (facet & atts$class_levels) {
         p <- ggplot(imp, aes_string("labels", "value", group = "variable")) +
-            facet_wrap(~ variable, scales = "scales")
+            facet_wrap(~ variable)
     } else if (!facet & atts$class_levels & geom != "bar") {
         p <- ggplot(imp, aes_string("labels", "value", colour = "variable"))
         p <- p + scale_colour_discrete(name = "Class")

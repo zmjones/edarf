@@ -46,57 +46,58 @@ install_github("zmjones/party", subdir = "pkg")
 
 ```{r}
 library(edarf)
+library(ggplot2)
 
 data(iris)
 library(randomForest)
 fit <- randomForest(Species ~ ., iris)
 pd <- partial_dependence(fit, df = iris, var = "Petal.Width", type = "prob")
 plot_pd(pd, geom = "line")
-ggsave("iris_pd_line.png", width = 10, height = 5)
+ggsave("examples/iris_pd_line.png", width = 10, height = 5)
 ```
-![](http://zmjones.com/static/images/iris_pd_line.png)
+![](examples/iris_pd_line.png)
 
 ```{r}
 plot_pd(pd, geom = "area")
-ggsave("iris_pd_area.png", width = 10, height = 5)
+ggsave("examples/iris_pd_area.png", width = 10, height = 5)
 ```
-![](http://zmjones.com/static/images/iris_pd_area.png)
+![](examples/iris_pd_area.png)
 
 ```{r}
 pd <- partial_dependence(fit, df = iris, var = "Petal.Width")
 plot_pd(pd, geom = "bar")
-ggsave("iris_pd_bar.png", width = 10, height = 5)
+ggsave("examples/iris_pd_bar.png", width = 10, height = 5)
 ```
-![](http://zmjones.com/static/images/iris_pd_bar.png)
+![](examples/iris_pd_bar.png)
 
 ```{r}
 pd_int <- partial_dependence(fit, df = iris, var = c("Petal.Width", "Sepal.Length"),
                              interaction = TRUE, type = "prob")
 plot_pd(pd_int, geom = "line", facet_var = "Petal.Width")
-ggsave("iris_pd_int_line.png", width = 10, height = 10)
+ggsave("examples/iris_pd_int_line.png", width = 10, height = 10)
 ```
-![](http://zmjones.com/static/images/iris_pd_int_line.png)
+![](examples/iris_pd_int_line.png)
 
 ```{r}
 plot_pd(pd_int, geom = "area", facet_var = "Petal.Width")
-ggsave("iris_pd_int_area.png", width = 10, height = 10)
+ggsave("examples/iris_pd_int_area.png", width = 10, height = 10)
 ```
-![](http://zmjones.com/static/images/iris_pd_int_area.png)
+![](examples/iris_pd_int_area.png)
 
 ```{r}
 pd_int <- partial_dependence(fit, df = iris, var = c("Petal.Width", "Sepal.Length"), interaction = TRUE)
 plot_pd(pd_int, geom = "bar", facet_var = "Petal.Width")
-ggsave("iris_pd_int_bar.png", width = 10, height = 10)
+ggsave("examples/iris_pd_int_bar.png", width = 10, height = 10)
 ```
-![](http://zmjones.com/static/images/iris_pd_int_bar.png)
+![](examples/iris_pd_int_bar.png)
 
 ```{r}
 pd_lst <- partial_dependence(fit, df = iris, var = c("Petal.Width", "Sepal.Length"),
                              interaction = FALSE, type = "prob")
-plot_pd(pd_lst, geom = "line", facet_var = "variable")
-ggsave("iris_pd_lst_line.png", width = 10, height = 5)
+plot_pd(pd_lst, geom = "line")
+ggsave("examples/iris_pd_lst_line.png", width = 10, height = 5)
 ```
-![](http://zmjones.com/static/images/iris_pd_lst_line.png)
+![](examples/iris_pd_lst_line.png)
 
 ### <a name="regression">Regression</a>
 
@@ -105,23 +106,23 @@ data(swiss)
 fit <- randomForest(Fertility ~ ., swiss, keep.inbag = TRUE)
 pd <- partial_dependence(fit, df = swiss, var = "Education", ci = TRUE)
 plot_pd(pd)
-ggsave("swiss_pd_line.png", width = 10, height = 5)
+ggsave("examples/swiss_pd_line.png", width = 10, height = 5)
 ```
-![](http://zmjones.com/static/images/swiss_pd_line.png)
+![](examples/swiss_pd_line.png)
 
 ```{r}
 pd_int <- partial_dependence(fit, df = swiss, var = c("Education", "Catholic"), interaction = TRUE, ci = TRUE)
 plot_pd(pd_int, facet_var = "Education")
-ggsave("swiss_pd_int_line.png", width = 10, height = 10)
+ggsave("examples/swiss_pd_int_line.png", width = 10, height = 10)
 ```
-![](http://zmjones.com/static/images/swiss_pd_int_line.png)
+![](examples/swiss_pd_int_line.png)
 
 ```{r}
 pd_lst <- partial_dependence(fit, df = swiss, var = c("Education", "Catholic"), interaction = FALSE, ci = TRUE)
-plot_pd(pd_lst, facet_var = "variable")
-ggsave("swiss_pd_lst_line.png", width = 10, height = 5)
+plot_pd(pd_lst)
+ggsave("examples/swiss_pd_lst_line.png", width = 10, height = 5)
 ```
-![](http://zmjones.com/static/images/swiss_pd_lst_line.png)
+![](examples/swiss_pd_lst_line.png)
 
 ### <a name="survival">Survival</a>
 
@@ -131,16 +132,16 @@ data(veteran)
 fit <- rfsrc(Surv(time, status) ~ ., veteran)
 pd <- partial_dependence(fit, var = "age")
 plot_pd(pd)
-ggsave("veteran_pd_line.png", width = 10, height = 5)
+ggsave("examples/veteran_pd_line.png", width = 10, height = 5)
 ```
-![](http://zmjones.com/static/images/veteran_pd_line.png)
+![](examples/veteran_pd_line.png)
 
 ```{r}
 pd_int <- partial_dependence(fit, var = c("age", "diagtime"), interaction = TRUE)
 plot_pd(pd_int, facet_var = "age")
-ggsave("veteran_pd_int_line.png", width = 10, height = 10)
+ggsave("examples/veteran_pd_int_line.png", width = 10, height = 10)
 ```
-![](http://zmjones.com/static/images/veteran_pd_int_line.png)
+![](examples/veteran_pd_int_line.png)
 
 ### <a name="multivariate">Multivariate</a>
 
@@ -150,9 +151,9 @@ library(party)
 fit <- cforest(hp + qsec ~ ., mtcars, controls = cforest_control(mtry = 2))
 pd <- partial_dependence(fit, var = "mpg")
 plot_pd(pd, scales = "free")
-ggsave("mtcars_pd_line.png", width = 10, height = 5)
+ggsave("examples/mtcars_pd_line.png", width = 10, height = 5)
 ```
-![](http://zmjones.com/static/images/mtcars_pd_line.png)
+![](examples/mtcars_pd_line.png)
 
 Multivariate two-way interaction plots not yet implemented. See [Issue #19](https://github.com/zmjones/edarf/issues/19).
 
@@ -162,28 +163,28 @@ Multivariate two-way interaction plots not yet implemented. See [Issue #19](http
 fit <- randomForest(Species ~ ., iris, importance = TRUE)
 imp <- variable_importance(fit, type = "accuracy", class_levels = TRUE)
 plot_imp(imp)
-ggsave("iris_imp_class_point.png", width = 10, height = 5)
+ggsave("examples/iris_imp_class_point.png", width = 10, height = 5)
 ```
-![](http://zmjones.com/static/images/iris_imp_class_point.png)
+![](examples/iris_imp_class_point.png)
 
 ```{r}
 plot_imp(imp, geom = "bar")
-ggsave("iris_imp_class_bar.png", width = 10, height = 5)
+ggsave("examples/iris_imp_class_bar.png", width = 10, height = 5)
 ```
-![](http://zmjones.com/static/images/iris_imp_class_bar.png)
+![](examples/iris_imp_class_bar.png)
 
 ```{r}
 plot_imp(imp, geom = "bar", facet = TRUE)
-ggsave("iris_imp_class_bar_facet.png", width = 10, height = 5)
+ggsave("examples/iris_imp_class_bar_facet.png", width = 10, height = 5)
 ```
-![](http://zmjones.com/static/images/iris_imp_class_bar_facet.png)
+![](examples/iris_imp_class_bar_facet.png)
 
 ```{r}
 imp <- variable_importance(fit, type = "accuracy", class_levels = FALSE)
 plot_imp(imp)
-ggsave("iris_imp.png", width = 10, height = 5)
+ggsave("examples/iris_imp.png", width = 10, height = 5)
 ```
-![](http://zmjones.com/static/images/iris_imp.png)
+![](examples/iris_imp.png)
 
 ## <a name="variance_estimation">Variance Estimation</a>
 
@@ -203,9 +204,9 @@ All the below is handled internally if variance estimates are requested, for `pa
 plot_pred(out$prediction, mtcars$hp, out$variance,
           outlier_idx = which(rank(out$prediction - mtcars$hp) %in% 1:5), labs = row.names(out),
           xlab = "Observed Horsepower", ylab = "Predicted Horsepower")
-ggsave("mtcars_pred.png", width = 10, height = 5)
+ggsave("examples/mtcars_pred.png", width = 10, height = 5)
 ```
-![](http://zmjones.com/static/images/mtcars_pred.png)
+![](examples/mtcars_pred.png)
 
 ## <a name="proximity">Proximity Matrix Visualization</a>
 
@@ -216,9 +217,9 @@ pca <- prcomp(prox)
 plot_prox(pca, labels = row.names(mtcars),
           color = as.factor(mtcars$cyl), color_label = "# cylinders",
           alpha = mtcars$mpg, alpha_label = "mpg")
-ggsave("mtcars_prox.png", width = 10, height = 7.5)
+ggsave("examples/mtcars_prox.png", width = 10, height = 7.5)
 ```
-![](http://zmjones.com/static/images/mtcars_prox.png)
+![](examples/mtcars_prox.png)
 
 ```{r}
 fit <- randomForest(Species ~ ., iris, proximity = TRUE)
@@ -228,7 +229,7 @@ plot_prox(pca,
           color = iris$Species, color_label = "Species",
           size = iris$Petal.Length, size_label = "Petal Length",
           alpha = iris$Petal.Width, alpha_label = "Petal Width")
-ggsave("iris_prox.png", width = 10, height = 7.5)
+ggsave("examples/iris_prox.png", width = 10, height = 7.5)
 ```
 
-![](http://zmjones.com/static/images/iris_prox.png)
+![](examples/iris_prox.png)
