@@ -23,6 +23,7 @@ Suggests:
     scales,
     doParallel,
     testthat
+LazyData: true
 LinkingTo: Rcpp, RcppArmadillo
 BugReports: https://github.com/zmjones/edarf
 
