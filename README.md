@@ -190,11 +190,9 @@ ggsave("examples/iris_imp.png", width = 10, height = 5)
 ## <a name="interaction_detection">Interaction Detection</a>
 
 ```{r}
-library(party)
-fit <- cforest(Species ~ ., iris, controls = cforest_unbiased(mtry = 2))
-int <- interaction_importance(fit, var = c("Petal.Width", "Petal.Length"), nperm = 10)
+int <- interaction_importance(fit, var = c("Petal.Width", "Petal.Length"), nperm = 10, data = iris)
 plot_int(int)
-ggsave("examples_iris_int_imp.png", width = 10, height = 5)
+ggsave("examples/iris_int_imp.png", width = 10, height = 5)
 ```
 ![](examples/iris_int_imp.png)
 

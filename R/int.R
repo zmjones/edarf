@@ -98,31 +98,27 @@ interaction_importance.randomForest <- function(fit, var, nperm = 100, parallel 
     else loss <- function(x, y) mean((x - y)^2)
     
     ensemble_pred <- predict(fit, newdata = data, type = "response", predict.all = TRUE)$individual
-    ensemble_weights <- fit$inbag
+    ensemble_loss <- apply(ensemble_pred, 2, function(x) loss(x, y))
+    '%op%' <- ifelse(foreach::getDoParWorkers() > 1 & parallel, foreach::'%dopar%', foreach::'%do%')
 
-    inner_loop <- function(fit, var, data) {
-        perm_loss <- matrix(0, nrow = ntree, ncol = length(var) + 3)
+    out <- foreach::foreach(iterators::icount(nperm), .combine = "rbind", .packages = "randomForest") %op% {
+        perm_loss <- matrix(NA, nrow = ntree, ncol = length(var) + 3)
         colnames(perm_loss) <- c(var, "additive", "joint", "difference")
         for (v in var) {
             pidx <- sample(1:n, n, FALSE)
             pdata <- data
             pdata[, v] <- pdata[pidx, v]
             p <- predict(fit, newdata = pdata, type = "response", predict.all = TRUE)$individual
-            perm_loss[, v] <- apply(ensemble_pred, 2, function(x) loss(p, x))
+            perm_loss[, v] <- apply(p, 2, function(x) loss(y, x)) - ensemble_loss
         }
+        perm_loss[, "additive"] <- rowSums(perm_loss[, var])
         pidx <- sample(1:n, n, FALSE)
         pdata <- data
         pdata[, var] <- pdata[pidx, var]
         p <- predict(fit, newdata = pdata, type = "response", predict.all = TRUE)$individual
-        perm_loss[, "additive"] <- rowSums(perm_loss[, var])
-        perm_loss[, "joint"] <- apply(ensemble_pred, 2, function(x) loss(p, x))
+        perm_loss[, "joint"] <- apply(p, 2, function(x) loss(y, x)) - ensemble_loss
         perm_loss[, "difference"] <- perm_loss[, "additive"] - perm_loss[, "joint"]
         perm_loss
-    }
-
-    '%op%' <- ifelse(foreach::getDoParWorkers() > 1 & parallel, foreach::'%dopar%', foreach::'%do%')
-    out <- foreach::foreach(iterators::icount(ntree), .combine = "rbind", .packages = "randomForest") %op% {
-        inner_loop(fit, var, data)
     }
     out <- colMeans(out)
     names(out) <- c(var, "additive", "joint", "difference")
