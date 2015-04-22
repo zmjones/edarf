@@ -23,6 +23,7 @@ Pull requests, bug reports, feature requests, etc. are welcome!
 	+ [Survival](#survival)
 	+ [Multivariate](#multivariate)
  - [Variable Importance](#variable_importance)
+ - [Interaction Detection](#interaction_detection)
  - [Variance Estimation](#variance_estimation)
  - [Proximity Matrix Visualization](#proximity)
 
@@ -186,9 +187,20 @@ ggsave("examples/iris_imp.png", width = 10, height = 5)
 ```
 ![](examples/iris_imp.png)
 
+## <a name="interaction_detection">Interaction Detection</a>
+
+```{r}
+library(party)
+fit <- cforest(Species ~ ., iris, controls = cforest_unbiased(mtry = 2))
+int <- interaction_importance(fit, var = c("Petal.Width", "Petal.Length"), nperm = 10)
+plot_int(int)
+ggsave("examples_iris_int_imp.png", width = 10, height = 5)
+```
+![](examples/iris_int_imp.png)
+
 ## <a name="variance_estimation">Variance Estimation</a>
 
-To use `var_est` with `randomForest` we need an updated (but not merged) version of [randomForest]([randomForest](http://github.com/swager/randomForest)) which is installed below with `devtools`.
+To use `var_est` with `randomForest` we need an updated (but not merged) version of [`randomForest`]([randomForest](http://github.com/swager/randomForest)) which is installed below with `devtools`.
 
 ```{r}
 library(devtools)
