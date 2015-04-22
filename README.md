@@ -28,7 +28,7 @@ Pull requests, bug reports, feature requests, etc. are welcome!
 
 ## <a name="install">Installation</a>
 
-It is not yet on CRAN, but you can install it from Github using [devtools](http://cran.r-project.org/web/packages/devtools/index.html). 
+It is not yet on CRAN, but you can install it from Github using [devtools](http://cran.r-project.org/web/packages/devtools/index.html).
 
 ```{r}
 library(devtools)

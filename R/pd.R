@@ -78,7 +78,7 @@ partial_dependence.randomForest <- function(fit, df, var, cutoff = 10, interacti
         rng <- data.frame(ivar_points(df, var, cutoff, empirical))
     }
     ## run the pd algo in parallel?
-    '%op%' <- ifelse(getDoParWorkers() > 1 & parallel, foreach::'%dopar%', foreach::'%do%')
+    '%op%' <- ifelse(foreach::getDoParWorkers() > 1 & parallel, foreach::'%dopar%', foreach::'%do%')
     inner_loop <- function(df, rng, idx, var) {
         ## fix var to points in prediction grid
         df[, var] <- rng[idx, ]
@@ -111,7 +111,7 @@ partial_dependence.randomForest <- function(fit, df, var, cutoff = 10, interacti
     i <- x <- idx <- out <- nam <- NULL ## initialize to avoid R CMD check errors
     ## loop over points in prediction grid (rng)
     if (is.data.frame(rng)) {
-        pred <- foreach(i = 1:nrow(rng), .packages = pkg) %op% inner_loop(df, rng, i, var)
+        pred <- foreach::foreach(i = 1:nrow(rng), .packages = pkg) %op% inner_loop(df, rng, i, var)
         pred <- as.data.frame(do.call(rbind, lapply(pred, unlist)), stringsAsFactors = FALSE)
         colnames(pred)[1:length(var)] <- var
         if (type != "prob" & (!ci | !(y_class %in% c("numeric", "integer"))))
@@ -241,17 +241,19 @@ partial_dependence.RandomForest <- function(fit, df = NULL, var, cutoff = 10, in
         if (length(var) > 1) {
             var_class <- sapply(df[, var], class)
         } else var_class <- class(df[, var])
-        pred <- foreach(i = 1:nrow(rng), .packages = pkg) %op% inner_loop(df, rng, i, var, var_class)
+        pred <- foreach::foreach(i = 1:nrow(rng), .packages = pkg) %op% inner_loop(df, rng, i, var, var_class)
         pred <- as.data.frame(do.call(rbind, lapply(pred, unlist)), stringsAsFactors = FALSE)
         colnames(pred)[1:length(var)] <- var
         if (type != "prob" & (!ci | !(class(y[, 1]) %in% c("numeric", "integer"))) & ncol(y) == 1)
             colnames(pred)[ncol(pred)] <- colnames(y)        
     } else {
-        pred <- foreach(x = var, .packages = pkg) %:%
-            foreach(idx = 1:nrow(rng[[x]]), .combine = rbind) %op% inner_loop(df, rng[[x]], idx, x, class(df[, x]))
+        pred <- foreach::foreach(x = var, .packages = pkg) %:%
+            foreach::foreach(idx = 1:nrow(rng[[x]]), .combine = rbind) %op% {
+                inner_loop(df, rng[[x]], idx, x, class(df[, x]))
+            }
         ## op not appropriate here, too much overhead, for some reason referencing foreach doesn't work
         ## e.g. foreach::'%do%' fails
-        pred <- foreach(i = 1:length(pred), .combine = rbind) %do% {
+        pred <- foreach::foreach(i = 1:length(pred), .combine = rbind) %do% {
             out <- data.frame(pred[[i]], "variable" = var[i], stringsAsFactors = FALSE)
             if (type != "prob")
                 colnames(out)[1:(ncol(y) + 1)] <- c("value", colnames(y))
@@ -324,17 +326,17 @@ partial_dependence.rfsrc <- function(fit, df, var, cutoff = 10, interaction = FA
     }
     i <- x <- idx <- out <- NULL ## initialize to avoid R CMD check errors
     if (is.data.frame(rng)) {
-        pred <- foreach(i = 1:nrow(rng), .packages = pkg) %op% inner_loop(df, rng, i, var)
+        pred <- foreach::foreach(i = 1:nrow(rng), .packages = pkg) %op% inner_loop(df, rng, i, var)
         pred <- as.data.frame(do.call(rbind, lapply(pred, unlist)), stringsAsFactors = FALSE)
         colnames(pred)[1:length(var)] <- var
         if (type != "prob" & (!ci | !(class(y) %in% c("numeric", "integer"))) & !is.data.frame(fit$yvar))
             colnames(pred)[ncol(pred)] <- fit$yvar.names
     } else {
-        pred <- foreach(x = var, .packages = pkg) %:%
-            foreach(idx = 1:nrow(rng[[x]]), .combine = rbind) %op% inner_loop(df, rng[[x]], idx, x)
+        pred <- foreach::foreach(x = var, .packages = pkg) %:%
+            foreach::foreach(idx = 1:nrow(rng[[x]]), .combine = rbind) %op% inner_loop(df, rng[[x]], idx, x)
         ## op not appropriate here, too much overhead, for some reason referencing foreach doesn't work
         ## e.g. foreach::'%do%' fails
-        pred <- foreach(i = 1:length(pred), .combine = rbind) %do% {
+        pred <- foreach::foreach(i = 1:length(pred), .combine = rbind) %do% {
             out <- data.frame(pred[[i]], "variable" = var[i], stringsAsFactors = FALSE)
             if (type != "prob" & !is.data.frame(fit$yvar))
                 colnames(out)[1:2] <- c("value", fit$yvar.names)

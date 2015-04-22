@@ -184,7 +184,6 @@ plot_pd <- function(pd, geom = "line", xlab = NULL, ylab = NULL, title = "", fac
 #' @param geom character describing type of plot desired: "point" or "bar"
 #' @param facet logical indicating whether to facet, only applicable when returning class-specific variable importance
 #' @param zero_line logical indicating whether to plot a dashed line at 0
-#' @param scales can be "free", "free_x", "free_y" or "fixed", applicable when facetting
 #' @param xlab x-axis label, default "Variables"
 #' @param ylab y-axis label, default "Importance"
 #' @param title title for the plot
@@ -416,3 +415,44 @@ plot_pred <- function(predicted, observed, variance = NULL, confidence = .95,
     p <- p + labs(x = xlab, y = ylab, title = title)
     p + theme_bw()    
 }
+#' Plot interaction detection using variable importance from random forests
+#'
+#' 
+#' @param int object of class "interaction_importance", a named numeric vector
+#' @param labels optional character vector of \code{length(int)} replacing \code{names(int)}
+#' @param vertical_labels optional logical rotating labels vertically
+#' @param xlab optional x-axis label, default "feature"
+#' @param ylab optional y-axis label, default "importance"
+#' @param title optional title, default empty string
+#'
+#' @return a ggplot2 object
+#'
+#' @examples
+#' \dontrun{
+#'
+#' library(party)
+#' data(iris)
+#' fit <- cforest(Species ~ ., iris, controls = cforest_unbiased(mtry = 2))
+#' int <- interaction_importance(fit, c("Petal.Width", "Petal.Length"), 10)
+#' plot_int(int)
+#' }
+#' @export
+plot_int <- function(int, labels = NULL, vertical_labels = FALSE,
+                     xlab = "feature", ylab = "importance", title = NULL) {
+    atts <- attributes(int)
+    int <- melt(int, id.vars = names(int))
+    if (is.null(labels)) {
+        int$labels <- row.names(int)
+    } else {
+        int$labels <- labels
+    }
+    row.names(int) <- NULL
+    int$labels <- factor(int$labels, levels = c(atts$target, "additive", "joint", "difference"))
+    p <- ggplot(int, aes_string("labels", "value")) + geom_point()
+    p <- p + theme_bw()
+    p <- p + labs(x = xlab, y = ylab, title = title)
+    if (vertical_labels)
+        p <- p + theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5))
+    p
+}
+ 

@@ -30,6 +30,10 @@ data(iris)
 
 fit <- randomForest(Species ~ ., iris)
 interaction_importance(fit, c("Petal.Width", "Petal.Length"), 10, data = iris)
+
+library(party)
+fit <- cforest(Species ~ ., iris, controls = cforest_unbiased(mtry = 2))
+interaction_importance(fit, c("Petal.Width", "Petal.Length"), 10, OOB = TRUE)
 }
 }
 
