@@ -1,6 +1,6 @@
 Package: edarf
 Version: 0.1
-Date: 4/20/2015
+Date: 2015-04-24
 Title: Exploratory Data Analysis using Random Forests
 Description: A package with functions useful for exploratory data analysis using
     random forests. The package can be used to compute bivariate and multivariate partial dependence,

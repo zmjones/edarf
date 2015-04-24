@@ -201,8 +201,8 @@ plot_pd <- function(pd, geom = "line", xlab = NULL, ylab = NULL, title = "", fac
 #'                            type = "local", interaction = TRUE, nperm = 10, data = iris)
 #' plot_imp(imp, geom = "bar")
 #'
-#' imp <- variable_importance(fit, var = colnames(iris)[-5],
-#'                            type = "aggregate", interaction = FALSE, nperm = 10, oob = TRUE, data = iris)
+#' imp <- variable_importance(fit, var = colnames(iris)[-5], type = "aggregate",
+#'                            interaction = FALSE, nperm = 10, oob = TRUE, data = iris)
 #' plot_imp(imp, geom = "bar")
 #'
 #' data(swiss)
