@@ -4,7 +4,7 @@
 \alias{variable_importance}
 \title{Variable importance using random forests}
 \usage{
-variable_importance(fit, var, type, oob, nperm, parallel, ...)
+variable_importance(fit, var, type, interaction, oob, nperm, parallel, data)
 }
 \arguments{
 \item{fit}{object of class 'RandomForest', 'randomForest', or 'rfsrc'}
@@ -13,21 +13,28 @@ variable_importance(fit, var, type, oob, nperm, parallel, ...)
 
 \item{type}{character, either "aggregate," (default) which gives the average loss under permutation or "local" which gives the residual across all observations}
 
+\item{interaction}{logcal, compute the joint and additive importance for observations (\code{type = "local"}) or variables \code{type = "aggregate"}}
+
+\item{oob}{logical, use the out of bag data data}
+
 \item{nperm}{positive integer giving the number of times to permute the indicated variables (default 10)}
 
 \item{parallel}{logical whether to run in parallel using the registered backend (default FALSE)}
 
-\item{...}{additional arguments to be passed to \code{variable_importance}. the randomForest method requires an additional argument \code{data} which is the training data.frame}
+\item{data}{optional (unless using randomForest) data.frame with which to calculate importance}
+}
+\value{
+a named numeric vector for type = "aggregate" or a data.frame for type = "local"
 }
 \description{
-Computes variable importance for a set of predictors from a fitted random forest object from the party, randomForest, or randomForestSRC package
+Computes local or aggregate variable importance for a set of predictors from a fitted random forest object from the party, randomForest, or randomForestSRC package
 }
 \examples{
 \dontrun{
 library(randomForest)
 data(iris)
 
-fit <- randomForest(Species ~ ., iris, importance = TRUE)
+fit <- randomForest(Species ~ ., iris)
 variable_importance(fit, var = colnames(iris)[-5], type = "aggregate", nperm = 10, data = iris)
 
 library(party)

@@ -188,38 +188,21 @@ test_that("multivariate regression and interaction", {
               expect_that(pd$qsec, is_a("numeric"))
           })
 
-## marginal accuracy
-## conditional  accuracy
-## marginal auc
-## conditional auc
+## aggregate importance
+## local importance
 
 fit <- cforest(score ~ ., data = readingSkills, control = cforest_unbiased(mtry = 2, ntree = 50))
 
-test_that("extractor works with marginal accuracy", {
-              imp <- variable_importance(fit)
-              expect_that(imp, is_a("data.frame"))
-              expect_that(nrow(imp), equals(3))
+test_that("importance works with aggregate", {
+              imp <- variable_importance(fit, colnames(readingSkills)[-4], nperm = 10)
+              expect_that(imp, is_a("numeric"))
+              expect_that(length(imp), equals(3))
           })
 
-test_that("extractor works with conditional accuracy", {
-              imp <- variable_importance(fit, type = "conditional")
+test_that("importance works with local", {
+              imp <- variable_importance(fit, colnames(readingSkills)[-4], "local", nperm = 10)
               expect_that(imp, is_a("data.frame"))
-              expect_that(nrow(imp), equals(3))
-          })
-
-readingSkills$score <- ifelse(readingSkills$score > mean(readingSkills$score), 1, 0)
-fit <- cforest(score ~ ., data = readingSkills, control = cforest_unbiased(mtry = 2, ntree = 50))
-
-test_that("extractor works with marginal auc", {
-              imp <- variable_importance(fit, type = "auc")
-              expect_that(imp, is_a("data.frame"))
-              expect_that(nrow(imp), equals(3))
-          })
-
-test_that("extractor works with conditional auc", {
-              imp <- variable_importance(fit, type = c("auc", "conditional"))
-              expect_that(imp, is_a("data.frame"))
-              expect_that(nrow(imp), equals(3))
+              expect_that(dim(imp), equals(c(200, 3)))
           })
 
 ## proximity

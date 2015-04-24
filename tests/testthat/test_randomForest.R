@@ -154,40 +154,21 @@ test_that("classification, probability output, and interaction", {
               expect_that(pd$virginica, is_a("numeric"))
           })
 
-## accuracy
-## gini
-## class
-## local
+## aggregate importance
+## local importance
 
-fit <- randomForest(Species ~ ., iris, importance = TRUE)
+fit <- randomForest(Species ~ ., iris)
 
-test_that("extractor works with marginal accuracy", {
-              imp <- variable_importance(fit, type = "accuracy")
-              expect_that(imp, is_a("data.frame"))
-              expect_that(nrow(imp), equals(4))
+test_that("importance works with aggregate", {
+              imp <- variable_importance(fit, colnames(iris)[-5], nperm = 10, data = iris)
+              expect_that(imp, is_a("numeric"))
+              expect_that(length(imp), equals(4))
           })
 
-test_that("extractor works with marginal gini", {
-              imp <- variable_importance(fit, type = "gini")
-              expect_that(imp, is_a("data.frame"))
-              expect_that(nrow(imp), equals(4))
-          })
-
-test_that("extractor works with marginal class importance", {
-              imp <- variable_importance(fit, type = "accuracy", class_levels = TRUE)
-              expect_that(imp, is_a("data.frame"))
-              expect_that(nrow(imp), equals(4))
-              expect_that(ncol(imp), equals(4))
-              expect_that(colnames(imp), equals(c("setosa", "versicolor", "virginica", "labels")))
-          })
-
-fit <- randomForest(Species ~ ., iris, localImp = TRUE)
-
-test_that("extractor works with local importance", {
-              imp <- variable_importance(fit, type = "local")
+test_that("importance works with local", {
+              imp <- variable_importance(fit, colnames(iris)[-5], "local", nperm = 10, data = iris)
               expect_that(imp, is_a("data.frame"))
               expect_that(dim(imp), equals(c(150, 4)))
-              expect_that(colnames(imp), equals(c("Sepal.Length", "Sepal.Width", "Petal.Length", "Petal.Width")))
           })
 
 ## proximity

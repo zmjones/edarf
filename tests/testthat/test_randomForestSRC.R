@@ -187,49 +187,21 @@ test_that("survival and interaction", {
               expect_that(pd$chf, is_a("numeric"))
           })
 
-## permute
-## random
-## permute.ensemble
-## random.ensemble
+## aggregate importance
+## local importance
 
-fit <- rfsrc(Species ~ ., iris, importance = "permute")
+fit <- rfsrc(Species ~ ., iris)
 
-test_that("extractor works with permutation accuracy", {
-              imp <- variable_importance(fit)
-              expect_that(imp, is_a("data.frame"))
-              expect_that(nrow(imp), equals(4))
+test_that("importance works with aggregate", {
+              imp <- variable_importance(fit, colnames(iris)[-5], nperm = 10)
+              expect_that(imp, is_a("numeric"))
+              expect_that(length(imp), equals(4))
           })
 
-test_that("extractor works with class levels", {
-              imp <- variable_importance(fit, class_levels = TRUE)
+test_that("importance works with local", {
+              imp <- variable_importance(fit, colnames(iris)[-5], "local", nperm = 10)
               expect_that(imp, is_a("data.frame"))
-              expect_that(nrow(imp), equals(4))
-              expect_that(ncol(imp), equals(4))
-              expect_that(colnames(imp), equals(c("setosa", "versicolor", "virginica", "labels")))
-          })
-
-fit <- rfsrc(Species ~ ., iris, importance = "random")
-
-test_that("extractor works with random accuracy", {
-              imp <- variable_importance(fit, type = "random")
-              expect_that(imp, is_a("data.frame"))
-              expect_that(nrow(imp), equals(4))
-          })
-
-fit <- rfsrc(Species ~ ., iris, importance = "permute.ensemble")
-
-test_that("extractor works with permute.ensemble accuracy", {
-              imp <- variable_importance(fit, type = "permute.ensemble")
-              expect_that(imp, is_a("data.frame"))
-              expect_that(nrow(imp), equals(4))
-          })
-
-fit <- rfsrc(Species ~ ., iris, importance = "random.ensemble")
-
-test_that("extractor works with permutation accuracy", {
-              imp <- variable_importance(fit, type = "random.ensemble")
-              expect_that(imp, is_a("data.frame"))
-              expect_that(nrow(imp), equals(4))
+              expect_that(dim(imp), equals(c(150, 4)))
           })
 
 ## proximity
