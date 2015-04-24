@@ -1,11 +1,11 @@
-test_that("ivar_points works correctly", {
+test_that("ivar_points", {
               df <- data.frame("x" = 1:20, "y" = rep(1, 20))
               expect_that(length(ivar_points(df, "x", 10)), equals(10))
               expect_that(length(unique(ivar_points(df, "x", 10))), equals(length(ivar_points(df, "x", 10))))
               expect_that(ivar_points(df, "x", nrow(df)), equals(df[, "x"]))
           })
 
-test_that("fix_classes works correctly", {
+test_that("fix_classes", {
               df <- data.frame(x = letters,
                                y = factor(letters),
                                z = seq(0, 1, length.out = length(letters)),
@@ -21,7 +21,7 @@ test_that("fix_classes works correctly", {
               expect_that(out$a, is_a("integer"))
           })
 
-test_that("permute data works correctly", {
+test_that("permute_data", {
               df <- data.frame(x = rnorm(10), y = letters[1:10])
               px <- permute_data(df, "x")
               py <- permute_data(df, "y")
