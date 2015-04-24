@@ -179,10 +179,12 @@ plot_pd <- function(pd, geom = "line", xlab = NULL, ylab = NULL, title = "", fac
 #' @param imp object of class \code{c("importance", "data.frame")} as returned by
 #' \code{\link{variable_importance}}
 #' @param geom character describing type of plot desired: "point" or "bar"
-#' @param labels character vector giving labels to variables,
-#' must have length equal to the number of rows or length of \code{imp}
 #' @param sort character indicating if sorting of the output is to be done.
 #' can be "none", "ascending", or "descending." only applicable when the importance type is "aggregate," or "local" and and the outcome variable is a "factor"
+#' @param labels character vector giving labels to variables,
+#' must have length equal to the number of rows or length of \code{imp}
+#' @param scales character, "free", "fixed", "free_x", or "free_y", only applicable when \code{type = "local"} and the outcome is an ordered factor or numeric
+#' @param se logical, plot a standard error ribbon around the estimated residual density under permutation, only applicable when \code{type = "local"} and the outcome is an ordered factor or numeric
 #' @param xlab x-axis label, default "Variables"
 #' @param ylab y-axis label, default "Importance"
 #' @param title title for the plot
@@ -195,15 +197,18 @@ plot_pd <- function(pd, geom = "line", xlab = NULL, ylab = NULL, title = "", fac
 #' fit <- randomForest(Species ~ ., iris)
 #'
 #' ## class-specific importance for all variables
-#' imp <- variable_importance(fit, var = colnames(iris)[-5], type = "local", interaction = TRUE, nperm = 10, data = iris)
+#' imp <- variable_importance(fit, var = colnames(iris)[-5],
+#'                            type = "local", interaction = TRUE, nperm = 10, data = iris)
 #' plot_imp(imp, geom = "bar")
 #'
-#' imp <- variable_importance(fit, var = colnames(iris)[-5], type = "aggregate", interaction = FALSE, nperm = 10, oob = TRUE, data = iris)
+#' imp <- variable_importance(fit, var = colnames(iris)[-5],
+#'                            type = "aggregate", interaction = FALSE, nperm = 10, oob = TRUE, data = iris)
 #' plot_imp(imp, geom = "bar")
 #'
 #' data(swiss)
 #' fit <- randomForest(Fertility ~ ., swiss)
-#' imp <- variable_importance(fit, var = colnames(swiss)[-1], type = "local", interaction = TRUE, nperm = 10, data = swiss)
+#' imp <- variable_importance(fit, var = colnames(swiss)[-1],
+#'                            type = "local", interaction = TRUE, nperm = 10, data = swiss)
 #' plot_imp(imp)
 #' 
 #' }

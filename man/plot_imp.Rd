@@ -20,6 +20,10 @@ can be "none", "ascending", or "descending." only applicable when the importance
 \item{labels}{character vector giving labels to variables,
 must have length equal to the number of rows or length of \code{imp}}
 
+\item{scales}{character, "free", "fixed", "free_x", or "free_y", only applicable when \code{type = "local"} and the outcome is an ordered factor or numeric}
+
+\item{se}{logical, plot a standard error ribbon around the estimated residual density under permutation, only applicable when \code{type = "local"} and the outcome is an ordered factor or numeric}
+
 \item{xlab}{x-axis label, default "Variables"}
 
 \item{ylab}{y-axis label, default "Importance"}
@@ -39,15 +43,18 @@ data(iris)
 fit <- randomForest(Species ~ ., iris)
 
 ## class-specific importance for all variables
-imp <- variable_importance(fit, var = colnames(iris)[-5], type = "local", interaction = TRUE, nperm = 10, data = iris)
+imp <- variable_importance(fit, var = colnames(iris)[-5],
+                           type = "local", interaction = TRUE, nperm = 10, data = iris)
 plot_imp(imp, geom = "bar")
 
-imp <- variable_importance(fit, var = colnames(iris)[-5], type = "aggregate", interaction = FALSE, nperm = 10, oob = TRUE, data = iris)
+imp <- variable_importance(fit, var = colnames(iris)[-5],
+                           type = "aggregate", interaction = FALSE, nperm = 10, oob = TRUE, data = iris)
 plot_imp(imp, geom = "bar")
 
 data(swiss)
 fit <- randomForest(Fertility ~ ., swiss)
-imp <- variable_importance(fit, var = colnames(swiss)[-1], type = "local", interaction = TRUE, nperm = 10, data = swiss)
+imp <- variable_importance(fit, var = colnames(swiss)[-1],
+                           type = "local", interaction = TRUE, nperm = 10, data = swiss)
 plot_imp(imp)
 
 }

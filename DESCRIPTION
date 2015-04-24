@@ -10,6 +10,7 @@ Description: A package with functions useful for exploratory data analysis using
 Author: Zachary M. Jones <zmj@zmjones.com> and Fridolin Linder <fridolin.linder@gmail.com>
 Maintainer: Zachary M. Jones <zmj@zmjones.com>
 License: MIT + file LICENSE
+Depends: R (>= 2.10)
 Imports:
     foreach,
     iterators,
