@@ -3,6 +3,7 @@
 #' @import ggplot2
 #' @importFrom reshape2 melt
 #' @import assertthat
+#' 
 #' @param pd object of class \code{c("pd", "data.frame")} as returned by
 #' \code{\link{partial_dependence}}
 #' @param geom character describing type of plot desired: "bar", "line", or "area"
@@ -177,13 +178,11 @@ plot_pd <- function(pd, geom = "line", xlab = NULL, ylab = NULL, title = "", fac
 #' 
 #' @param imp object of class \code{c("importance", "data.frame")} as returned by
 #' \code{\link{variable_importance}}
-#' @param labels character vector giving labels to variables,
-#' must have length equal to the number of rows in 'imp'
-#' @param sort character indicating if sorting of the output is to be done.
-#' can be "none", "ascending", or "descending"
 #' @param geom character describing type of plot desired: "point" or "bar"
-#' @param facet logical indicating whether to facet, only applicable when returning class-specific variable importance
-#' @param zero_line logical indicating whether to plot a dashed line at 0
+#' @param labels character vector giving labels to variables,
+#' must have length equal to the number of rows or length of \code{imp}
+#' @param sort character indicating if sorting of the output is to be done.
+#' can be "none", "ascending", or "descending." only applicable when the importance type is "aggregate," or "local" and and the outcome variable is a "factor"
 #' @param xlab x-axis label, default "Variables"
 #' @param ylab y-axis label, default "Importance"
 #' @param title title for the plot
@@ -193,58 +192,123 @@ plot_pd <- function(pd, geom = "line", xlab = NULL, ylab = NULL, title = "", fac
 #' @examples \dontrun{
 #' library(randomForest)
 #' data(iris)
-#' fit <- randomForest(Species ~ ., iris, importance = TRUE)
-#' imp <- variable_importance(fit, "accuracy", TRUE)
+#' fit <- randomForest(Species ~ ., iris)
+#'
+#' ## class-specific importance for all variables
+#' imp <- variable_importance(fit, var = colnames(iris)[-5], type = "local", interaction = TRUE, nperm = 10, data = iris)
 #' plot_imp(imp, geom = "bar")
+#'
+#' imp <- variable_importance(fit, var = colnames(iris)[-5], type = "aggregate", interaction = FALSE, nperm = 10, oob = TRUE, data = iris)
+#' plot_imp(imp, geom = "bar")
+#'
+#' data(swiss)
+#' fit <- randomForest(Fertility ~ ., swiss)
+#' imp <- variable_importance(fit, var = colnames(swiss)[-1], type = "local", interaction = TRUE, nperm = 10, data = swiss)
+#' plot_imp(imp)
+#' 
 #' }
 #' @export
-plot_imp <- function(imp, sort = "none", labels = NULL,
-                     geom = "point", facet = FALSE,
-                     zero_line = NULL,
-                     xlab = "Variables", ylab = "Importance", title = "") {
+#' 
+plot_imp <- function(imp, geom = "point", sort = "decreasing", labels = NULL,
+                     scales = "free_y", se = TRUE, xlab = NULL, ylab = NULL, title = NULL) {
     atts <- attributes(imp)
-    if (!is.null(labels) & length(labels) == nrow(imp))
-        imp$labels <- labels
-    if (atts$type == "local")
-        stop("cannot plot local importance")
-    if (atts$class_levels)
-        imp <- melt(imp, "labels")
-    if (sort == "ascending")
-        imp$labels <- factor(imp$labels, levels = imp$labels[order(imp$value, decreasing = FALSE)])
-    else if (sort == "descending")
-        imp$labels <- factor(imp$labels, levels = imp$labels[order(imp$value, decreasing = TRUE)])
-    else if (sort == "none")
-        imp$labels <- as.factor(imp$labels)
-    else
-        stop("invalid input to sort argument")
-    
-    if (facet & atts$class_levels) {
-        p <- ggplot(imp, aes_string("labels", "value", group = "variable")) +
-            facet_wrap(~ variable)
-    } else if (!facet & atts$class_levels & geom != "bar") {
-        p <- ggplot(imp, aes_string("labels", "value", colour = "variable"))
-        p <- p + scale_colour_discrete(name = "Class")
-    } else if (!facet & geom == "bar" & atts$class_levels) {
-        p <- ggplot(imp, aes_string("labels", "value", fill = "variable"))
-        p <- p + scale_fill_discrete(name = "Class")
-    } else {
-        p <- ggplot(imp, aes_string("labels", "value"))
+    if (atts$type == "local") {
+        imp$target <- atts$target
+        if (class(atts$target) == "factor") {
+            imp <- sapply(levels(imp$target), function(x)
+                colMeans(imp[which(imp$target == x), -ncol(imp), drop = FALSE]))
+            imp <- as.data.frame(imp)
+            if (!is.null(labels)) {
+                if (length(labels) == nrow(imp)) {
+                    imp$labels <- labels
+                } else {
+                    stop("length of labels does not match length of importance output")
+                }
+            } else {
+                imp$labels <- row.names(imp)
+            }
+            row.names(imp) <- NULL
+            imp <- reshape2::melt(imp, id.vars = "labels", variable.name = "Class")
+            if (geom == "point") {
+                p <- ggplot(imp, aes_string("value", "labels", color = "Class")) +
+                    geom_point()
+            } else if (geom == "bar") {
+                p <- ggplot(imp, aes_string("labels", "value", fill = "Class")) +
+                    geom_bar(stat = "identity", position = "dodge") + coord_flip()
+            } else {
+                stop("invalid input to geom argument")
+            }
+        } else if (is.ordered(atts$target) | is.numeric(atts$target)) {
+            imp <- reshape2::melt(imp, id.vars = "target")
+            p <- ggplot(imp, aes_string("target", "value")) +
+                stat_smooth(method = "loess", se = se) +
+                    facet_wrap(~ variable, scales = scales)
+        } else {
+            stop("")
+        }
+        if (is.null(xlab)) {
+            if (!is.factor(atts$target)) {
+                xlab <- "Outcome"
+            } else {
+                xlab <- ""
+            }
+        }
+        if (is.null(ylab))
+            if (!is.factor(atts$target)) {
+                ylab <- "Residual Under Permutation"
+            } else {
+                ylab <- "Permutation Importance"
+            }
+        if (is.null(title))
+            title <- ""
+    } else { ## type == "aggregate"
+        imp <- data.frame(value = imp)
+        if (!is.null(labels)) {
+            if (length(labels) == length(imp)) {
+                imp$labels <- labels
+            } else {
+                stop("length of labels does not match length of importance output")
+            }
+        } else {
+            if (atts$interaction) {
+                imp$labels <- c(atts$var, "additive", "joint")
+            } else {
+                imp$labels <- atts$var
+            }
+        }
+        if (sort == "increasing") {
+            imp$labels <- factor(imp$labels, levels = imp$labels[order(imp$value, decreasing = FALSE)])
+        } else if (sort == "decreasing") {
+            imp$labels <- factor(imp$labels, levels = imp$labels[order(imp$value, decreasing = TRUE)])
+        } else {
+            stop("invalid input to sort argument")
+        }
+        if (geom == "point") {
+            p <- ggplot(imp, aes_string("value", "labels")) + geom_point()
+        } else if (geom == "bar") {
+            p <- ggplot(imp, aes_string("labels", "value")) + geom_bar(stat = "identity") + coord_flip()
+        } else {
+            stop("invalid input to geom argument")
+        }
+        if (is.null(xlab)) {
+            if (geom == "bar") {
+                xlab <- ""
+            } else {
+                xlab <- "Permutation Importance"
+            }
+        }
+        if (is.null(ylab)) {
+            if (geom == "bar") {
+                ylab <- "Permutation Importance"
+            } else {
+                ylab <- ""
+            }
+        }
+        if (is.null(title))
+            title <- ""
     }
-
-    if (geom == "point")
-        p <- p + geom_point()
-    else if (geom == "bar" & !atts$class_levels)
-        p <- p + geom_bar(stat = "identity")
-    else if (geom == "bar" & atts$class_levels)
-        p <- p + geom_bar(stat = "identity", position = "dodge")
-    else
-        stop("invalid geom")
-
-    if (!is.null(zero_line))
-        p <- p + geom_hline(yintercept = 0, linetype = "dotted")
-
-    p <- p + labs(y = ylab, x = xlab, title = title)
-    p + coord_flip() + theme_bw()
+    p <- p + labs(x = xlab, y = ylab, title = title)
+    p + theme_bw()
 }
 #' Plot principle components of the proximity matrix
 #'

@@ -23,7 +23,7 @@ Pull requests, bug reports, feature requests, etc. are welcome!
 	+ [Survival](#survival)
 	+ [Multivariate](#multivariate)
  - [Variable Importance](#variable_importance)
- - [Interaction Detection](#interaction_detection)
+	+ [Interaction Importance](#interaction_importance)
  - [Variance Estimation](#variance_estimation)
  - [Proximity Matrix Visualization](#proximity)
 
@@ -161,40 +161,52 @@ Multivariate two-way interaction plots not yet implemented. See [Issue #19](http
 ## <a name="variable_importance">Variable Importance</a>
 
 ```{r}
-fit <- randomForest(Species ~ ., iris, importance = TRUE)
-imp <- variable_importance(fit, type = "accuracy", class_levels = TRUE)
-plot_imp(imp)
-ggsave("examples/iris_imp_class_point.png", width = 10, height = 5)
-```
-![](examples/iris_imp_class_point.png)
-
-```{r}
+fit <- randomForest(Species ~ ., iris)
+imp <- variable_importance(fit, var = colnames(iris)[-5], type = "aggregate", data = iris)
 plot_imp(imp, geom = "bar")
-ggsave("examples/iris_imp_class_bar.png", width = 10, height = 5)
-```
-![](examples/iris_imp_class_bar.png)
-
-```{r}
-plot_imp(imp, geom = "bar", facet = TRUE)
-ggsave("examples/iris_imp_class_bar_facet.png", width = 10, height = 5)
-```
-![](examples/iris_imp_class_bar_facet.png)
-
-```{r}
-imp <- variable_importance(fit, type = "accuracy", class_levels = FALSE)
-plot_imp(imp)
 ggsave("examples/iris_imp.png", width = 10, height = 5)
 ```
 ![](examples/iris_imp.png)
 
-## <a name="interaction_detection">Interaction Detection</a>
+```{r}
+imp <- variable_importance(fit, var = colnames(iris)[-5], type = "local", data = iris)
+plot_imp(imp, geom = "bar")
+ggsave("examples/iris_imp_class.png", width = 10, height = 5)
+```
+![](examples/iris_imp_class.png)
 
 ```{r}
-int <- interaction_importance(fit, var = c("Petal.Width", "Petal.Length"), nperm = 10, data = iris)
-plot_int(int)
+fit <- randomForest(Fertility ~ ., swiss)
+imp <- variable_importance(fit, var = colnames(swiss)[-1], type = "aggregate", data = swiss)
+plot_imp(imp)
+ggsave("examples/swiss_imp.png", width = 10, height = 5)
+```
+![](examples/swiss_imp.png)
+
+```{r}
+imp <- variable_importance(fit, var = colnames(swiss)[-1], type = "local", data = swiss)
+plot_imp(imp, xlab = "Fertility")
+ggsave("examples/swiss_imp_local.png", width = 10, height = 5)
+```
+![](examples/swiss_imp_local.png)
+
+### <a name="interaction_importance">Interaction Importance</a>
+
+```{r}
+int <- variable_importance(fit, var = c("Education", "Catholic"), type = "aggregate", interaction = TRUE,
+                           data = swiss)
+plot_imp(int, geom = "bar")
 ggsave("examples/iris_int_imp.png", width = 10, height = 5)
 ```
 ![](examples/iris_int_imp.png)
+
+```{r}
+int <- variable_importance(fit, var = c("Education", "Catholic"), type = "local", interaction = TRUE,
+                           data = swiss)
+plot_imp(int, xlab = "Fertility")
+ggsave("examples/iris_int_imp_local.png", width = 7, height = 7)
+```
+![](examples/iris_int_imp_local.png)
 
 ## <a name="variance_estimation">Variance Estimation</a>
 

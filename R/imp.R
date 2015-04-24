@@ -113,7 +113,6 @@ permute_data <- function(data, x) {
             }
             out$additive <- rowSums(out[, var])
             out$joint <- int
-            out$difference <- out$additive - out$joint
         }
     } else if (type == "aggregate") {
         if (is.factor(y) & !is.ordered(y)) loss <- function(x, y) mean(x != y)
@@ -131,9 +130,8 @@ permute_data <- function(data, x) {
                 inner_loop(data, var, predict_options, y, ensemble_loss)
             }
             additive <- sum(out)
-            difference <- additive - int
-            out <- c(out, additive, int, difference)
-            names(out) <- c(var, "additive", "joint", "difference")
+            out <- c(out, additive, int)
+            names(out) <- c(var, "additive", "joint")
         }
     } else {
         stop("unsupported type argument")
@@ -144,5 +142,6 @@ permute_data <- function(data, x) {
     attr(out, "var") <- var
     attr(out, "oob") <- oob
     attr(out, "interaction") <- interaction
+    attr(out, "target") <- y
     out
 }
