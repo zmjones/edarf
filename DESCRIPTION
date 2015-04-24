@@ -22,6 +22,7 @@ Imports:
     party
 Suggests:
     randomForest,
+    randomForestSRC,
     scales,
     doParallel,
     testthat
