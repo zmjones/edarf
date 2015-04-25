@@ -19,7 +19,8 @@ Imports:
     reshape2,
     Rcpp (>= 0.11.1),
     Matrix,
-    party
+    party,
+    plyr
 Suggests:
     randomForest,
     randomForestSRC,

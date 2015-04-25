@@ -4,14 +4,14 @@
 \alias{partial_dependence}
 \title{Partial dependence using random forests}
 \usage{
-partial_dependence(fit, df, var, cutoff = 10, interaction = FALSE,
-  ci = FALSE, confidence = 0.95, empirical = TRUE, parallel = FALSE,
-  type = "", drop_levels = NULL, ...)
+partial_dependence(fit, data, var, cutoff = 10L, interaction = FALSE,
+  oob = TRUE, ci = FALSE, confidence = 0.95, empirical = TRUE,
+  parallel = FALSE, type = "prob", drop_levels = NULL)
 }
 \arguments{
 \item{fit}{object of class 'RandomForest', 'randomForest', or 'rfsrc'}
 
-\item{df}{the data.frame used to fit the model, only needed for randomForest}
+\item{data}{the data.frame used to fit the model, only needed for randomForest}
 
 \item{var}{a character vector of the predictors of interest, which must match the input matrix}
 
@@ -19,6 +19,8 @@ partial_dependence(fit, df, var, cutoff = 10, interaction = FALSE,
 partial dependence calculation}
 
 \item{interaction}{logical, if 'var' is a vector, does this specify an interaction or a list of bivariate partial dependence}
+
+\item{oob}{logical, use the out-of-bag data to compute predictions at each step}
 
 \item{ci}{use the bias corrected infinitesimal jackknife from Wager, Hastie, and Efron (2014), only works with regression}
 
@@ -28,11 +30,9 @@ partial dependence calculation}
 
 \item{parallel}{logical indicator of whether a parallel backend should be used if registered}
 
-\item{type}{with classification, default "" gives most probable class for classification and "prob" gives class probabilities}
+\item{type}{with classification, default is "prob" which gives class probabilities estimated by the norm of the votes cast for each class, alternatively "class" gives the most probably class}
 
 \item{drop_levels}{character vector specifying levels of a factor to drop, spaces in levels should be replaced by dots}
-
-\item{...}{additional arguments to be passed}
 }
 \value{
 a data.frame with the partial dependence of 'var'
@@ -48,22 +48,16 @@ from a fitted random forest object from the party, randomForest, or randomForest
 \dontrun{
 library(randomForest)
 library(edarf)
-## library(doParallel)
-## library(parallel)
-## registerDoParallel(makeCluster(detectCores()))
-
-## Classification
 
 data(iris)
+data(swiss)
 
+## classification
 fit <- randomForest(Species ~ ., iris)
 pd <- partial_dependence(fit, iris, c("Petal.Width", "Sepal.Length"))
 pd_int <- partial_dependence(fit, iris, c("Petal.Width", "Sepal.Length"), interaction = TRUE)
 
 ## Regression
-
-data(swiss)
-
 fit <- randomForest(Fertility ~ ., swiss, keep.inbag = TRUE)
 pd <- partial_dependence(fit, swiss, "Education", ci = TRUE)
 pd_int <- partial_dependence(fit, swiss, c("Education", "Catholic"), interaction = TRUE, ci = TRUE)

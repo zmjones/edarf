@@ -65,7 +65,7 @@ variable_importance.rfsrc <- function(fit, var, type = "aggregate", interaction 
     return(out)
 }
 
-permute_data <- function(data, x) {
+.permute_data <- function(data, x) {
     pdata <- data
     n <- nrow(data)
     pidx <- sapply(x, function(z) sample(1:n, size = n, replace = FALSE))
@@ -73,9 +73,8 @@ permute_data <- function(data, x) {
         pidx <- pidx[, 1]
         pdata[, x] <- pdata[pidx, x]
     } else {
-        for (i in 1:length(x)) {
+        for (i in 1:length(x))
             pdata[, x[i]] <- pdata[pidx[, i], x[i]]
-        }
     }
     return(pdata)
 }
@@ -90,7 +89,7 @@ permute_data <- function(data, x) {
     if (pkg == "randomForestSRC") ensemble_pred <- ensemble_pred$predicted
 
     inner_loop <- function(data, x, predict_options, y, ensemble_output) {
-        pdata <- permute_data(data, x)
+        pdata <- .permute_data(data, x)
         p <- do.call("predict", c(predict_options, list(newdata = pdata)))
         if (pkg == "randomForestSRC") p <- p$predicted
         loss(p, y) - ensemble_output
@@ -104,15 +103,13 @@ permute_data <- function(data, x) {
         comb <- function(...) rowMeans(do.call("cbind", list(...)))
 
         out <- foreach::foreach(x = var, .combine = "cbind", .packages = pkg) %:%
-            foreach::foreach(iterators::icount(nperm), .combine = comb, .packages = pkg) %op% {
+            foreach::foreach(iterators::icount(nperm), .combine = comb, .packages = pkg) %op%
                 inner_loop(data, x, predict_options, y, ensemble_resid)
-            }
         out <- as.data.frame(out)
         colnames(out) <- var
         if (interaction) {
-            int <- foreach::foreach(iterators::icount(nperm), .combine = comb, .packages = pkg) %op% {
+            int <- foreach::foreach(iterators::icount(nperm), .combine = comb, .packages = pkg) %op%
                 inner_loop(data, var, predict_options, y, ensemble_resid)
-            }
             out$additive <- rowSums(out[, var])
             out$joint <- int
         }
