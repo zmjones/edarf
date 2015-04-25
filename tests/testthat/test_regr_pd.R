@@ -2,12 +2,9 @@ library(randomForest)
 library(party)
 library(randomForestSRC)
 
-n <- 25
-k <- 2
-X <- replicate(k, rnorm(n))
-beta <- rep(1, k)
-y <- as.numeric(X %*% beta + rnorm(n))
-df <-  data.frame(X, y)
+df <- read.csv("df_regr.csv")
+X <- df[, -which(colnames(df) == "y")]
+y <- df$y
 fit_rf_f <- randomForest(y ~ ., df, keep.inbag = TRUE)
 fit_rf_d <- randomForest(X, y, keep.inbag = TRUE)
 fit_cf <- cforest(y ~ ., df, controls = cforest_control(mtry = 1))
@@ -102,6 +99,3 @@ test_that("rfsrc", {
               expect_that(all(sapply(pd_both, class) == "numeric"), is_true())
               expect_that(all(pd_both$variance > 0), is_true())
           })
-
-
-

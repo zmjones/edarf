@@ -2,12 +2,10 @@ library(randomForest)
 library(party)
 library(randomForestSRC)
 
-n <- 25
-k <- 2
-X <- replicate(k, rnorm(n))
-beta <- rep(1, k)
-y <- as.factor(ifelse(as.numeric(X %*% beta + rnorm(n)) > 0, 1, 0))
-df <-  data.frame(X, y)
+df <-  read.csv("df_classif.csv")
+df$y <- as.factor(df$y)
+X <- df[, -which(colnames(df) == "y")]
+y <- df$y
 fit_rf_f <- randomForest(y ~ ., df, keep.inbag = TRUE)
 fit_rf_d <- randomForest(X, y, keep.inbag = TRUE)
 fit_cf <- cforest(y ~ ., df, controls = cforest_control(mtry = 1))
