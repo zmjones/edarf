@@ -85,6 +85,8 @@ permute_data <- function(data, x) {
     '%op%' <- ifelse(foreach::getDoParWorkers() > 1 & parallel, foreach::'%dopar%', foreach::'%do%')
     ensemble_pred <- do.call("predict", c(predict_options, list(newdata = data)))
 
+    x <- NULL ## initialize global variables
+
     if (pkg == "randomForestSRC") ensemble_pred <- ensemble_pred$predicted
 
     inner_loop <- function(data, x, predict_options, y, ensemble_output) {
