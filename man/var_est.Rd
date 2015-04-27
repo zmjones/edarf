@@ -4,12 +4,12 @@
 \alias{var_est}
 \title{Variance estimates for predicted values from random forests}
 \usage{
-var_est(fit, df)
+var_est(fit, data)
 }
 \arguments{
 \item{fit}{object of class 'RandomForest', 'randomForest', or 'rfsrc' (must be regression)}
 
-\item{df}{dataframe to be used for prediction}
+\item{data}{dataframe to be used for prediction}
 }
 \value{
 a data.frame of length n with one column 'prediction' which contains the ensemble prediction

@@ -18,9 +18,8 @@ Imports:
     assertthat,
     reshape2,
     Rcpp (>= 0.11.1),
-    Matrix,
-    party,
-    plyr
+    plyr,
+    party
 Suggests:
     randomForest,
     randomForestSRC,

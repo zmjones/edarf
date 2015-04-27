@@ -18,9 +18,9 @@ BEGIN_RCPP
     return __result;
 END_RCPP
 }
-// vestl
-arma::mat vestl(int n, int ntree, arma::mat pd_membership, arma::rowvec yvar, arma::mat inbag);
-RcppExport SEXP edarf_vestl(SEXP nSEXP, SEXP ntreeSEXP, SEXP pd_membershipSEXP, SEXP yvarSEXP, SEXP inbagSEXP) {
+// get_tree_pred
+arma::mat get_tree_pred(int n, int ntree, arma::mat pd_membership, arma::rowvec yvar, arma::mat inbag);
+RcppExport SEXP edarf_get_tree_pred(SEXP nSEXP, SEXP ntreeSEXP, SEXP pd_membershipSEXP, SEXP yvarSEXP, SEXP inbagSEXP) {
 BEGIN_RCPP
     Rcpp::RObject __result;
     Rcpp::RNGScope __rngScope;
@@ -29,7 +29,21 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< arma::mat >::type pd_membership(pd_membershipSEXP);
     Rcpp::traits::input_parameter< arma::rowvec >::type yvar(yvarSEXP);
     Rcpp::traits::input_parameter< arma::mat >::type inbag(inbagSEXP);
-    __result = Rcpp::wrap(vestl(n, ntree, pd_membership, yvar, inbag));
+    __result = Rcpp::wrap(get_tree_pred(n, ntree, pd_membership, yvar, inbag));
+    return __result;
+END_RCPP
+}
+// inf_jackknife
+arma::mat inf_jackknife(int n, int b, arma::mat P, arma::mat N);
+RcppExport SEXP edarf_inf_jackknife(SEXP nSEXP, SEXP bSEXP, SEXP PSEXP, SEXP NSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject __result;
+    Rcpp::RNGScope __rngScope;
+    Rcpp::traits::input_parameter< int >::type n(nSEXP);
+    Rcpp::traits::input_parameter< int >::type b(bSEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type P(PSEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type N(NSEXP);
+    __result = Rcpp::wrap(inf_jackknife(n, b, P, N));
     return __result;
 END_RCPP
 }
