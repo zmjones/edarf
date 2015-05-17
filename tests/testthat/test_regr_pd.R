@@ -23,12 +23,12 @@ test_that("randomForest.formula", {
               expect_that(colnames(pd_int), equals(c("X1", "X2", "y")))
 
               pd_ci <- partial_dependence(fit_rf_f, df, "X1", cutoff, ci = TRUE)
-              expect_that(colnames(pd_ci), equals(c("X1", "y", "variance")))
+              expect_that(colnames(pd_ci), equals(c("X1", "y", "variance", "low", "high")))
               expect_that(all(sapply(pd_ci, class) == "numeric"), is_true())
               expect_that(all(pd_ci$variance > 0), is_true())
 
               pd_both <- partial_dependence(fit_rf_f, df, c("X1", "X2"), cutoff, TRUE, ci = TRUE)
-              expect_that(colnames(pd_both), equals(c("X1", "X2", "y", "variance")))
+              expect_that(colnames(pd_both), equals(c("X1", "X2", "y", "variance", "low", "high")))
               expect_that(all(sapply(pd_both, class) == "numeric"), is_true())
               expect_that(all(pd_both$variance > 0), is_true())
           })
@@ -45,12 +45,12 @@ test_that("cforest", {
               expect_that(colnames(pd_int), equals(c("X1", "X2", "y")))
 
               pd_ci <- partial_dependence(fit_cf, df, "X1", cutoff, ci = TRUE)
-              expect_that(colnames(pd_ci), equals(c("X1", "y", "variance")))
+              expect_that(colnames(pd_ci), equals(c("X1", "y", "variance", "low", "high")))
               expect_that(all(sapply(pd_ci, class) == "numeric"), is_true())
               expect_that(all(pd_ci$variance > 0), is_true())
 
               pd_both <- partial_dependence(fit_cf, df, c("X1", "X2"), cutoff, TRUE, ci = TRUE)
-              expect_that(colnames(pd_both), equals(c("X1", "X2", "y", "variance")))
+              expect_that(colnames(pd_both), equals(c("X1", "X2", "y", "variance", "low", "high")))
               expect_that(all(sapply(pd_both, class) == "numeric"), is_true())
               expect_that(all(pd_both$variance > 0), is_true())
           })
@@ -67,12 +67,12 @@ test_that("rfsrc", {
               expect_that(colnames(pd_int), equals(c("X1", "X2", "y")))
 
               pd_ci <- partial_dependence(fit_rfsrc, df, "X1", cutoff, ci = TRUE)
-              expect_that(colnames(pd_ci), equals(c("X1", "y", "variance")))
+              expect_that(colnames(pd_ci), equals(c("X1", "y", "variance", "low", "high")))
               expect_that(all(sapply(pd_ci, class) == "numeric"), is_true())
               expect_that(all(pd_ci$variance > 0), is_true())
 
               pd_both <- partial_dependence(fit_rfsrc, df, c("X1", "X2"), cutoff, TRUE, ci = TRUE)
-              expect_that(colnames(pd_both), equals(c("X1", "X2", "y", "variance")))
+              expect_that(colnames(pd_both), equals(c("X1", "X2", "y", "variance", "low", "high")))
               expect_that(all(sapply(pd_both, class) == "numeric"), is_true())
               expect_that(all(pd_both$variance > 0), is_true())
           })

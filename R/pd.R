@@ -221,10 +221,15 @@ partial_dependence.rfsrc <- function(fit, data = NULL, var, cutoff = 10L, intera
         }
         out <- unlist(c(rng[idx, ], pred))
         if (is.null(drop_levels))
-            names(out) <- c(var, target)
+            names(out)[1:(length(var) + length(target))] <- c(var, target)
         else
             names(out) <- c(var, target[!target %in% drop_levels])
-        if (ci) names(out)[length(out)] <- "variance"
+        if (ci) {
+            cl <- qnorm((1 - confidence) / 2, lower.tail = FALSE)
+            se <- unname(sqrt(out["variance"]))
+            out["low"]<- out[target] - cl * se
+            out["high"] <- out[target] + cl * se
+        }
         out
     }
     i <- x <- idx <- out <- NULL ## initialize to avoid check errors
@@ -246,7 +251,7 @@ partial_dependence.rfsrc <- function(fit, data = NULL, var, cutoff = 10L, intera
     }
     attr(pred, "class") <- c("pd", "data.frame")
     attr(pred, "target") <- target
-    attr(pred, "prob") <- type == "prob"
+    attr(pred, "prob") <- type == "prob" & class(y) == "factor"
     attr(pred, "interaction") <- length(var) > 1 & interaction
     attr(pred, "multivariate") <- class(y) == "data.frame"
     attr(pred, "var") <- var
