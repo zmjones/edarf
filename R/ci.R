@@ -19,27 +19,27 @@
 var_est <- function(fit, data) UseMethod("var_est", fit)
 #' @export
 var_est.randomForest <- function(fit, data, ...) {
-    info <- installed.packages(fields = c("Package", "Version"))
-    info <- info[, c("Package", "Version")]
-    if (!info[info[, 1] == "randomForest", "Version"] == "4.6-11")
-        stop("install fixed randomForest from http://github.com/swager/randomForest")
-    if (is.null(fit$inbag))
-        stop("keep.inbag must be true in call to randomForest")
-    pred <- predict(fit, newdata = data, predict.all = TRUE, ...)
-    data.frame("prediction" = pred$aggregate,
-               "variance" = inf_jackknife(nrow(data), fit$ntree, pred$individual, fit$inbag))
-    
+  info <- installed.packages(fields = c("Package", "Version"))
+  info <- info[, c("Package", "Version")]
+  if (!info[info[, 1] == "randomForest", "Version"] == "4.6-11")
+    stop("install fixed randomForest from http://github.com/swager/randomForest")
+  if (is.null(fit$inbag))
+    stop("keep.inbag must be true in call to randomForest")
+  pred <- predict(fit, newdata = data, predict.all = TRUE, ...)
+  data.frame("prediction" = pred$aggregate,
+             "variance" = inf_jackknife(nrow(data), fit$ntree, pred$individual, fit$inbag))
+  
 }
 #' @export
 var_est.RandomForest <- function(fit, data) {
-    pred <- sapply(1:length(fit@ensemble), function(idx) predict(fit, newdata = data, subset = idx))
-    data.frame("prediction" = predict(fit, newdata = data),
-               "variance" = inf_jackknife(nrow(data), length(fit@ensemble), pred,
-                   as.matrix(do.call(cbind, fit@weights), sparse = TRUE)))
+  pred <- sapply(1:length(fit@ensemble), function(idx) predict(fit, newdata = data, subset = idx))
+  data.frame("prediction" = predict(fit, newdata = data),
+             "variance" = inf_jackknife(nrow(data), length(fit@ensemble), pred,
+                                        as.matrix(do.call(cbind, fit@weights), sparse = TRUE)))
 }
 #' @export
 var_est.rfsrc <- function(fit, data, ...) {
-    pred <- predict(fit, newdata = data, outcome = "train", ...)
-    tree_pred <- get_tree_pred(fit$n, fit$ntree, pred$membership, fit$yvar, fit$inbag)
-    data.frame("prediction" = pred$predicted, "variance" = inf_jackknife(fit$n, fit$ntree, tree_pred, fit$inbag))
+  pred <- predict(fit, newdata = data, outcome = "train", ...)
+  tree_pred <- get_tree_pred(fit$n, fit$ntree, pred$membership, fit$yvar, fit$inbag)
+  data.frame("prediction" = pred$predicted, "variance" = inf_jackknife(fit$n, fit$ntree, tree_pred, fit$inbag))
 }

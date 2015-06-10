@@ -37,110 +37,110 @@
 #' }
 #' @export
 variable_importance <- function(fit, var, type, interaction, oob, nperm, parallel, data)
-    UseMethod("variable_importance")
+  UseMethod("variable_importance")
 #' @export
 variable_importance.randomForest <- function(fit, var, type = "aggregate", interaction = FALSE,
                                              oob = TRUE, nperm = 100, parallel = FALSE,
                                              data = NULL) {
-    out <- .variable_importance(fit, var, type, interaction, nperm, parallel, data,
-                                y = fit$y, list(object = fit, type = "response", OOB = oob),
-                                "randomForest")
-    return(out)
+  out <- .variable_importance(fit, var, type, interaction, nperm, parallel, data,
+                              y = fit$y, list(object = fit, type = "response", OOB = oob),
+                              "randomForest")
+  return(out)
 }
 #' @export
 variable_importance.RandomForest <- function(fit, var, type = "aggregate", interaction = FALSE,
                                              oob = TRUE, nperm = 100, parallel = FALSE, data = NULL) {
-    out <- .variable_importance(fit, var, type, interaction, nperm, parallel,
-                                get("input", fit@data@env),
-                                get("response", fit@data@env)[, 1],
-                                list(object = fit, type = "response", OOB = oob),
-                                "party")
-    return(out)
+  out <- .variable_importance(fit, var, type, interaction, nperm, parallel,
+                              get("input", fit@data@env),
+                              get("response", fit@data@env)[, 1],
+                              list(object = fit, type = "response", OOB = oob),
+                              "party")
+  return(out)
 }
 #' @export
 variable_importance.rfsrc <- function(fit, var, type = "aggregate", interaction = FALSE,
                                       oob = TRUE, nperm = 100, parallel = FALSE, data = NULL) {
-    out <- .variable_importance(fit, var, type, interaction, nperm, parallel,
-                                fit$xvar, fit$yvar, list(object = fit), "randomForestSRC")
-    return(out)
+  out <- .variable_importance(fit, var, type, interaction, nperm, parallel,
+                              fit$xvar, fit$yvar, list(object = fit), "randomForestSRC")
+  return(out)
 }
 
 .permute_data <- function(data, x) {
-    pdata <- data
-    n <- nrow(data)
-    pidx <- sapply(x, function(z) sample(1:n, size = n, replace = FALSE))
-    if (length(x) == 1) {
-        pidx <- pidx[, 1]
-        pdata[, x] <- pdata[pidx, x]
-    } else {
-        for (i in 1:length(x))
-            pdata[, x[i]] <- pdata[pidx[, i], x[i]]
-    }
-    return(pdata)
+  pdata <- data
+  n <- nrow(data)
+  pidx <- sapply(x, function(z) sample(1:n, size = n, replace = FALSE))
+  if (length(x) == 1) {
+    pidx <- pidx[, 1]
+    pdata[, x] <- pdata[pidx, x]
+  } else {
+    for (i in 1:length(x))
+      pdata[, x[i]] <- pdata[pidx[, i], x[i]]
+  }
+  return(pdata)
 }
 
 .variable_importance <- function(fit, var, type, interaction = FALSE, nperm, parallel,
                                  data, y, predict_options, pkg, oob = NULL) {
-    '%op%' <- ifelse(foreach::getDoParWorkers() > 1 & parallel, foreach::'%dopar%', foreach::'%do%')
-    ensemble_pred <- do.call("predict", c(predict_options, list(newdata = data)))
+  '%op%' <- ifelse(foreach::getDoParWorkers() > 1 & parallel, foreach::'%dopar%', foreach::'%do%')
+  ensemble_pred <- do.call("predict", c(predict_options, list(newdata = data)))
 
-    x <- NULL ## initialize global variables
+  x <- NULL ## initialize global variables
 
-    if (pkg == "randomForestSRC") ensemble_pred <- ensemble_pred$predicted
+  if (pkg == "randomForestSRC") ensemble_pred <- ensemble_pred$predicted
 
-    inner_loop <- function(data, x, predict_options, y, ensemble_output) {
-        pdata <- .permute_data(data, x)
-        p <- do.call("predict", c(predict_options, list(newdata = pdata)))
-        if (pkg == "randomForestSRC") p <- p$predicted
-        loss(p, y) - ensemble_output
+  inner_loop <- function(data, x, predict_options, y, ensemble_output) {
+    pdata <- .permute_data(data, x)
+    p <- do.call("predict", c(predict_options, list(newdata = pdata)))
+    if (pkg == "randomForestSRC") p <- p$predicted
+    loss(p, y) - ensemble_output
+  }
+
+  if (type == "local") {
+    if (is.factor(y) & !is.ordered(y)) loss <- function(x, y) ifelse(x != y, 1, 0)
+    else if (is.ordered(y)) loss <- function(x, y) as.integer(x) - as.integer(y)
+    else loss <- function(x, y) x - y
+    ensemble_resid <- loss(ensemble_pred, y)
+    comb <- function(...) rowMeans(do.call("cbind", list(...)))
+
+    out <- foreach::foreach(x = var, .combine = "cbind", .packages = pkg) %:%
+      foreach::foreach(iterators::icount(nperm), .combine = comb, .packages = pkg) %op%
+      inner_loop(data, x, predict_options, y, ensemble_resid)
+    out <- as.data.frame(out)
+    colnames(out) <- var
+    if (interaction) {
+      int <- foreach::foreach(iterators::icount(nperm), .combine = comb, .packages = pkg) %op%
+        inner_loop(data, var, predict_options, y, ensemble_resid)
+      out$additive <- rowSums(out[, var])
+      out$joint <- int
     }
+  } else if (type == "aggregate") {
+    if (is.factor(y) & !is.ordered(y)) loss <- function(x, y) mean(x != y)
+    else loss <- function(x, y) mean((x - y)^2)
+    ensemble_loss <- loss(ensemble_pred, y)
+    comb <- function(...) mean(do.call("c", list(...)))
 
-    if (type == "local") {
-        if (is.factor(y) & !is.ordered(y)) loss <- function(x, y) ifelse(x != y, 1, 0)
-        else if (is.ordered(y)) loss <- function(x, y) as.integer(x) - as.integer(y)
-        else loss <- function(x, y) x - y
-        ensemble_resid <- loss(ensemble_pred, y)
-        comb <- function(...) rowMeans(do.call("cbind", list(...)))
-
-        out <- foreach::foreach(x = var, .combine = "cbind", .packages = pkg) %:%
-            foreach::foreach(iterators::icount(nperm), .combine = comb, .packages = pkg) %op%
-                inner_loop(data, x, predict_options, y, ensemble_resid)
-        out <- as.data.frame(out)
-        colnames(out) <- var
-        if (interaction) {
-            int <- foreach::foreach(iterators::icount(nperm), .combine = comb, .packages = pkg) %op%
-                inner_loop(data, var, predict_options, y, ensemble_resid)
-            out$additive <- rowSums(out[, var])
-            out$joint <- int
-        }
-    } else if (type == "aggregate") {
-        if (is.factor(y) & !is.ordered(y)) loss <- function(x, y) mean(x != y)
-        else loss <- function(x, y) mean((x - y)^2)
-        ensemble_loss <- loss(ensemble_pred, y)
-        comb <- function(...) mean(do.call("c", list(...)))
-
-        out <- foreach::foreach(x = var, .combine = "c", .packages = pkg) %:%
-            foreach::foreach(iterators::icount(nperm), .combine = comb, .packages = pkg) %op% {
-                inner_loop(data, x, predict_options, y, ensemble_loss)
-            }
-        names(out) <- var
-        if (interaction) {
-            int <- foreach::foreach(iterators::icount(nperm), .combine = comb) %op% {
-                inner_loop(data, var, predict_options, y, ensemble_loss)
-            }
-            additive <- sum(out)
-            out <- c(out, additive, int)
-            names(out) <- c(var, "additive", "joint")
-        }
-    } else {
-        stop("unsupported type argument")
+    out <- foreach::foreach(x = var, .combine = "c", .packages = pkg) %:%
+      foreach::foreach(iterators::icount(nperm), .combine = comb, .packages = pkg) %op% {
+        inner_loop(data, x, predict_options, y, ensemble_loss)
+      }
+    names(out) <- var
+    if (interaction) {
+      int <- foreach::foreach(iterators::icount(nperm), .combine = comb) %op% {
+        inner_loop(data, var, predict_options, y, ensemble_loss)
+      }
+      additive <- sum(out)
+      out <- c(out, additive, int)
+      names(out) <- c(var, "additive", "joint")
     }
+  } else {
+    stop("unsupported type argument")
+  }
 
-    attr(out, "class") <- c("importance", ifelse(type == "aggregate", "numeric", "data.frame"))
-    attr(out, "type") <- type
-    attr(out, "var") <- var
-    attr(out, "oob") <- oob
-    attr(out, "interaction") <- interaction
-    attr(out, "target") <- y
-    out
+  attr(out, "class") <- c("importance", ifelse(type == "aggregate", "numeric", "data.frame"))
+  attr(out, "type") <- type
+  attr(out, "var") <- var
+  attr(out, "oob") <- oob
+  attr(out, "interaction") <- interaction
+  attr(out, "target") <- y
+  out
 }

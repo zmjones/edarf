@@ -16,31 +16,31 @@
 extract_proximity <- function(fit, newdata) UseMethod("extract_proximity")
 #' @export
 extract_proximity.randomForest <- function(fit, newdata = NULL, ...) {
-    if (!is.null(newdata)) {
-        pred <- predict(fit, newdata = newdata, proximity = TRUE, ...)
-        if (!is.null(pred$oob.prox))
-            out <- pred$oob.prox
-        else if (!is.null(pred$prox))
-            out <- pred$prox
-        else stop("not sure what is up") 
-    } else {
-        if (is.null(fit$proximity))
-            stop("call randomForest with proximity or oob.prox = TRUE")
-        fit$proximity
-    }
+  if (!is.null(newdata)) {
+    pred <- predict(fit, newdata = newdata, proximity = TRUE, ...)
+    if (!is.null(pred$oob.prox))
+      out <- pred$oob.prox
+    else if (!is.null(pred$prox))
+      out <- pred$prox
+    else stop("not sure what is up") 
+  } else {
+    if (is.null(fit$proximity))
+      stop("call randomForest with proximity or oob.prox = TRUE")
+    fit$proximity
+  }
 }
 #' @export
 extract_proximity.RandomForest <- function(fit, newdata = NULL, ...) {
-    proximity(fit, newdata, ...)
+  proximity(fit, newdata, ...)
 }
 #' @export
 extract_proximity.rfsrc <- function(fit, newdata = NULL, ...) {
-    if (!is.null(newdata)) {
-        pred <- predict(fit, newdata = newdata, proximity = TRUE, ...)
-        out <- pred$prox
-    } else {
-        if (is.null(fit$proximity))
-            stop("call rfsrc with proximity equal to TRUE, \"inbag\", \"oob\", or \"all\"")
-        fit$proximity
-    }
+  if (!is.null(newdata)) {
+    pred <- predict(fit, newdata = newdata, proximity = TRUE, ...)
+    out <- pred$prox
+  } else {
+    if (is.null(fit$proximity))
+      stop("call rfsrc with proximity equal to TRUE, \"inbag\", \"oob\", or \"all\"")
+    fit$proximity
+  }
 }
