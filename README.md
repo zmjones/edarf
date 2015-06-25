@@ -54,7 +54,7 @@ library(ggplot2)
 data(iris)
 library(randomForest)
 fit <- randomForest(Species ~ ., iris)
-pd <- partial_dependence(fit, df = iris, var = "Petal.Width", type = "prob")
+pd <- partial_dependence(fit, data = iris, var = "Petal.Width", type = "prob")
 plot_pd(pd, geom = "line")
 ggsave("examples/iris_pd_line.png", width = 10, height = 5)
 ```
@@ -67,14 +67,14 @@ ggsave("examples/iris_pd_area.png", width = 10, height = 5)
 ![](examples/iris_pd_area.png)
 
 ```{r}
-pd <- partial_dependence(fit, df = iris, var = "Petal.Width")
+pd <- partial_dependence(fit, data = iris, var = "Petal.Width")
 plot_pd(pd, geom = "bar")
 ggsave("examples/iris_pd_bar.png", width = 10, height = 5)
 ```
 ![](examples/iris_pd_bar.png)
 
 ```{r}
-pd_int <- partial_dependence(fit, df = iris, var = c("Petal.Width", "Sepal.Length"),
+pd_int <- partial_dependence(fit, data = iris, var = c("Petal.Width", "Sepal.Length"),
                              interaction = TRUE, type = "prob")
 plot_pd(pd_int, geom = "line", facet_var = "Petal.Width")
 ggsave("examples/iris_pd_int_line.png", width = 10, height = 10)
@@ -88,14 +88,14 @@ ggsave("examples/iris_pd_int_area.png", width = 10, height = 10)
 ![](examples/iris_pd_int_area.png)
 
 ```{r}
-pd_int <- partial_dependence(fit, df = iris, var = c("Petal.Width", "Sepal.Length"), interaction = TRUE)
+pd_int <- partial_dependence(fit, data = iris, var = c("Petal.Width", "Sepal.Length"), interaction = TRUE)
 plot_pd(pd_int, geom = "bar", facet_var = "Petal.Width")
 ggsave("examples/iris_pd_int_bar.png", width = 10, height = 10)
 ```
 ![](examples/iris_pd_int_bar.png)
 
 ```{r}
-pd_lst <- partial_dependence(fit, df = iris, var = c("Petal.Width", "Sepal.Length"),
+pd_lst <- partial_dependence(fit, data = iris, var = c("Petal.Width", "Sepal.Length"),
                              interaction = FALSE, type = "prob")
 plot_pd(pd_lst, geom = "line")
 ggsave("examples/iris_pd_lst_line.png", width = 10, height = 5)
@@ -107,21 +107,21 @@ ggsave("examples/iris_pd_lst_line.png", width = 10, height = 5)
 ```{r}
 data(swiss)
 fit <- randomForest(Fertility ~ ., swiss, keep.inbag = TRUE)
-pd <- partial_dependence(fit, df = swiss, var = "Education", ci = TRUE)
+pd <- partial_dependence(fit, data = swiss, var = "Education", ci = TRUE)
 plot_pd(pd)
 ggsave("examples/swiss_pd_line.png", width = 10, height = 5)
 ```
 ![](examples/swiss_pd_line.png)
 
 ```{r}
-pd_int <- partial_dependence(fit, df = swiss, var = c("Education", "Catholic"), interaction = TRUE, ci = TRUE)
+pd_int <- partial_dependence(fit, data = swiss, var = c("Education", "Catholic"), interaction = TRUE, ci = TRUE)
 plot_pd(pd_int, facet_var = "Education")
 ggsave("examples/swiss_pd_int_line.png", width = 10, height = 10)
 ```
 ![](examples/swiss_pd_int_line.png)
 
 ```{r}
-pd_lst <- partial_dependence(fit, df = swiss, var = c("Education", "Catholic"), interaction = FALSE, ci = TRUE)
+pd_lst <- partial_dependence(fit, data = swiss, var = c("Education", "Catholic"), interaction = FALSE, ci = TRUE)
 plot_pd(pd_lst)
 ggsave("examples/swiss_pd_lst_line.png", width = 10, height = 5)
 ```
