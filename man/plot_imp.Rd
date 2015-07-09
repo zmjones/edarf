@@ -5,8 +5,7 @@
 \title{Plot variable importance from random forests}
 \usage{
 plot_imp(imp, geom = "point", sort = "decreasing", labels = NULL,
-  scales = "free_y", se = TRUE, xlab = NULL, ylab = NULL,
-  title = NULL)
+  scales = "free_y", se = TRUE)
 }
 \arguments{
 \item{imp}{object of class \code{c("importance", "data.frame")} as returned by
@@ -23,12 +22,6 @@ must have length equal to the number of rows or length of \code{imp}}
 \item{scales}{character, "free", "fixed", "free_x", or "free_y", only applicable when \code{type = "local"} and the outcome is an ordered factor or numeric}
 
 \item{se}{logical, plot a standard error ribbon around the estimated residual density under permutation, only applicable when \code{type = "local"} and the outcome is an ordered factor or numeric}
-
-\item{xlab}{x-axis label, default "Variables"}
-
-\item{ylab}{y-axis label, default "Importance"}
-
-\item{title}{title for the plot}
 }
 \value{
 a ggplot2 object
@@ -45,18 +38,17 @@ fit <- randomForest(Species ~ ., iris)
 ## class-specific importance for all variables
 imp <- variable_importance(fit, var = colnames(iris)[-5],
                            type = "local", interaction = TRUE, nperm = 10, data = iris)
-plot_imp(imp, geom = "bar")
+plot_imp(imp)
 
 imp <- variable_importance(fit, var = colnames(iris)[-5], type = "aggregate",
                            interaction = FALSE, nperm = 10, oob = TRUE, data = iris)
-plot_imp(imp, geom = "bar")
+plot_imp(imp)
 
 data(swiss)
 fit <- randomForest(Fertility ~ ., swiss)
 imp <- variable_importance(fit, var = colnames(swiss)[-1],
                            type = "local", interaction = TRUE, nperm = 10, data = swiss)
 plot_imp(imp)
-
 }
 }
 

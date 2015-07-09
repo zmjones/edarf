@@ -36,7 +36,7 @@ var_est.RandomForest <- function(fit, data) {
   if (check)
     stop("Install party from http://github.com/zmjones/party/pkg.")
   pred <- sapply(1:length(fit@ensemble), function(idx) predict(fit, newdata = data, subset = idx))
-  data.frame("prediction" = predict(fit, newdata = data),
+  data.frame("prediction" = predict(fit, newdata = data)[,, drop = TRUE],
              "variance" = inf_jackknife(nrow(data), length(fit@ensemble), pred,
                                         as.matrix(do.call(cbind, fit@weights), sparse = TRUE)))
 }

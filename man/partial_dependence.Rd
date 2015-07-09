@@ -5,8 +5,8 @@
 \title{Partial dependence using random forests}
 \usage{
 partial_dependence(fit, data, var, cutoff = 10L, interaction = FALSE,
-  oob = TRUE, ci = FALSE, confidence = 0.95, empirical = TRUE,
-  parallel = FALSE, type = "prob", drop_levels = NULL)
+  oob = TRUE, resampling = "none", ci = FALSE, confidence = 0.95,
+  parallel = FALSE, type = "prob")
 }
 \arguments{
 \item{fit}{object of class 'RandomForest', 'randomForest', or 'rfsrc'}
@@ -22,23 +22,20 @@ partial dependence calculation}
 
 \item{oob}{logical, use the out-of-bag data to compute predictions at each step}
 
+\item{resampling}{desired resampling method for generating variable prediction grid. can be "none", "bootstrap", or "subsampling"}
+
 \item{ci}{use the bias corrected infinitesimal jackknife from Wager, Hastie, and Efron (2014), only works with regression}
 
 \item{confidence}{desired confidence for the returned interval (ignored if ci is false)}
 
-\item{empirical}{logical indicator of whether or not only values in the data should be sampled}
-
 \item{parallel}{logical indicator of whether a parallel backend should be used if registered}
 
 \item{type}{with classification, default is "prob" which gives class probabilities estimated by the norm of the votes cast for each class, alternatively "class" gives the most probably class}
-
-\item{drop_levels}{character vector specifying levels of a factor to drop, spaces in levels should be replaced by dots}
 }
 \value{
 a data.frame with the partial dependence of 'var'
 if 'var' has length = 1 then the output will be a data.frame with a column for the predicted value at each value of 'var', averaged over the values of all other predictors.
-if 'var' has length > 1 and interaction is false the out is returned in melted form, i.e. there is a column 'value''variable', and the predicted value for that combination.
-if 'var' has length > 1 and interaction is true then the output will be a data.frame with a column for each element of 'var' and the predicted value for each combination.
+if 'var' has length > 1 and interaction is true or false then the output will be a data.frame with a column for each element of 'var' and the predicted value for each combination.
 }
 \description{
 Calculates the partial dependence of the response on an arbitrary dimensional set of predictors

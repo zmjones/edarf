@@ -6,10 +6,6 @@
 #' 
 #' @param pd object of class \code{c("pd", "data.frame")} as returned by
 #' \code{\link{partial_dependence}}
-#' @param geom character describing type of plot desired: "bar", "line", or "area"
-#' @param xlab x-axis label, default depends on input
-#' @param ylab y-axis label, default depends on input
-#' @param title title for the plot
 #' @param facet_var a character vector indicating the variable that should be used
 #' to facet on if interaction is plotted. If not specified the variable with less 
 #' unique values is chosen.
@@ -22,93 +18,58 @@
 #' data(iris)
 #' fit <- randomForest(Species ~ ., iris)
 #' pd <- partial_dependence(fit, iris, "Petal.Width", type = "prob")
-#' plot_pd(pd, geom = "area")
+#' plot_pd(pd)
 #' }
 #' @export
-plot_pd <- function(pd, geom = "line", xlab = NULL, ylab = NULL, title = "", facet_var = NULL,
-                    scales = "free_x") {
+plot_pd <- function(pd, facet_var = NULL, scales = "free_x") {
   atts <- attributes(pd)
   ## One predictor Plots
   if (!atts$interaction & length(atts$var) == 1) {
     if (!atts$prob & !atts$multivariate) {
       ## Numeric Y or Majority class
-      p <- ggplot(pd, aes_string(colnames(pd)[1], colnames(pd)[2]))
-      if (geom == "line") {
+      if (class(pd[[atts$target]]) == "numeric") {
+        p <- ggplot(pd, aes_string(atts$var, atts$target))
         p <- p + geom_point() + geom_line()
-        if (atts$ci) p <- p + geom_errorbar(aes_string(ymin = "low", ymax = "high"), alpha = .25)
-      } else if (geom == "bar")
-        p <- p + geom_bar(stat = "identity")
-      else stop("Unsupported geom")
-      if (is.null(ylab))
-        ylab <- paste("Predicted", colnames(pd)[2])
-      if (is.null(xlab))
-        xlab <- colnames(pd)[1]
-      p <- p + labs(y = ylab, x = xlab, title = title)
+        if (atts$ci)
+          p <- p + geom_errorbar(aes_string(ymin = "lower", y = atts$target, ymax = "upper"),
+                                 width = .15, size = .5, alpha = .25)
+      } else {
+        pd[[atts$var]] <- cut(pd[[atts$var]], hist(pd[[atts$var]], plot = FALSE)$breaks)
+        p <- ggplot(pd, aes_string(atts$var, fill = atts$target))
+        p <- p + geom_bar(position = "fill")
+      }
+      p <- p + labs(y = atts$target, x = atts$var)
     } else if (atts$prob & !atts$multivariate) {
-      ## Predicted probabilities
-      df <- melt(pd, id.vars = 1)
-      colnames(df) <- c("x", "Class", "Probability")
-      if (geom == "area") {
-        p <- ggplot(df, aes_string("x", "Probability", fill = "Class"))
-        p <- p + geom_area(position = "fill")
-        p <- p + scale_fill_grey()
-      } else if (geom == "line") {
-        p <- ggplot(df, aes_string("x", "Probability", colour = "Class"))
-        p <- p + geom_line() + geom_point()
-      } else stop("Unsupported geom")
-      if (is.null(ylab))
-        ylab <- "Probability"
-      if (is.null(xlab))
-        xlab <- colnames(pd)[1]
-      p <- p + labs(x = xlab, y = ylab, title = title)
-    } else {
-      ## Multivariate with single explanatory variable
-      df <- melt(pd, id.vars = 1)
-      colnames(df) <- c("x", "Outcome", "value")
-      df$Outcome <- paste0("Outcome: ", df$Outcome)
-      p <- ggplot(df, aes_string("x", "value", group = "Outcome"))
+      df <- melt(pd, id.vars = atts$var, value.name = "Probability", variable.name = "Class")
+      p <- ggplot(df, aes_string(atts$var, "Probability", colour = "Class"))
       p <- p + geom_line() + geom_point()
-      p <- p + facet_wrap(~ Outcome, scales = scales)
-      if (is.null(ylab))
-        ylab <- "Predicted Outcome"
-      if (is.null(xlab))
-        xlab <- colnames(pd)[1]
-      p <- p + labs(x = xlab, y = ylab, title = title)
+      p <- p + labs(x = atts$var, y = "Probability")
+    } else {
+      stop("Multivariate outcomes are not supported.")
     }
   } else if (!atts$interaction & length(atts$var) > 1) {
+    ## list plots
     if (!atts$prob & !atts$ci) {
-      p <- ggplot(pd, aes_string("value", atts$target, group = "variable"))
-      if (geom == "line") {
-        p <- p + geom_line() + geom_point()
-      } else if (geom == "bar") {
-        p <- p + geom_bar(stat = "identity")
-      } else {
-        stop("unsupported geom for this partial_dependence input")
-      }
+      for (x in atts$var)
+        pd[[x]] <- cut(pd[[x]], hist(pd[[x]], plot = FALSE)$breaks)
+      df <- melt(pd, id.vars = atts$target, value.name = "Value", variable.name = "Variable", na.rm = TRUE)
+      p <- ggplot(df, aes_string("Value", fill = atts$target))
+      p <- p + geom_bar(position = "fill")
+      p <- p + scale_fill_manual()
     } else if (atts$prob & !atts$ci) {
-      df <- melt(pd, id.vars = c("value", "variable"), value.name = "Probability",
-                 variable.name = "Class")
-      if (geom == "area") {
-        p <- ggplot(df, aes_string("value", "Probability", fill = "Class"))
-        p <- p + geom_area(position = "fill")
-        p <- p + scale_fill_grey()
-      } else if (geom == "line") {
-        p <- ggplot(df, aes_string("value", "Probability", colour = "Class"))
-        p <- p + geom_line() + geom_point()
-      } else stop("Unsupported geom")
-    } else if (atts$ci & !atts$prob) {
-      p <- ggplot(pd, aes_string("value", atts$target))
+      df <- melt(pd, id.vars = atts$var, value.name = "Probability", variable.name = "Class")
+      df <- melt(df, id.vars = c("Probability", "Class"), value.name = "Value", variable.name = "Variable")
+      p <- ggplot(df, aes_string("Value", "Probability", colour = "Class"))
       p <- p + geom_line() + geom_point()
-      p <- p + geom_errorbar(aes_string(ymin = "low", y = atts$target, ymax = "high"), alpha = .25)
     } else {
-      stop("some sort of error")
+      df <- melt(df, id.vars = atts$target, value.name = "Value", variable.name = "Variable", na.rm = TRUE)
+      p <- ggplot(pd, aes_string("Value", atts$target))
+      p <- p + geom_line() + geom_point()
+      p <- p + geom_errorbar(aes_string(ymin = "lower", y = atts$target, ymax = "upper"),
+                             width = .15, size = .5, alpha = .25)
     }
-    p <- p + facet_wrap(~ variable, scales = scales)
-    if (is.null(ylab))
-      ylab <- "Predicted Outcome"
-    if (is.null(xlab))
-      xlab <- "Predictor Scale"
-    p <- p + labs(x = xlab, y = ylab, title = title)
+    p <- p + facet_wrap(as.formula(paste0("~ Variable")), scales = scales)
+    p <- p + labs(x = "Variable Value", y = "Predicted Outcome")
   } else if (atts$interaction) {
     ## Interaction Plots
     if (length(atts$var) > 2) stop("Only two-way interactions supported")
@@ -116,57 +77,31 @@ plot_pd <- function(pd, geom = "line", xlab = NULL, ylab = NULL, title = "", fac
       n_unique <- apply(pd[, atts$var], 2, function(x) length(unique(x)))
       facet_var <- names(which.min(n_unique))
     }
-    if ((class(pd[, facet_var]) %in% c("numeric", "integer"))) {
-      ordering <- as.character(unique(sort(pd[, facet_var])))
-      labels <- paste0(facet_var, " = ", ordering)
-      pd[, facet_var] <- factor(pd[, facet_var], levels = ordering,
-                                labels = labels)
-    } else if (class(pd[, facet_var]) == "character") {
-      pd[, facet_var] <- as.factor(pd[, facet_var])
+    if (class(pd[[facet_var]]) %in% c("numeric", "integer")) {
+      ordering <- unique(sort(pd[[facet_var]]))
+      labels <- paste0(facet_var, " = ", as.character(signif(ordering, 3)))
+      pd[[facet_var]] <- factor(pd[[facet_var]], levels = ordering, labels = labels)
     }
     plot_var <- atts$var[atts$var != facet_var]
     if (atts$prob) {
-      df <- melt(pd, id.vars = atts$var)
-      colnames(df) <- c(atts$var, "Class", "Probability")
-      if (geom == "area") {
-        p <- ggplot(df, aes_string(x = plot_var,
-                                   y = "Probability",
-                                   fill = "Class"))
-        p <- p + geom_area(position = "fill")
-        p <- p + scale_fill_grey()
-      } else if (geom == "line") {
-        p <- ggplot(df, aes_string(x = plot_var,
-                                   y = "Probability",
-                                   colour = "Class"))
-        p <- p + geom_line() + geom_point()
-      } else stop("Unsupported geom")
-      p <- p + facet_wrap(as.formula(paste0("~", facet_var)), scales = scales)
-      if (is.null(xlab))
-        xlab <- plot_var
-      if (is.null(ylab))
-        ylab <- "Probability"
-      p <- p + labs(x = xlab, y = ylab, title = title)
-    } else if (!atts$prob & class(pd[, 3]) == "numeric" & !atts$multivariate) {
-      y <- colnames(pd)[3]
-      p <- ggplot(pd, aes_string(x = plot_var, y = y, group = facet_var))
-      p <- p + facet_wrap(as.formula(paste0("~", facet_var)), scales = scales)
+      df <- melt(pd, id.vars = atts$var, value.name = "Probability", variable.name = "Class")
+      p <- ggplot(df, aes_string(plot_var, "Probability", colour = "Class"))
       p <- p + geom_line() + geom_point()
-      if (atts$ci) p <- p + geom_errorbar(aes_string(ymin = "low", ymax = "high"), alpha = .25)
-      if (is.null(xlab))
-        xlab <- plot_var
-      if (is.null(ylab))
-        ylab <- paste("Predicted", y)
-      p <- p + labs(x = xlab, y = ylab, title = title)
-    } else if (class(pd[, 3]) == "factor" | class(pd[, 3]) == "character") {
-      y <- colnames(pd)[3]
-      p <- ggplot(pd, aes_string(x = plot_var, y = y, group = facet_var))
-      p <- p + facet_wrap(as.formula(paste0("~", facet_var)))
-      p <- p + labs(x = plot_var, y = paste("Predicted", y), title = title)
-      if (geom == "line")
-        p <- p + geom_point() + geom_line()
-      else if (geom == "bar")
-        p <- p + geom_bar(stat = "identity")
-    } else stop("Unsupported input. Open an issue on GitHub!")
+      p <- p + labs(x = plot_var, y = "Probability")
+    } else if (!atts$prob & class(pd[[atts$target]]) == "numeric" & !atts$multivariate) {
+      p <- ggplot(pd, aes_string(plot_var, atts$target, group = facet_var))
+      p <- p + geom_line() + geom_point()
+      if (atts$ci)
+        p <- p + geom_errorbar(aes_string(ymin = "lower", y = atts$target, ymax = "upper"),
+                               width = .15, size = .5, alpha = .25)
+      p <- p + labs(x = plot_var, y = atts$target)
+    } else  {
+      pd[[plot_var]] <- cut(pd[[plot_var]], hist(pd[[plot_var]], plot = FALSE)$breaks)
+      p <- ggplot(pd, aes_string(plot_var, fill = atts$target))
+      p <- p + geom_bar(position = "fill")
+      p <- p + labs(x = plot_var, y =  atts$target)
+    }
+    p <- p + facet_wrap(as.formula(paste0("~", facet_var)), scales = scales)
   }
   p + theme_bw()
 }
@@ -185,10 +120,7 @@ plot_pd <- function(pd, geom = "line", xlab = NULL, ylab = NULL, title = "", fac
 #' must have length equal to the number of rows or length of \code{imp}
 #' @param scales character, "free", "fixed", "free_x", or "free_y", only applicable when \code{type = "local"} and the outcome is an ordered factor or numeric
 #' @param se logical, plot a standard error ribbon around the estimated residual density under permutation, only applicable when \code{type = "local"} and the outcome is an ordered factor or numeric
-#' @param xlab x-axis label, default "Variables"
-#' @param ylab y-axis label, default "Importance"
-#' @param title title for the plot
-#'
+#' 
 #' @return a ggplot2 object
 #' 
 #' @examples \dontrun{
@@ -199,23 +131,21 @@ plot_pd <- function(pd, geom = "line", xlab = NULL, ylab = NULL, title = "", fac
 #' ## class-specific importance for all variables
 #' imp <- variable_importance(fit, var = colnames(iris)[-5],
 #'                            type = "local", interaction = TRUE, nperm = 10, data = iris)
-#' plot_imp(imp, geom = "bar")
+#' plot_imp(imp)
 #'
 #' imp <- variable_importance(fit, var = colnames(iris)[-5], type = "aggregate",
 #'                            interaction = FALSE, nperm = 10, oob = TRUE, data = iris)
-#' plot_imp(imp, geom = "bar")
+#' plot_imp(imp)
 #'
 #' data(swiss)
 #' fit <- randomForest(Fertility ~ ., swiss)
 #' imp <- variable_importance(fit, var = colnames(swiss)[-1],
 #'                            type = "local", interaction = TRUE, nperm = 10, data = swiss)
 #' plot_imp(imp)
-#' 
 #' }
 #' @export
 #' 
-plot_imp <- function(imp, geom = "point", sort = "decreasing", labels = NULL,
-                     scales = "free_y", se = TRUE, xlab = NULL, ylab = NULL, title = NULL) {
+plot_imp <- function(imp, geom = "point", sort = "decreasing", labels = NULL, scales = "free_y", se = TRUE) {
   atts <- attributes(imp)
   if (atts$type == "local") {
     imp$target <- atts$target
@@ -233,7 +163,7 @@ plot_imp <- function(imp, geom = "point", sort = "decreasing", labels = NULL,
         imp$labels <- row.names(imp)
       }
       row.names(imp) <- NULL
-      imp <- reshape2::melt(imp, id.vars = "labels", variable.name = "Class")
+      imp <- melt(imp, id.vars = "labels", variable.name = "Class")
       if (geom == "point") {
         p <- ggplot(imp, aes_string("value", "labels", color = "Class")) +
           geom_point()
@@ -244,76 +174,66 @@ plot_imp <- function(imp, geom = "point", sort = "decreasing", labels = NULL,
         stop("invalid input to geom argument")
       }
     } else if (is.ordered(atts$target) | is.numeric(atts$target)) {
-      imp <- reshape2::melt(imp, id.vars = "target")
+      imp <- melt(imp, id.vars = "target")
       p <- ggplot(imp, aes_string("target", "value")) +
         stat_smooth(method = "loess", se = se) +
         facet_wrap(~ variable, scales = scales)
     } else {
       stop("")
     }
-    if (is.null(xlab)) {
-      if (!is.factor(atts$target)) {
-        xlab <- "Outcome"
-      } else {
-        xlab <- ""
-      }
-    }
-    if (is.null(ylab))
-      if (!is.factor(atts$target)) {
-        ylab <- "Residual Under Permutation"
-      } else {
-        ylab <- "Permutation Importance"
-      }
-    if (is.null(title))
-      title <- ""
-  } else { ## type == "aggregate"
-    imp <- data.frame(value = imp)
-    if (!is.null(labels)) {
-      if (length(labels) == length(imp)) {
-        imp$labels <- labels
-      } else {
-        stop("length of labels does not match length of importance output")
-      }
+    if (!is.factor(atts$target)) {
+      xlab <- "Outcome"
     } else {
-      if (atts$interaction) {
-        imp$labels <- c(atts$var, "additive", "joint")
+      xlab <- ""
+    }
+    if (!is.factor(atts$target)) {
+      ylab <- "Residual Under Permutation"
+    } else {
+      ylab <- "Permutation Importance"
+    }
+    } else { ## type == "aggregate"
+      imp <- data.frame(value = imp)
+      if (!is.null(labels)) {
+        if (length(labels) == length(imp)) {
+          imp$labels <- labels
+        } else {
+          stop("length of labels does not match length of importance output")
+        }
       } else {
-        imp$labels <- atts$var
+        if (atts$interaction) {
+          imp$labels <- c(atts$var, "additive", "joint")
+        } else {
+          imp$labels <- atts$var
+        }
       }
-    }
-    if (sort == "increasing") {
-      imp$labels <- factor(imp$labels, levels = imp$labels[order(imp$value, decreasing = FALSE)])
-    } else if (sort == "decreasing") {
-      imp$labels <- factor(imp$labels, levels = imp$labels[order(imp$value, decreasing = TRUE)])
-    } else {
-      stop("invalid input to sort argument")
-    }
-    if (geom == "point") {
-      p <- ggplot(imp, aes_string("value", "labels")) + geom_point()
-    } else if (geom == "bar") {
-      p <- ggplot(imp, aes_string("labels", "value")) + geom_bar(stat = "identity") + coord_flip()
-    } else {
-      stop("invalid input to geom argument")
-    }
-    if (is.null(xlab)) {
+      if (sort == "increasing") {
+        imp$labels <- factor(imp$labels, levels = imp$labels[order(imp$value, decreasing = FALSE)])
+      } else if (sort == "decreasing") {
+        imp$labels <- factor(imp$labels, levels = imp$labels[order(imp$value, decreasing = TRUE)])
+      } else {
+        stop("invalid input to sort argument")
+      }
+      if (geom == "point") {
+        p <- ggplot(imp, aes_string("value", "labels")) + geom_point()
+      } else if (geom == "bar") {
+        p <- ggplot(imp, aes_string("labels", "value")) + geom_bar(stat = "identity") + coord_flip()
+      } else {
+        stop("invalid input to geom argument")
+      }
       if (geom == "bar") {
         xlab <- ""
       } else {
         xlab <- "Permutation Importance"
       }
-    }
-    if (is.null(ylab)) {
+
       if (geom == "bar") {
         ylab <- "Permutation Importance"
       } else {
         ylab <- ""
       }
     }
-    if (is.null(title))
-      title <- ""
-  }
-  p <- p + labs(x = xlab, y = ylab, title = title)
-  p + theme_bw()
+    p <- p + labs(x = xlab, y = ylab)
+    p + theme_bw()
 }
 #' Plot principle components of the proximity matrix
 #'

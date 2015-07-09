@@ -2,14 +2,14 @@
 # Generator token: 10BE3573-1514-4C36-9D1C-5A225CD40393
 
 .wmean <- function(x, w) {
-  .Call('edarf_wmean', PACKAGE = 'edarf', x, w)
+    .Call('edarf_wmean', PACKAGE = 'edarf', x, w)
 }
 
 get_tree_pred <- function(n, ntree, pd_membership, yvar, inbag) {
-  .Call('edarf_get_tree_pred', PACKAGE = 'edarf', n, ntree, pd_membership, yvar, inbag)
+    .Call('edarf_get_tree_pred', PACKAGE = 'edarf', n, ntree, pd_membership, yvar, inbag)
 }
 
 inf_jackknife <- function(n, b, P, N) {
-  .Call('edarf_inf_jackknife', PACKAGE = 'edarf', n, b, P, N)
+    .Call('edarf_inf_jackknife', PACKAGE = 'edarf', n, b, P, N)
 }
 
