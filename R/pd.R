@@ -19,6 +19,7 @@
 #' @param resampling desired resampling method for generating variable prediction grid. can be "none", "bootstrap", or "subsampling"
 #' @param parallel logical indicator of whether a parallel backend should be used if registered
 #' @param type with classification, default is "prob" which gives class probabilities estimated by the norm of the votes cast for each class, alternatively "class" gives the most probably class
+#' @param clean_names logical indicator of whether to clean factor names in output i.e. "level" instead of "factorname.level."
 #' @return a data.frame with the partial dependence of 'var'
 #' if 'var' has length = 1 then the output will be a data.frame with a column for the predicted value at each value of 'var', averaged over the values of all other predictors.
 #' if 'var' has length > 1 and interaction is true or false then the output will be a data.frame with a column for each element of 'var' and the predicted value for each combination.
@@ -45,11 +46,11 @@
 #' @export
 partial_dependence <- function(fit, data, var, cutoff = 10L, interaction = FALSE, oob = TRUE,
                                resampling = "none", ci = FALSE, confidence = .95, parallel = FALSE,
-                               type = "prob") UseMethod("partial_dependence", fit)
+                               type = "prob", clean_names = TRUE) UseMethod("partial_dependence", fit)
 #' @export
 partial_dependence.randomForest <- function(fit, data, var, cutoff = 10L, interaction = FALSE,
                                             oob = TRUE, resampling = "none", ci = FALSE, confidence = .95,
-                                            parallel = FALSE, type = "prob") {
+                                            parallel = FALSE, type = "prob", clean_names = TRUE) {
   pkg <- "randomForest"
   ## find the target feature in the data.frame
   check <- lapply(1:ncol(data), function(x)
@@ -77,12 +78,12 @@ partial_dependence.randomForest <- function(fit, data, var, cutoff = 10L, intera
 
   .partial_dependence(data, target, var, cutoff, interaction,
                       resampling, ci, confidence,
-                      parallel, predict_options, pkg, type)
+                      parallel, predict_options, pkg, type, clean_names)
 }
 #' @export
 partial_dependence.RandomForest <- function(fit, data = NULL, var, cutoff = 10L, interaction = FALSE,
                                             oob = TRUE, resampling = "none", ci = FALSE, confidence = .95,
-                                            parallel = FALSE, type = "prob") {
+                                            parallel = FALSE, type = "prob", clean_names = TRUE) {
   pkg <- "party"
   y <- get("response", fit@data@env)
   data <- data.frame(get("input", fit@data@env), y)
@@ -109,12 +110,12 @@ partial_dependence.RandomForest <- function(fit, data = NULL, var, cutoff = 10L,
 
   .partial_dependence(data, target, var, cutoff, interaction,
                       resampling, ci, confidence,
-                      parallel, predict_options, pkg, type)
+                      parallel, predict_options, pkg, type, clean_names)
 }
 #' @export
 partial_dependence.rfsrc <- function(fit, data = NULL, var, cutoff = 10L, interaction = FALSE,
                                      oob = TRUE, resampling = "none", ci = FALSE, confidence = .95,
-                                     parallel = FALSE, type = "prob") {
+                                     parallel = FALSE, type = "prob", clean_names = TRUE) {
   pkg <- "randomForestSRC"
   target <- fit$yvar.names
   data <- data.frame(fit$xvar, fit$yvar) ## rfsrc casts integers to numerics
@@ -136,12 +137,12 @@ partial_dependence.rfsrc <- function(fit, data = NULL, var, cutoff = 10L, intera
 
   .partial_dependence(data, target, var, cutoff, interaction,
                       resampling, ci, confidence,
-                      parallel, predict_options, pkg, type)
+                      parallel, predict_options, pkg, type, clean_names)
 }
 
 .partial_dependence <- function(data, target, var, cutoff, interaction,
                                 resampling, ci, confidence,
-                                parallel, predict_options, pkg, type) {
+                                parallel, predict_options, pkg, type, clean_names) {
   if (length(target) == 1)
     y <- data[[target]]
   else
@@ -170,9 +171,10 @@ partial_dependence.rfsrc <- function(fit, data = NULL, var, cutoff = 10L, intera
   
   if (length(var) > 1 & !interaction) {
     out <- lapply(var, function(x) {
-      pred <- foreach(i = seq_len(nrow(rng)), .combine = comb) %op%
+      pred <- foreach(i = seq_len(nrow(rng)), .combine = comb) %op% {
         .inner_loop(data, y, rng[x][!is.na(rng[x]),, drop = FALSE], i,
-                    var, ci, confidence, predict_options, pkg, type)
+                    var, ci, confidence, predict_options, pkg, type, clean_names)
+      }
       cbind(pred, rng[x][!is.na(rng[[x]]),, drop = FALSE])
     })
     out <- plyr::ldply(out)
@@ -182,11 +184,11 @@ partial_dependence.rfsrc <- function(fit, data = NULL, var, cutoff = 10L, intera
       colnames(out) <- c(target, var)
   } else {
     pred <- foreach(i = seq_len(nrow(rng)), .combine = comb) %op%
-      .inner_loop(data, y, rng, i, var, ci, confidence, predict_options, pkg, type)
+      .inner_loop(data, y, rng, i, var, ci, confidence, predict_options, pkg, type, clean_names)
 
     if (ci)
       colnames(pred) <- c("lower", target, "upper")
-    if (!is.data.frame(y))
+    if (!is.data.frame(y) & !ci)
       colnames(pred) <- target
 
     out <- cbind(pred, rng)
@@ -221,7 +223,7 @@ partial_dependence.rfsrc <- function(fit, data = NULL, var, cutoff = 10L, intera
   }
 }
 
-.inner_loop <- function(data, y, rng, idx, var, ci, confidence, predict_options, pkg, type) {
+.inner_loop <- function(data, y, rng, idx, var, ci, confidence, predict_options, pkg, type, clean_names) {
   ## fix var predictiors
   data[, var] <- rng[idx, ]
   ## check to see if we are doing a multivariate fit
@@ -253,7 +255,7 @@ partial_dependence.rfsrc <- function(fit, data = NULL, var, cutoff = 10L, intera
         if (is.list(pred))
           pred <- do.call("rbind", pred)
         pred <- colMeans(pred)
-        if (!all(names(pred) == levels(y)))
+        if (!all(names(pred) == levels(y)) & clean_names)
           names(pred) <- gsub("^.*\\.", "", names(pred))
       } else if (type == "class") {
         ## if no class probs requested just find the name of the maximal class
@@ -271,10 +273,12 @@ partial_dependence.rfsrc <- function(fit, data = NULL, var, cutoff = 10L, intera
   } else {
     pred <- do.call("predict", c(predict_options, list(newdata = data)))
     pred <- colMeans(do.call("rbind", pred))
-    facts <- names(y)[sapply(data[ names(y)], class) %in% c("character", "factor")]
-    matched <- grepl(paste("^", facts, "*.", sep = "", collapse = "|"), names(pred))
-    pattern <- paste(paste0("^", facts, "\\."), collapse = "|")
-    names(pred)[matched] <- gsub(pattern, "", names(pred)[matched])
+    if (clean_names) {
+      facts <- names(y)[sapply(data[ names(y)], class) %in% c("character", "factor")]
+      matched <- grepl(paste("^", facts, "*.", sep = "", collapse = "|"), names(pred))
+      pattern <- paste(paste0("^", facts, "\\."), collapse = "|")
+      names(pred)[matched] <- gsub(pattern, "", names(pred)[matched])
+    }
   }
   out <- unlist(pred)
   if (ci) {

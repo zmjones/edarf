@@ -6,7 +6,7 @@
 \usage{
 partial_dependence(fit, data, var, cutoff = 10L, interaction = FALSE,
   oob = TRUE, resampling = "none", ci = FALSE, confidence = 0.95,
-  parallel = FALSE, type = "prob")
+  parallel = FALSE, type = "prob", clean_names = TRUE)
 }
 \arguments{
 \item{fit}{object of class 'RandomForest', 'randomForest', or 'rfsrc'}
@@ -31,6 +31,8 @@ partial dependence calculation}
 \item{parallel}{logical indicator of whether a parallel backend should be used if registered}
 
 \item{type}{with classification, default is "prob" which gives class probabilities estimated by the norm of the votes cast for each class, alternatively "class" gives the most probably class}
+
+\item{clean_names}{logical indicator of whether to clean factor names in output i.e. "level" instead of "factorname.level."}
 }
 \value{
 a data.frame with the partial dependence of 'var'
