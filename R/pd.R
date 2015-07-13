@@ -153,16 +153,16 @@ partial_dependence.rfsrc <- function(fit, data = NULL, var, cutoff = 10L, intera
   if (length(var) == 1)
     interaction <- FALSE
   
-  rng = vector("list", length(var))
-  names(rng) = var
+  rng <- vector("list", length(var))
+  names(rng) <- var
   for (i in 1:length(var))
-    rng[[i]] = .ivar_points(var[i], data, resampling,
+    rng[[i]] <- .ivar_points(var[i], data, resampling,
                             fmin = ifelse(!is.factor(data[[var[i]]]), min(data[[var[i]]], na.rm = TRUE), NA),
                             fmax = ifelse(!is.factor(data[[var[i]]]), max(data[[var[i]]], na.rm = TRUE), NA),
                             cutoff = cutoff)
-  rng = as.data.frame(rng)
+  rng <- as.data.frame(rng)
   if (length(var) > 1L & interaction)
-    rng = expand.grid(rng)
+    rng <- expand.grid(rng)
   
   ## check to see if parallel backend registered
   '%op%' <- ifelse(foreach::getDoParWorkers() > 1 & parallel, foreach::'%dopar%', foreach::'%do%')
@@ -181,13 +181,14 @@ partial_dependence.rfsrc <- function(fit, data = NULL, var, cutoff = 10L, intera
     else
       colnames(out) <- c(target, var)
   } else {
-    pred <- foreach(i = seq_len(nrow(rng)), .combine = comb) %op% {
+    pred <- foreach(i = seq_len(nrow(rng)), .combine = comb) %op%
       .inner_loop(data, y, rng, i, var, ci, confidence, predict_options, pkg, type)
-    }
+
     if (ci)
       colnames(pred) <- c("lower", target, "upper")
-    else
+    if (!is.data.frame(y))
       colnames(pred) <- target
+
     out <- cbind(pred, rng)
   }
     
