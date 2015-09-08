@@ -4,33 +4,24 @@
 \alias{plot_imp}
 \title{Plot variable importance from random forests}
 \usage{
-plot_imp(imp, sort = "none", labels = NULL, geom = "point",
-  facet = FALSE, zero_line = NULL, scales = "free", xlab = "Variables",
-  ylab = "Importance", title = "")
+plot_imp(imp, geom = "point", sort = "decreasing", labels = NULL,
+  scales = "free_y", se = TRUE)
 }
 \arguments{
 \item{imp}{object of class \code{c("importance", "data.frame")} as returned by
 \code{\link{variable_importance}}}
 
-\item{sort}{character indicating if sorting of the output is to be done.
-can be "none", "ascending", or "descending"}
-
-\item{labels}{character vector giving labels to variables,
-must have length equal to the number of rows in 'imp'}
-
 \item{geom}{character describing type of plot desired: "point" or "bar"}
 
-\item{facet}{logical indicating whether to facet, only applicable when returning class-specific variable importance}
+\item{sort}{character indicating if sorting of the output is to be done.
+can be "none", "ascending", or "descending." only applicable when the importance type is "aggregate," or "local" and and the outcome variable is a "factor"}
 
-\item{zero_line}{logical indicating whether to plot a dashed line at 0}
+\item{labels}{character vector giving labels to variables,
+must have length equal to the number of rows or length of \code{imp}}
 
-\item{scales}{can be "free", "free_x", "free_y" or "fixed", applicable when facetting}
+\item{scales}{character, "free", "fixed", "free_x", or "free_y", only applicable when \code{type = "local"} and the outcome is an ordered factor or numeric}
 
-\item{xlab}{x-axis label, default "Variables"}
-
-\item{ylab}{y-axis label, default "Importance"}
-
-\item{title}{title for the plot}
+\item{se}{logical, plot a standard error ribbon around the estimated residual density under permutation, only applicable when \code{type = "local"} and the outcome is an ordered factor or numeric}
 }
 \value{
 a ggplot2 object
@@ -42,9 +33,22 @@ Plot variable importance from random forests
 \dontrun{
 library(randomForest)
 data(iris)
-fit <- randomForest(Species ~ ., iris, importance = TRUE)
-imp <- variable_importance(fit, "accuracy", TRUE)
-plot_imp(imp, geom = "bar")
+fit <- randomForest(Species ~ ., iris)
+
+## class-specific importance for all variables
+imp <- variable_importance(fit, var = colnames(iris)[-5],
+                           type = "local", interaction = TRUE, nperm = 10, data = iris)
+plot_imp(imp)
+
+imp <- variable_importance(fit, var = colnames(iris)[-5], type = "aggregate",
+                           interaction = FALSE, nperm = 10, oob = TRUE, data = iris)
+plot_imp(imp)
+
+data(swiss)
+fit <- randomForest(Fertility ~ ., swiss)
+imp <- variable_importance(fit, var = colnames(swiss)[-1],
+                           type = "local", interaction = TRUE, nperm = 10, data = swiss)
+plot_imp(imp)
 }
 }
 

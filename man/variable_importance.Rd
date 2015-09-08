@@ -4,30 +4,48 @@
 \alias{variable_importance}
 \title{Variable importance using random forests}
 \usage{
-variable_importance(fit, type, class_levels = FALSE, ...)
+variable_importance(fit, var, type, interaction, oob, nperm, parallel, data)
 }
 \arguments{
 \item{fit}{object of class 'RandomForest', 'randomForest', or 'rfsrc'}
 
-\item{type}{character, for randomForest equal to "accuracy", "gini", or "local"
-if type is "accuracy" importance must be set to TRUE in the call to randomForest
-for RandomForest (class for cforest) may be equal to "conditional" and/or "auc" (type may have length two), which will return the conditional/or auc importance}
+\item{var}{character, variables to find the importance of}
 
-\item{class_levels}{logical if possible return class specific importance, i.e. how much does the loss increase for each class from perturbing each feature in turn}
+\item{type}{character, either "aggregate," (default) which gives the average loss under permutation or "local" which gives the residual across all observations}
 
-\item{...}{arguments to be passed to \code{variable_importance}}
+\item{interaction}{logcal, compute the joint and additive importance for observations (\code{type = "local"}) or variables \code{type = "aggregate"}}
+
+\item{oob}{logical, use the out of bag data data}
+
+\item{nperm}{positive integer giving the number of times to permute the indicated variables (default 10)}
+
+\item{parallel}{logical whether to run in parallel using the registered backend (default FALSE)}
+
+\item{data}{optional (unless using randomForest) data.frame with which to calculate importance}
+}
+\value{
+a named numeric vector for type = "aggregate" or a data.frame for type = "local"
 }
 \description{
-Extracts variable importance for a set of predictors from a fitted random forest object from the party, randomForest, or randomForestSRC package
+Computes local or aggregate variable importance for a set of predictors from a fitted random forest object from the party, randomForest, or randomForestSRC package
 }
 \examples{
 \dontrun{
 library(randomForest)
 data(iris)
 
-fit <- randomForest(Species ~ ., iris, importance = TRUE)
-imp <- variable_importance(fit, "accuracy", TRUE)
-plot_imp(imp)
+fit <- randomForest(Species ~ ., iris)
+variable_importance(fit, var = colnames(iris)[-5], type = "aggregate", nperm = 10, data = iris)
+
+library(party)
+data(swiss)
+fit <- cforest(Fertility ~ ., swiss)
+variable_importance(fit, var = colnames(swiss)[-1], type = "local", nperm = 10)
+
+data(mtcars)
+library(randomForestSRC)
+fit <- rfsrc(mpg ~ ., mtcars)
+variable_importance(fit, var = colnames(mtcars)[-1], type = "aggregate", nperm = 10, oob = TRUE)
 }
 }
 
