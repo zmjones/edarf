@@ -10,16 +10,12 @@ using namespace Rcpp;
 double wmean(arma::rowvec x, arma::colvec w);
 RcppExport SEXP edarf_wmean(SEXP xSEXP, SEXP wSEXP) {
 BEGIN_RCPP
-    SEXP __sexp_result;
-    {
-        Rcpp::RNGScope __rngScope;
-        Rcpp::traits::input_parameter< arma::rowvec >::type x(xSEXP );
-        Rcpp::traits::input_parameter< arma::colvec >::type w(wSEXP );
-        double __result = wmean(x, w);
-        PROTECT(__sexp_result = Rcpp::wrap(__result));
-    }
-    UNPROTECT(1);
-    return __sexp_result;
+    Rcpp::RObject __result;
+    Rcpp::RNGScope __rngScope;
+    Rcpp::traits::input_parameter< arma::rowvec >::type x(xSEXP);
+    Rcpp::traits::input_parameter< arma::colvec >::type w(wSEXP);
+    __result = Rcpp::wrap(wmean(x, w));
+    return __result;
 END_RCPP
 }
 // get_tree_pred

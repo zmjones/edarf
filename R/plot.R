@@ -189,7 +189,7 @@ plot_imp <- function(imp, geom = "point", sort = "decreasing", labels = NULL, sc
     if (!is.factor(atts$target)) {
       ylab <- "Residual Under Permutation"
     } else {
-      ylab <- "Permutation Importance"
+      xlab <- "Permutation Importance"
     }
     } else { ## type == "aggregate"
       imp <- data.frame(value = imp)
@@ -221,14 +221,10 @@ plot_imp <- function(imp, geom = "point", sort = "decreasing", labels = NULL, sc
         stop("invalid input to geom argument")
       }
       if (geom == "bar") {
+        ylab <- "Permutation Importance"
         xlab <- ""
       } else {
         xlab <- "Permutation Importance"
-      }
-
-      if (geom == "bar") {
-        ylab <- "Permutation Importance"
-      } else {
         ylab <- ""
       }
     }

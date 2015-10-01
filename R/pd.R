@@ -170,14 +170,18 @@ partial_dependence.rfsrc <- function(fit, data = NULL, var, cutoff = 10L, intera
   comb <- function(...) do.call("rbind", list(...))
   
   if (length(var) > 1 & !interaction) {
-    out <- lapply(var, function(x) {
-      pred <- foreach(i = seq_len(nrow(rng)), .combine = comb) %op% {
-        .inner_loop(data, y, rng[x][!is.na(rng[x]),, drop = FALSE], i,
-                    var, ci, confidence, predict_options, pkg, type, clean_names)
-      }
-      cbind(pred, rng[x][!is.na(rng[[x]]),, drop = FALSE])
-    })
+    out <- foreach(x = var) %:% foreach(i = seq_len(nrow(rng)), .combine = "rbind") %op%
+    .inner_loop(data, y, rng[, x, drop = FALSE], i, x, ci, confidence,
+                predict_options, pkg, type, clean_names)
+    names(out) <- var
     out <- plyr::ldply(out)
+    for (x in var) {
+      idx <- which(out$.id %in% x)
+      out[idx, x] <- rng[[x]]
+      out[!idx, x] <- NA
+    }
+    out$.id <- NULL
+    
     if (ci)
       colnames(out) <- c("lower", target, "upper", var)
     else
