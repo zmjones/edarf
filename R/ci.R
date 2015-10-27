@@ -20,12 +20,10 @@
 var_est <- function(fit, data, ...) UseMethod("var_est", fit)
 #' @export
 var_est.randomForest <- function(fit, data, ...) {
-  info <- installed.packages(fields = c("Package", "Version"))
-  info <- info[, c("Package", "Version")]
-  if (!info[info[, 1] == "randomForest", "Version"] == "4.6-11")
-    stop("install fixed randomForest from http://github.com/swager/randomForest")
   if (is.null(fit$inbag))
     stop("keep.inbag must be true in call to randomForest")
+  if (max(fit$inbag) == 1)
+    stop("update randomForest")
   pred <- predict(fit, newdata = data, predict.all = TRUE, ...)
   data.frame("prediction" = pred$aggregate,
              "variance" = inf_jackknife(nrow(data), fit$ntree, pred$individual, fit$inbag))
