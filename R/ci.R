@@ -11,12 +11,13 @@
 #' 
 #' @param fit object of class 'RandomForest', 'randomForest', or 'rfsrc' (must be regression)
 #' @param data dataframe to be used for prediction
+#' @param ... additional arguments to be passed to the predict method
 #'
 #' @return a data.frame of length n with one column 'prediction' which contains the ensemble prediction
 #' and a column 'variance' which contains the estimated variance
 #'
 #' @export
-var_est <- function(fit, data) UseMethod("var_est", fit)
+var_est <- function(fit, data, ...) UseMethod("var_est", fit)
 #' @export
 var_est.randomForest <- function(fit, data, ...) {
   info <- installed.packages(fields = c("Package", "Version"))
@@ -31,18 +32,21 @@ var_est.randomForest <- function(fit, data, ...) {
   
 }
 #' @export
-var_est.RandomForest <- function(fit, data) {
+var_est.RandomForest <- function(fit, data, ...) {
   check <- !("subset" %in% names(as.list(args(fit@predict_response))))
   if (check)
     stop("Install party from http://github.com/zmjones/party/pkg.")
-  pred <- sapply(1:length(fit@ensemble), function(idx) predict(fit, newdata = data, subset = idx))
-  data.frame("prediction" = predict(fit, newdata = data)[,, drop = TRUE],
+  pred <- sapply(1:length(fit@ensemble), function(idx) predict(fit, newdata = data, subset = idx, ...))
+  data.frame("prediction" = predict(fit, newdata = data, ...)[,, drop = TRUE],
              "variance" = inf_jackknife(nrow(data), length(fit@ensemble), pred,
                                         as.matrix(do.call(cbind, fit@weights), sparse = TRUE)))
 }
 #' @export
 var_est.rfsrc <- function(fit, data, ...) {
-  pred <- predict(fit, newdata = data, outcome = "train", ...)
+  args <- list(...)
+  if (is.null(args$outcome))
+    args$outcome <- "train"
+  pred <- do.call(predict.rfsrc, c(args, list(object = fit, newdata = data)))
   tree_pred <- get_tree_pred(fit$n, fit$ntree, pred$membership, fit$yvar, fit$inbag)
   data.frame("prediction" = pred$predicted, "variance" = inf_jackknife(fit$n, fit$ntree, tree_pred, fit$inbag))
 }
