@@ -45,6 +45,6 @@ var_est.rfsrc <- function(fit, data, ...) {
   if (is.null(args$outcome))
     args$outcome <- "train"
   pred <- do.call(predict.rfsrc, c(args, list(object = fit, newdata = data)))
-  tree_pred <- get_tree_pred(fit$n, fit$ntree, pred$membership, fit$yvar, fit$inbag)
-  data.frame("prediction" = pred$predicted, "variance" = inf_jackknife(fit$n, fit$ntree, tree_pred, fit$inbag))
+  tree_pred <- get_tree_pred(pred$n, pred$ntree, pred$membership, pred$yvar, pred$inbag)
+  data.frame("prediction" = pred$predicted, "variance" = inf_jackknife(pred$n, fit$ntree, tree_pred, fit$inbag))
 }
