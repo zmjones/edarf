@@ -144,7 +144,6 @@ plot_pd <- function(pd, facet_var = NULL, scales = "free_x") {
 #' plot_imp(imp)
 #' }
 #' @export
-#' 
 plot_imp <- function(imp, geom = "point", sort = "decreasing", labels = NULL, scales = "free_y", se = TRUE) {
   atts <- attributes(imp)
   if (atts$type == "local") {
