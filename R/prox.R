@@ -2,7 +2,6 @@
 #'
 #' Extracts proximity matrices from random forest objects from the party, randomForest or randomForestSRC packages
 #'
-#' @importFrom party proximity
 #' @importFrom stats predict
 #'
 #' @param fit object of class 'RandomForest', 'randomForest', or 'rfsrc'
@@ -31,7 +30,7 @@ extract_proximity.randomForest <- function(fit, newdata = NULL, ...) {
 }
 #' @export
 extract_proximity.RandomForest <- function(fit, newdata = NULL, ...) {
-  proximity(fit, newdata, ...)
+  party::proximity(fit, newdata, ...)
 }
 #' @export
 extract_proximity.rfsrc <- function(fit, newdata = NULL, ...) {

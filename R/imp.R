@@ -81,7 +81,7 @@ variable_importance.rfsrc <- function(fit, var, type = "aggregate", interaction 
 
 .variable_importance <- function(fit, var, type, interaction = FALSE, nperm, parallel,
                                  data, y, predict_options, pkg, oob = NULL) {
-  '%op%' <- ifelse(foreach::getDoParWorkers() > 1 & parallel, foreach::'%dopar%', foreach::'%do%')
+  '%op%' <- ifelse(getDoParWorkers() > 1 & parallel, foreach::'%dopar%', foreach::'%do%')
   ensemble_pred <- do.call("predict", c(predict_options, list(newdata = data)))
 
   x <- NULL ## initialize global variables
@@ -102,13 +102,13 @@ variable_importance.rfsrc <- function(fit, var, type = "aggregate", interaction 
     ensemble_resid <- loss(ensemble_pred, y)
     comb <- function(...) rowMeans(do.call("cbind", list(...)))
 
-    out <- foreach::foreach(x = var, .combine = "cbind", .packages = pkg) %:%
-      foreach::foreach(iterators::icount(nperm), .combine = comb, .packages = pkg) %op%
+    out <- foreach(x = var, .combine = "cbind", .packages = pkg) %:%
+      foreach(icount(nperm), .combine = comb, .packages = pkg) %op%
       inner_loop(data, x, predict_options, y, ensemble_resid)
     out <- as.data.frame(out)
     colnames(out) <- var
     if (interaction) {
-      int <- foreach::foreach(iterators::icount(nperm), .combine = comb, .packages = pkg) %op%
+      int <- foreach(icount(nperm), .combine = comb, .packages = pkg) %op%
         inner_loop(data, var, predict_options, y, ensemble_resid)
       out$additive <- rowSums(out[, var])
       out$joint <- int
@@ -119,13 +119,13 @@ variable_importance.rfsrc <- function(fit, var, type = "aggregate", interaction 
     ensemble_loss <- loss(ensemble_pred, y)
     comb <- function(...) mean(do.call("c", list(...)))
 
-    out <- foreach::foreach(x = var, .combine = "c", .packages = pkg) %:%
-      foreach::foreach(iterators::icount(nperm), .combine = comb, .packages = pkg) %op% {
+    out <- foreach(x = var, .combine = "c", .packages = pkg) %:%
+      foreach(icount(nperm), .combine = comb, .packages = pkg) %op% {
         inner_loop(data, x, predict_options, y, ensemble_loss)
       }
     names(out) <- var
     if (interaction) {
-      int <- foreach::foreach(iterators::icount(nperm), .combine = comb) %op% {
+      int <- foreach(icount(nperm), .combine = comb) %op% {
         inner_loop(data, var, predict_options, y, ensemble_loss)
       }
       additive <- sum(out)

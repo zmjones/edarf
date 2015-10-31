@@ -3,11 +3,11 @@ Version: 0.1
 Date: 2015-04-24
 Title: Exploratory Data Analysis using Random Forests
 Description: A package with functions useful for exploratory data analysis using
-    random forests. The package can be used to compute bivariate and multivariate
+    random forests. The package can be used to compute multivariate
     partial dependence, observation and variable-wise marginal and joint permutation
-    importance. It can also visualize all of the aforementioned methods with
-    ggplot2. It also contains functions for visualizing predictions and PCA of
-    proximity matrices using biplots.
+    importance. The package can also generate random forest measures of distance
+    (supervised or unsupervised). All of the aforementioned functions are accompanied
+    by ggplot2 plotting functions
 Author: Zachary M. Jones <zmj@zmjones.com> and Fridolin Linder
     <fridolin.linder@gmail.com>
 Maintainer: Zachary M. Jones <zmj@zmjones.com>
@@ -21,13 +21,11 @@ Imports:
     assertthat,
     reshape2,
     Rcpp (>= 0.11.1),
-    plyr,
-    party
+    plyr
 Suggests:
+    party,
     randomForest,
     randomForestSRC,
-    scales,
-    doParallel,
     testthat
 LazyData: true
 LinkingTo: Rcpp, RcppArmadillo

@@ -166,7 +166,7 @@ partial_dependence.rfsrc <- function(fit, data = NULL, var, cutoff = 10L, intera
     rng <- expand.grid(rng)
   
   ## check to see if parallel backend registered
-  '%op%' <- ifelse(foreach::getDoParWorkers() > 1 & parallel, foreach::'%dopar%', foreach::'%do%')
+  '%op%' <- ifelse(getDoParWorkers() > 1 & parallel, foreach::'%dopar%', foreach::'%do%')
   comb <- function(...) do.call("rbind", list(...))
   
   if (length(var) > 1 & !interaction) {
@@ -174,7 +174,7 @@ partial_dependence.rfsrc <- function(fit, data = NULL, var, cutoff = 10L, intera
     .inner_loop(data, y, rng[, x, drop = FALSE], i, x, ci, confidence,
                 predict_options, pkg, type, clean_names)
     names(out) <- var
-    out <- plyr::ldply(out)
+    out <- ldply(out)
     for (x in var) {
       idx <- which(out$.id %in% x)
       out[idx, x] <- rng[[x]]
