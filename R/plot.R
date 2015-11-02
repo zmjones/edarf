@@ -6,10 +6,9 @@
 #' 
 #' @param pd object of class \code{c("pd", "data.frame")} as returned by
 #' \code{\link{partial_dependence}}
-#' @param facet_var a character vector indicating the variable that should be used
+#' @param facet a character vector indicating the variable that should be used
 #' to facet on if interaction is plotted. If not specified the variable with less 
 #' unique values is chosen.
-#' @param scales can be "free", "free_x", "free_y" or "fixed", applicable when facetting
 #' @return a ggplot2 object
 #' 
 #' @examples \dontrun{
@@ -17,91 +16,70 @@
 #' library(edarf)
 #' data(iris)
 #' fit <- randomForest(Species ~ ., iris)
-#' pd <- partial_dependence(fit, iris, "Petal.Width", type = "prob")
+#' pd <- partial_dependence(fit, iris, "Petal.Width")
 #' plot_pd(pd)
 #' }
 #' @export
-plot_pd <- function(pd, facet_var = NULL, scales = "free_x") {
+plot_pd <- function(pd, facet = NULL) {
   atts <- attributes(pd)
-  ## One predictor Plots
-  if (!atts$interaction & length(atts$var) == 1) {
-    if (!atts$prob & !atts$multivariate) {
-      ## Numeric Y or Majority class
-      if (class(pd[[atts$target]]) == "numeric") {
-        p <- ggplot(pd, aes_string(atts$var, atts$target))
-        p <- p + geom_point() + geom_line()
-        if (atts$ci)
-          p <- p + geom_errorbar(aes_string(ymin = "lower", y = atts$target, ymax = "upper"),
-                                 width = .15, size = .5, alpha = .25)
-      } else {
-        pd[[atts$var]] <- cut(pd[[atts$var]], hist(pd[[atts$var]], plot = FALSE)$breaks)
-        p <- ggplot(pd, aes_string(atts$var, fill = atts$target))
-        p <- p + geom_bar(position = "fill")
-      }
-      p <- p + labs(y = atts$target, x = atts$var)
-    } else if (atts$prob & !atts$multivariate) {
-      df <- melt(pd, id.vars = atts$var, value.name = "Probability", variable.name = "Class")
-      p <- ggplot(df, aes_string(atts$var, "Probability", colour = "Class"))
-      p <- p + geom_line() + geom_point()
-      p <- p + labs(x = atts$var, y = "Probability")
-    } else {
-      stop("Multivariate outcomes are not supported.")
-    }
-  } else if (!atts$interaction & length(atts$var) > 1) {
-    ## list plots
-    if (!atts$prob & !atts$ci) {
-      for (x in atts$var)
-        pd[[x]] <- cut(pd[[x]], hist(pd[[x]], plot = FALSE)$breaks)
-      df <- melt(pd, id.vars = atts$target, value.name = "Value", variable.name = "Variable", na.rm = TRUE)
-      p <- ggplot(df, aes_string("Value", fill = atts$target))
-      p <- p + geom_bar(position = "fill")
-      p <- p + scale_fill_manual()
-    } else if (atts$prob & !atts$ci) {
-      df <- melt(pd, id.vars = atts$var, value.name = "Probability", variable.name = "Class")
-      df <- melt(df, id.vars = c("Probability", "Class"), value.name = "Value", variable.name = "Variable")
-      p <- ggplot(df, aes_string("Value", "Probability", colour = "Class"))
-      p <- p + geom_line() + geom_point()
-    } else {
-      df <- melt(df, id.vars = atts$target, value.name = "Value", variable.name = "Variable", na.rm = TRUE)
-      p <- ggplot(pd, aes_string("Value", atts$target))
-      p <- p + geom_line() + geom_point()
+  if (atts$multivariate)
+    stop("multivariate plots not supported.")
+  if (is.null(facet) & atts$interaction)
+    facet <- names(which.min(apply(pd[, atts$var], 2, function(x) length(unique(x)))))
+  if (!is.null(facet)) {
+    if (!any(facet %in% atts$var))
+      stop("facet must be one of the variables in the pd argument.")
+    ordering <- unique(sort(pd[[facet]]))
+    if (is.factor(pd[[facet]]))
+      labels <- paste0(facet, " = ", as.character(ordering))
+    else
+      labels <- paste0(facet, " = ", as.character(signif(ordering, 3)))
+    pd[[facet]] <- factor(pd[[facet]], levels = ordering, labels = labels)
+    var <- atts$var[atts$var != facet]
+  } else {
+    var <- atts$var
+  }
+
+  bounds <- if (atts$ci) c("lower", "upper") else NULL
+  dat <- melt(pd, id.vars = c(atts$target, facet, bounds), na.rm = TRUE)
+  if (is.character(dat$value)) ## casting factors to integers, ack!
+    dat$value <- as.integer(dat$value)
+  
+  if (length(atts$target) > 1)
+    dat <- melt(dat, id.vars = c("variable", "value", facet), value.name = "Probability",
+                variable.name = "Class", na.rm = TRUE)
+
+  if (length(var) == 1 & !atts$prob) {
+    p <- ggplot(dat, aes_string("value", atts$target))
+  } else if (!atts$prob) {
+    p <- ggplot(dat, aes_string("value", atts$target, group = "variable"))
+  } else {
+    p <- ggplot(dat, aes_string("value", "Probability", colour = "Class"))
+  }
+
+  p <- p + geom_point()
+
+  if (!(is.factor(pd[, var]) & !is.ordered(pd[, var])))
+    p <- p + geom_line()
+  
+  if (atts$ci) {
+    if (atts$prob)
+      p <- p + geom_errorbar(aes_string(ymin = "lower", y = "Probability", ymax = "upper"),
+                             width = .15, size = .5, alpha = .25)
+    else
       p <- p + geom_errorbar(aes_string(ymin = "lower", y = atts$target, ymax = "upper"),
                              width = .15, size = .5, alpha = .25)
+  }
+
+  if (length(var) == 1)
+    p <- p + labs(x = var)
+
+  if (length(atts$var) > 1) {
+    if (!atts$interaction) {
+      p <- p + facet_wrap(~ variable, scales = "free_x")
+    } else {
+      p <- p + facet_wrap(as.formula(paste0("~ ", facet)))
     }
-    p <- p + facet_wrap(as.formula(paste0("~ Variable")), scales = scales)
-    p <- p + labs(x = "Variable Value", y = "Predicted Outcome")
-  } else if (atts$interaction) {
-    ## Interaction Plots
-    if (length(atts$var) > 2) stop("Only two-way interactions supported")
-    if (is.null(facet_var)) {
-      n_unique <- apply(pd[, atts$var], 2, function(x) length(unique(x)))
-      facet_var <- names(which.min(n_unique))
-    }
-    if (class(pd[[facet_var]]) %in% c("numeric", "integer")) {
-      ordering <- unique(sort(pd[[facet_var]]))
-      labels <- paste0(facet_var, " = ", as.character(signif(ordering, 3)))
-      pd[[facet_var]] <- factor(pd[[facet_var]], levels = ordering, labels = labels)
-    }
-    plot_var <- atts$var[atts$var != facet_var]
-    if (atts$prob) {
-      df <- melt(pd, id.vars = atts$var, value.name = "Probability", variable.name = "Class")
-      p <- ggplot(df, aes_string(plot_var, "Probability", colour = "Class"))
-      p <- p + geom_line() + geom_point()
-      p <- p + labs(x = plot_var, y = "Probability")
-    } else if (!atts$prob & class(pd[[atts$target]]) == "numeric" & !atts$multivariate) {
-      p <- ggplot(pd, aes_string(plot_var, atts$target, group = facet_var))
-      p <- p + geom_line() + geom_point()
-      if (atts$ci)
-        p <- p + geom_errorbar(aes_string(ymin = "lower", y = atts$target, ymax = "upper"),
-                               width = .15, size = .5, alpha = .25)
-      p <- p + labs(x = plot_var, y = atts$target)
-    } else  {
-      pd[[plot_var]] <- cut(pd[[plot_var]], hist(pd[[plot_var]], plot = FALSE)$breaks)
-      p <- ggplot(pd, aes_string(plot_var, fill = atts$target))
-      p <- p + geom_bar(position = "fill")
-      p <- p + labs(x = plot_var, y =  atts$target)
-    }
-    p <- p + facet_wrap(as.formula(paste0("~", facet_var)), scales = scales)
   }
   p + theme_bw()
 }

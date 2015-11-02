@@ -4,17 +4,15 @@
 \alias{plot_pd}
 \title{Plot partial dependence from random forests}
 \usage{
-plot_pd(pd, facet_var = NULL, scales = "free_x")
+plot_pd(pd, facet = NULL)
 }
 \arguments{
 \item{pd}{object of class \code{c("pd", "data.frame")} as returned by
 \code{\link{partial_dependence}}}
 
-\item{facet_var}{a character vector indicating the variable that should be used
+\item{facet}{a character vector indicating the variable that should be used
 to facet on if interaction is plotted. If not specified the variable with less 
 unique values is chosen.}
-
-\item{scales}{can be "free", "free_x", "free_y" or "fixed", applicable when facetting}
 }
 \value{
 a ggplot2 object
@@ -28,7 +26,7 @@ library(randomForest)
 library(edarf)
 data(iris)
 fit <- randomForest(Species ~ ., iris)
-pd <- partial_dependence(fit, iris, "Petal.Width", type = "prob")
+pd <- partial_dependence(fit, iris, "Petal.Width")
 plot_pd(pd)
 }
 }
