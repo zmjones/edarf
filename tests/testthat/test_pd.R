@@ -1,7 +1,3 @@
-library(randomForest)
-library(party)
-library(randomForestSRC)
-
 test_that("regression", {
   lapply(fits_regr, function(fit) {
     pd <- partial_dependence(fit, df_regr, "X1", cutoff)
@@ -22,33 +18,30 @@ test_that("regression", {
     expect_that(all(pd_ci$lower <= pd_ci$y) & all(pd_ci$y <= pd_ci$upper), is_true())
     plot_pd(pd_ci)
 
-    pd_both <- partial_dependence(fit, df_regr, c("X1", "X2"), cutoff, TRUE, ci = TRUE)
-    expect_that(colnames(pd_both), equals(c("lower", "y", "upper", "X1", "X2")))
-    expect_that(all(sapply(pd_both, class) == "numeric"), is_true())
+    pd_both <- partial_dependence(fit, df_regr, c("X1", "X3"), cutoff, TRUE, ci = TRUE)
+    expect_that(colnames(pd_both), equals(c("lower", "y", "upper", "X1", "X3")))
     expect_that(all(pd_both$lower <= pd_both$y) & all(pd_both$y <= pd_both$upper), is_true())
-    plot_pd(pd_both)
+    plot_pd(pd_both, "X3")
   })
 })
 
 test_that("classification", {
   lapply(fits_classif, function(fit) {
-    pd <- partial_dependence(fit, df_classif, "X1", cutoff, type = "class")
-    expect_that(pd, is_a("data.frame"))
-    expect_that(colnames(pd), equals(c("y", "X1")))
-    expect_that(class(pd$y) == "factor" & class(pd$X1) == "numeric", is_true())
-    expect_that(nrow(pd), equals(cutoff))
+    pd <- partial_dependence(fit, df_classif, "X1", cutoff)
+    expect_that(colnames(pd), equals(c("0", "1", "X1")))
+    expect_that(all(sapply(pd, class) == "numeric"), is_true())
     plot_pd(pd)
 
-    pd_int <- partial_dependence(fit, df_classif, c("X1", "X2"), cutoff, TRUE, type = "class")
-    expect_that(pd_int$y, is_a("factor"))
-    expect_that(all(sapply(pd_int[, -which(colnames(pd_int) == "y")], class) == "numeric"), is_true())
-    expect_that(colnames(pd_int), equals(c("y", "X1", "X2")))
+    pd_int <- partial_dependence(fit, df_classif, c("X1", "X2"), cutoff, interaction = TRUE)
+    expect_that(colnames(pd_int), equals(c("0", "1", "X1", "X2")))
+    expect_that(all(sapply(pd_int, class) == "numeric"), is_true())
     plot_pd(pd_int)
 
-    pd_prob <- partial_dependence(fit, df_classif, "X1", cutoff, type = "prob")
-    expect_that(all(sapply(pd_prob, class) == "numeric"), is_true())
-    expect_that(colnames(pd_prob), equals(c("0", "1", "X1")))
-    plot_pd(pd_prob)
+    pd_lst <- partial_dependence(fit, df_classif, c("X1", "X3"), cutoff)
+    expect_that(colnames(pd_lst), equals(c("0", "1", "X1", "X3")))
+    plot_pd(pd_lst)
+  })
+})
 
 test_that("multivariate", {
   lapply(fits_multi, function(fit) {

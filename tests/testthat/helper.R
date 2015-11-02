@@ -10,6 +10,8 @@ n <- 50
 
 X1 <- rnorm(n)
 X2 <- rnorm(n)
+X3 <- as.ordered(sample(1:3, n, TRUE))
+b3 <- runif(3, -1, 1)
 
 df_regr <- data.frame(X1, X2, X3, "y" = rowSums(poly(X1)) * X2 + model.matrix( ~ -1 + as.factor(X3)) %*% b3)
 df_classif <- data.frame(X1, X2, X3, "y" = as.factor(ifelse(df_regr$y > median(df_regr$y), 1, 0)))
