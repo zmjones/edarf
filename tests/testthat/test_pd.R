@@ -50,13 +50,17 @@ test_that("classification", {
     expect_that(colnames(pd_prob), equals(c("0", "1", "X1")))
     plot_pd(pd_prob)
 
-    pd_int_prob <- partial_dependence(fit, df_classif, c("X1", "X2"), cutoff, TRUE, type = "prob")
-    expect_that(colnames(pd_int_prob), equals(c("0", "1", "X1", "X2")))
-    plot_pd(pd_int_prob)
+test_that("multivariate", {
+  lapply(fits_multi, function(fit) {
+    pd <- partial_dependence(fit, df_multi, "X1", cutoff)
+    expect_that(colnames(pd), equals(c("yr", "0", "1", "X1")))
+    expect_that(all(sapply(pd, class) == "numeric"), is_true())
 
-    pd_lst <- partial_dependence(fit, df_classif, c("X1", "X2"), cutoff, type = "class")
-    expect_that(colnames(pd_lst), equals(c("y", "X1", "X2")))
-    expect_that(pd_lst$y, is_a("factor"))
-    plot_pd(pd_lst)
+    pd_int <- partial_dependence(fit, df_multi, c("X1", "X2"), cutoff, interaction = TRUE)
+    expect_that(colnames(pd_int), equals(c("yr", "0", "1", "X1", "X2")))
+    expect_that(all(sapply(pd_int, class) == "numeric"), is_true())
+
+    pd_lst <- partial_dependence(fit, df_multi, c("X1", "X3"), cutoff)
+    expect_that(colnames(pd_lst), equals(c("yr", "0", "1", "X1", "X3")))
   })
 })

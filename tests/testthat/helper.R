@@ -11,8 +11,9 @@ n <- 50
 X1 <- rnorm(n)
 X2 <- rnorm(n)
 
-df_regr <- data.frame(X1, X2, "y" = rowSums(poly(X1)) * X2)
-df_classif <- data.frame(X1, X2, "y" = as.factor(ifelse(df_regr$y / var(df_regr$y) > 1, 1, 0)))
+df_regr <- data.frame(X1, X2, X3, "y" = rowSums(poly(X1)) * X2 + model.matrix( ~ -1 + as.factor(X3)) %*% b3)
+df_classif <- data.frame(X1, X2, X3, "y" = as.factor(ifelse(df_regr$y > median(df_regr$y), 1, 0)))
+df_multi <- data.frame("yr" = df_regr$y, "yc" = df_classif$y, X1, X2, X3)
 
 fits_regr <- list(
   randomForest(y ~ ., df_regr, keep.inbag = TRUE),
@@ -26,4 +27,8 @@ fits_classif <- list(
   randomForest(df_classif[, -which(colnames(df_classif) == "y")], df_classif$y, keep.inbag = TRUE),
   cforest(y ~ ., df_classif, controls = cforest_control(mtry = 1)),
   rfsrc(y ~ ., df_classif)
+)
+
+fits_multi <- list(
+  cforest(yr + yc ~ ., df_multi, controls = cforest_control(mtry = 1))
 )
