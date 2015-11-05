@@ -3,4 +3,4 @@ sudo: required
 
 r_github_packages:
  - zmjones/party/pkg
- - swager/randomForest
+ - swager/randomForestCI

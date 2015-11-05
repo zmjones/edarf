@@ -12,6 +12,8 @@ var_est(fit, data, ...)
 \item{data}{dataframe to be used for prediction}
 
 \item{...}{additional arguments to be passed to the predict method}
+
+\item{calibrate}{whether to calibrate the variance estimates using empirical bayes via randomForestCI, default is TRUE}
 }
 \value{
 a data.frame of length n with one column 'prediction' which contains the ensemble prediction

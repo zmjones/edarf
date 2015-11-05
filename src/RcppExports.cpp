@@ -33,17 +33,3 @@ BEGIN_RCPP
     return __result;
 END_RCPP
 }
-// inf_jackknife
-arma::mat inf_jackknife(int n, int b, arma::mat P, arma::mat N);
-RcppExport SEXP edarf_inf_jackknife(SEXP nSEXP, SEXP bSEXP, SEXP PSEXP, SEXP NSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject __result;
-    Rcpp::RNGScope __rngScope;
-    Rcpp::traits::input_parameter< int >::type n(nSEXP);
-    Rcpp::traits::input_parameter< int >::type b(bSEXP);
-    Rcpp::traits::input_parameter< arma::mat >::type P(PSEXP);
-    Rcpp::traits::input_parameter< arma::mat >::type N(NSEXP);
-    __result = Rcpp::wrap(inf_jackknife(n, b, P, N));
-    return __result;
-END_RCPP
-}

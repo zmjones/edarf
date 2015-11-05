@@ -26,6 +26,9 @@ Suggests:
     party,
     randomForest,
     randomForestSRC,
+    randomForestCI,
+    scales,
+    doParallel,
     testthat
 LazyData: true
 LinkingTo: Rcpp, RcppArmadillo

@@ -9,7 +9,3 @@ get_tree_pred <- function(n, ntree, pd_membership, yvar, inbag) {
     .Call('edarf_get_tree_pred', PACKAGE = 'edarf', n, ntree, pd_membership, yvar, inbag)
 }
 
-inf_jackknife <- function(n, b, P, N) {
-    .Call('edarf_inf_jackknife', PACKAGE = 'edarf', n, b, P, N)
-}
-
