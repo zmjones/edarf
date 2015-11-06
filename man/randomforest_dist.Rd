@@ -22,7 +22,6 @@ compute the distance between features using a random forest
 \examples{
 
 data(iris)
-randomforest_dist(iris[, -ncol(iris)], method = "randomForest")
-
+d <- randomforest_dist(iris[, -ncol(iris)], method = "randomForest")
 }
 

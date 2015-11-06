@@ -18,7 +18,7 @@
 #' and a column 'variance' which contains the estimated variance
 #'
 #' @export
-var_est <- function(fit, data, ...) UseMethod("var_est", fit)
+var_est <- function(fit, data, calibrate, ...) UseMethod("var_est", fit)
 #' @export
 var_est.randomForest <- function(fit, data, calibrate = TRUE, ...) {
   pred <- predict(fit, newdata = data, predict.all = TRUE, ...)$individual

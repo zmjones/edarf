@@ -9,8 +9,6 @@
 #' @param ... arguments to be passed to \code{extract_proximity}
 #'
 #' @return an n x n matrix where position i, j gives the proportion of times observation i and j are in the same teriminal node across all trees
-#'
-#' 
 #' @export
 extract_proximity <- function(fit, newdata) UseMethod("extract_proximity")
 #' @export

@@ -42,7 +42,6 @@ Calculates the partial dependence of the response on an arbitrary dimensional se
 from a fitted random forest object from the party, randomForest, or randomForestSRC packages
 }
 \examples{
-\dontrun{
 library(randomForest)
 library(edarf)
 
@@ -58,7 +57,5 @@ pd_int <- partial_dependence(fit, iris, c("Petal.Width", "Sepal.Length"), intera
 fit <- randomForest(Fertility ~ ., swiss, keep.inbag = TRUE)
 pd <- partial_dependence(fit, swiss, "Education", ci = TRUE)
 pd_int <- partial_dependence(fit, swiss, c("Education", "Catholic"), interaction = TRUE, ci = TRUE)
-}
-
 }
 

@@ -24,7 +24,6 @@
 #' if 'var' has length > 1 and interaction is true or false then the output will be a data.frame with a column for each element of 'var' and the predicted value for each combination.
 #'
 #' @examples
-#' \dontrun{
 #' library(randomForest)
 #' library(edarf)
 #' 
@@ -40,8 +39,6 @@
 #' fit <- randomForest(Fertility ~ ., swiss, keep.inbag = TRUE)
 #' pd <- partial_dependence(fit, swiss, "Education", ci = TRUE)
 #' pd_int <- partial_dependence(fit, swiss, c("Education", "Catholic"), interaction = TRUE, ci = TRUE)
-#' }
-#'
 #' @export
 partial_dependence <- function(fit, data, var, cutoff = 10L, interaction = FALSE, oob = TRUE,
                                resampling = "none", ci = FALSE, confidence = .95, parallel = FALSE,

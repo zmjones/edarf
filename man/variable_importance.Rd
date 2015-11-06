@@ -30,22 +30,20 @@ a named numeric vector for type = "aggregate" or a data.frame for type = "local"
 Computes local or aggregate variable importance for a set of predictors from a fitted random forest object from the party, randomForest, or randomForestSRC package
 }
 \examples{
-\dontrun{
 library(randomForest)
 data(iris)
 
 fit <- randomForest(Species ~ ., iris)
-variable_importance(fit, var = colnames(iris)[-5], type = "aggregate", nperm = 10, data = iris)
+variable_importance(fit, var = colnames(iris)[-5], type = "aggregate", nperm = 2, data = iris)
 
 library(party)
 data(swiss)
 fit <- cforest(Fertility ~ ., swiss)
-variable_importance(fit, var = colnames(swiss)[-1], type = "local", nperm = 10)
+variable_importance(fit, var = colnames(swiss)[-1], type = "local", nperm = 2)
 
 data(mtcars)
 library(randomForestSRC)
 fit <- rfsrc(mpg ~ ., mtcars)
-variable_importance(fit, var = colnames(mtcars)[-1], type = "aggregate", nperm = 10, oob = TRUE)
-}
+variable_importance(fit, var = colnames(mtcars)[-1], type = "aggregate", nperm = 2, oob = TRUE)
 }
 

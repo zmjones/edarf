@@ -21,8 +21,7 @@ augment_data <- function(data) {
 #' @examples
 #'
 #' data(iris)
-#' randomforest_dist(iris[, -ncol(iris)], method = "randomForest")
-#' 
+#' d <- randomforest_dist(iris[, -ncol(iris)], method = "randomForest")
 #' @export
 randomforest_dist <- function(data, newdata = NULL, method = "party", ...) {
   n <- if (is.null(newdata)) nrow(data) else nrow(data)

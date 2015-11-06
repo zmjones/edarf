@@ -40,12 +40,12 @@ a ggplot object
 Plot predicted versus observed values
 }
 \examples{
-\dontrun{
+library(randomForest)
+library(edarf)
 fit <- randomForest(hp ~ ., mtcars, keep.inbag = TRUE)
 out <- var_est(fit, mtcars)
 plot_pred(out$prediction, mtcars$hp, out$variance,
           outlier_idx = which(abs(out$prediction - mtcars$hp) > .5 * sd(mtcars$hp)),
           labs = row.names(mtcars))
-}
 }
 

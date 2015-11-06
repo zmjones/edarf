@@ -7,7 +7,7 @@ Description: A package with functions useful for exploratory data analysis using
     partial dependence, observation and variable-wise marginal and joint permutation
     importance. The package can also generate random forest measures of distance
     (supervised or unsupervised). All of the aforementioned functions are accompanied
-    by ggplot2 plotting functions
+    by ggplot2 plotting functions.
 Author: Zachary M. Jones <zmj@zmjones.com> and Fridolin Linder
     <fridolin.linder@gmail.com>
 Maintainer: Zachary M. Jones <zmj@zmjones.com>

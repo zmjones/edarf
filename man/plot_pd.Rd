@@ -21,13 +21,11 @@ a ggplot2 object
 Plot partial dependence from random forests
 }
 \examples{
-\dontrun{
 library(randomForest)
 library(edarf)
 data(iris)
 fit <- randomForest(Species ~ ., iris)
 pd <- partial_dependence(fit, iris, "Petal.Width")
 plot_pd(pd)
-}
 }
 

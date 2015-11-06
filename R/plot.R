@@ -11,14 +11,13 @@
 #' unique values is chosen.
 #' @return a ggplot2 object
 #' 
-#' @examples \dontrun{
+#' @examples
 #' library(randomForest)
 #' library(edarf)
 #' data(iris)
 #' fit <- randomForest(Species ~ ., iris)
 #' pd <- partial_dependence(fit, iris, "Petal.Width")
 #' plot_pd(pd)
-#' }
 #' @export
 plot_pd <- function(pd, facet = NULL) {
   atts <- attributes(pd)
@@ -98,27 +97,25 @@ plot_pd <- function(pd, facet = NULL) {
 #' must have length equal to the number of rows or length of \code{imp}
 #' @param scales character, "free", "fixed", "free_x", or "free_y", only applicable when \code{type = "local"} and the outcome is an ordered factor or numeric
 #' @param se logical, plot a standard error ribbon around the estimated residual density under permutation, only applicable when \code{type = "local"} and the outcome is an ordered factor or numeric
-#' 
 #' @return a ggplot2 object
-#' 
-#' @examples \dontrun{
+#' @examples
 #' library(randomForest)
 #' data(iris)
 #' fit <- randomForest(Species ~ ., iris)
 #'
 #' ## class-specific importance for all variables
 #' imp <- variable_importance(fit, var = colnames(iris)[-5],
-#'                            type = "local", interaction = TRUE, nperm = 10, data = iris)
+#'                            type = "local", interaction = TRUE, nperm = 2, data = iris)
 #' plot_imp(imp)
 #'
 #' imp <- variable_importance(fit, var = colnames(iris)[-5], type = "aggregate",
-#'                            interaction = FALSE, nperm = 10, oob = TRUE, data = iris)
+#'                            interaction = FALSE, nperm = 2, oob = TRUE, data = iris)
 #' plot_imp(imp)
 #'
 #' data(swiss)
 #' fit <- randomForest(Fertility ~ ., swiss)
 #' imp <- variable_importance(fit, var = colnames(swiss)[-1],
-#'                            type = "local", interaction = TRUE, nperm = 10, data = swiss)
+#'                            type = "local", interaction = TRUE, nperm = 2, data = swiss)
 #' plot_imp(imp)
 #' }
 #' @export
@@ -335,13 +332,13 @@ plot_prox <- function(pca, dims = 1:2, labels = NULL,
 #'
 #' @return a ggplot object
 #' @examples
-#' \dontrun{
+#' library(randomForest)
+#' library(edarf)
 #' fit <- randomForest(hp ~ ., mtcars, keep.inbag = TRUE)
 #' out <- var_est(fit, mtcars)
 #' plot_pred(out$prediction, mtcars$hp, out$variance,
 #'           outlier_idx = which(abs(out$prediction - mtcars$hp) > .5 * sd(mtcars$hp)),
 #'           labs = row.names(mtcars))
-#' }
 #' @export
 plot_pred <- function(predicted, observed, variance = NULL, confidence = .95,
                       perfect_line = TRUE, outlier_idx = NULL, labs = NULL,

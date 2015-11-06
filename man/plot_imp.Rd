@@ -29,26 +29,4 @@ a ggplot2 object
 \description{
 Plot variable importance from random forests
 }
-\examples{
-\dontrun{
-library(randomForest)
-data(iris)
-fit <- randomForest(Species ~ ., iris)
-
-## class-specific importance for all variables
-imp <- variable_importance(fit, var = colnames(iris)[-5],
-                           type = "local", interaction = TRUE, nperm = 10, data = iris)
-plot_imp(imp)
-
-imp <- variable_importance(fit, var = colnames(iris)[-5], type = "aggregate",
-                           interaction = FALSE, nperm = 10, oob = TRUE, data = iris)
-plot_imp(imp)
-
-data(swiss)
-fit <- randomForest(Fertility ~ ., swiss)
-imp <- variable_importance(fit, var = colnames(swiss)[-1],
-                           type = "local", interaction = TRUE, nperm = 10, data = swiss)
-plot_imp(imp)
-}
-}
 
