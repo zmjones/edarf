@@ -9,6 +9,8 @@
 #' @param facet a character vector indicating the variable that should be used
 #' to facet on if interaction is plotted. If not specified the variable with less 
 #' unique values is chosen.
+#' @param toPlot a character vector indicating what variables to plut. If not
+#' specifie then all characters are plotted
 #' @return a ggplot2 object
 #' 
 #' @examples
@@ -19,7 +21,7 @@
 #' pd <- partial_dependence(fit, iris, "Petal.Width")
 #' plot_pd(pd)
 #' @export
-plot_pd <- function(pd, facet = NULL) {
+plot_pd <- function(pd, facet = NULL, toPlot = NULL) {
   atts <- attributes(pd)
   if (atts$multivariate)
     stop("multivariate plots not supported.")
@@ -38,13 +40,22 @@ plot_pd <- function(pd, facet = NULL) {
   } else {
     var <- atts$var
   }
+  
+  if(!is.null(toPlot)){
+    if(!all(toPlot %in% atts$target)) stop("toPlot contains variables that are not in the partial dependencies")
+    keep <- atts$names[!(atts$names %in% atts$target)]
+    atts$target <- toPlot
+    pd <- pd[,c(toPlot, keep)]
+    rm(keep)
+  }
 
   bounds <- if (atts$ci) c("lower", "upper") else NULL
   dat <- melt(pd, id.vars = c(atts$target, facet, bounds), na.rm = TRUE)
   if (is.character(dat$value)) ## casting factors to integers, ack!
-    dat$value <- as.integer(dat$value)
+    dat$value <- as.integer(dat$value) 
   
-  if (length(atts$target) > 1)
+  #### Not sure if below if statement is right. 
+  if (length(atts$target) > 1 | (length(atts$target) == 1 & atts$prob)) 
     dat <- melt(dat, id.vars = c("variable", "value", facet), value.name = "Probability",
                 variable.name = "Class", na.rm = TRUE)
 
