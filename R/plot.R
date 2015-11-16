@@ -9,8 +9,8 @@
 #' @param facet a character vector indicating the variable that should be used
 #' to facet on if interaction is plotted. If not specified the variable with less 
 #' unique values is chosen.
-#' @param toPlot a character vector indicating what variables to plut. If not
-#' specifie then all characters are plotted
+#' @param to_plot a character vector indicating what variables to plot. If not
+#' specified then all variables are plotted
 #' @return a ggplot2 object
 #' 
 #' @examples
@@ -21,7 +21,7 @@
 #' pd <- partial_dependence(fit, iris, "Petal.Width")
 #' plot_pd(pd)
 #' @export
-plot_pd <- function(pd, facet = NULL, toPlot = NULL) {
+plot_pd <- function(pd, facet = NULL, to_plot = NULL) {
   atts <- attributes(pd)
   if (atts$multivariate)
     stop("multivariate plots not supported.")
@@ -41,18 +41,18 @@ plot_pd <- function(pd, facet = NULL, toPlot = NULL) {
     var <- atts$var
   }
   
-  if(!is.null(toPlot)){
-    if(!all(toPlot %in% atts$target)) stop("toPlot contains variables that are not in the partial dependencies")
+  if(!is.null(to_plot)){
+    if(!all(to_plot %in% atts$target)) stop("to_plot contains variables that are not in the partial dependencies")
     keep <- atts$names[!(atts$names %in% atts$target)]
-    atts$target <- toPlot
-    pd <- pd[,c(toPlot, keep)]
+    atts$target <- to_plot
+    pd <- pd[,c(to_plot, keep)]
     rm(keep)
   }
 
   bounds <- if (atts$ci) c("lower", "upper") else NULL
   dat <- melt(pd, id.vars = c(atts$target, facet, bounds), na.rm = TRUE)
   if (is.character(dat$value)) ## casting factors to integers, ack!
-    dat$value <- as.integer(dat$value) 
+    dat$value <- as.integer(dat$value)
   
   #### Not sure if below if statement is right. 
   if (length(atts$target) > 1 | (length(atts$target) == 1 & atts$prob)) 
@@ -128,7 +128,6 @@ plot_pd <- function(pd, facet = NULL, toPlot = NULL) {
 #' imp <- variable_importance(fit, var = colnames(swiss)[-1],
 #'                            type = "local", interaction = TRUE, nperm = 2, data = swiss)
 #' plot_imp(imp)
-#' }
 #' @export
 plot_imp <- function(imp, geom = "point", sort = "decreasing", labels = NULL, scales = "free_y", se = TRUE) {
   atts <- attributes(imp)
