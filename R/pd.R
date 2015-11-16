@@ -134,6 +134,15 @@ partial_dependence.rfsrc <- function(fit, data = NULL, var, cutoff = 10L, intera
   if (class(y) == "data.frame")
     target <- unname(unlist(sapply(target, function(y) if (is.factor(data[[y]])) levels(data[[y]]) else y)))
   
+  if (length(var) == 1){
+    if (class(data[,var])=="factor"){
+      if(length(levels(data[,var])) != cutoff){
+        warning(paste("Levels of factor variable != cutoff. Adjusted cutoff to ", length(levels(data[,var])), sep=""))
+        cutoff <- length(levels(data[,var]))
+      }
+    }
+  }
+  
   rng <- vector("list", length(var))
   names(rng) <- var
   for (i in 1:length(var))
