@@ -165,55 +165,52 @@ plot_imp <- function(imp, geom = "point", sort = "decreasing", labels = NULL, sc
     } else {
       stop("")
     }
-    if (!is.factor(atts$target)) {
-      xlab <- "Outcome"
+    if (is.factor(atts$target)) {
+      xlab <- "Permutation Importance"
+      ylab <- ""
     } else {
-      xlab <- ""
-    }
-    if (!is.factor(atts$target)) {
+      xlab <- "Feature Value"
       ylab <- "Residual Under Permutation"
+    }
+  } else { ## type == "aggregate"
+    imp <- data.frame(value = imp)
+    if (!is.null(labels)) {
+      if (length(labels) == length(imp)) {
+        imp$labels <- labels
+      } else {
+        stop("length of labels does not match length of importance output")
+      }
+    } else {
+      if (atts$interaction) {
+        imp$labels <- c(atts$var, "additive", "joint")
+      } else {
+        imp$labels <- atts$var
+      }
+    }
+    if (sort == "increasing") {
+      imp$labels <- factor(imp$labels, levels = imp$labels[order(imp$value, decreasing = FALSE)])
+    } else if (sort == "decreasing") {
+      imp$labels <- factor(imp$labels, levels = imp$labels[order(imp$value, decreasing = TRUE)])
+    } else {
+      stop("invalid input to sort argument")
+    }
+    if (geom == "point") {
+      p <- ggplot(imp, aes_string("value", "labels")) + geom_point()
+    } else if (geom == "bar") {
+      p <- ggplot(imp, aes_string("labels", "value")) + geom_bar(stat = "identity") + coord_flip()
+    } else {
+      stop("invalid input to geom argument")
+    }
+    if (geom == "bar") {
+      ylab <- "Permutation Importance"
+      xlab <- ""
     } else {
       xlab <- "Permutation Importance"
+      ylab <- ""
     }
-    } else { ## type == "aggregate"
-      imp <- data.frame(value = imp)
-      if (!is.null(labels)) {
-        if (length(labels) == length(imp)) {
-          imp$labels <- labels
-        } else {
-          stop("length of labels does not match length of importance output")
-        }
-      } else {
-        if (atts$interaction) {
-          imp$labels <- c(atts$var, "additive", "joint")
-        } else {
-          imp$labels <- atts$var
-        }
-      }
-      if (sort == "increasing") {
-        imp$labels <- factor(imp$labels, levels = imp$labels[order(imp$value, decreasing = FALSE)])
-      } else if (sort == "decreasing") {
-        imp$labels <- factor(imp$labels, levels = imp$labels[order(imp$value, decreasing = TRUE)])
-      } else {
-        stop("invalid input to sort argument")
-      }
-      if (geom == "point") {
-        p <- ggplot(imp, aes_string("value", "labels")) + geom_point()
-      } else if (geom == "bar") {
-        p <- ggplot(imp, aes_string("labels", "value")) + geom_bar(stat = "identity") + coord_flip()
-      } else {
-        stop("invalid input to geom argument")
-      }
-      if (geom == "bar") {
-        ylab <- "Permutation Importance"
-        xlab <- ""
-      } else {
-        xlab <- "Permutation Importance"
-        ylab <- ""
-      }
-    }
-    p <- p + labs(x = xlab, y = ylab)
-    p + theme_bw()
+  }
+  p <- p + labs(x = xlab, y = ylab)
+  p + theme_bw()
 }
 #' Plot principle components of the proximity matrix
 #'
