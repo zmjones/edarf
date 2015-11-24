@@ -128,31 +128,49 @@ partial_dependence.rfsrc <- function(fit, data = NULL, var, cutoff = 10L, intera
     interaction <- FALSE
   if (class(y) == "data.frame")
     target <- unname(unlist(sapply(target, function(y) if (is.factor(data[[y]])) levels(data[[y]]) else y)))
-  
+    
   rng <- vector("list", length(var))
   names(rng) <- var
+
   for (i in 1:length(var))
     rng[[i]] <- .ivar_points(var[i], data,
                              fmin = ifelse(!is.factor(data[[var[i]]]), min(data[[var[i]]], na.rm = TRUE), NA),
                              fmax = ifelse(!is.factor(data[[var[i]]]), max(data[[var[i]]], na.rm = TRUE), NA),
                              cutoff = cutoff)
-  rng <- as.data.frame(rng)
-  if (length(var) > 1L & interaction)
+
+  tmp <- as.data.frame(matrix(NA, nrow=max(cutoff), ncol=length(var)))
+  names(tmp) <- var
+  for(ii in 1:length(var)){
+    for(jj in 1:max(cutoff)){
+      if(!is.null(rng[[ii]][jj]))
+        tmp[jj,ii] <- rng[[ii]][jj]
+      else
+        tmp[jj,ii] <- NA
+    }
+    if(class(rng[[ii]]) == "factor")
+      tmp[,ii] <- factor(tmp[,ii], labels=levels(rng[[ii]]), levels=labels(rng[[ii]]))
+  }
+  rng <- tmp
+  rm(tmp)
+    
+  if (length(var) > 1L & interaction){
     rng <- expand.grid(rng)
+    rng <- rng[apply(rng, 1, function(ii) !any(is.na(ii))), ]
+  }
   
   ## check to see if parallel backend registered
   '%op%' <- ifelse(getDoParWorkers() > 1 & parallel, foreach::'%dopar%', foreach::'%do%')
   comb <- function(...) do.call("rbind", list(...))
   
   if (length(var) > 1 & !interaction) {
-    out <- foreach(x = var) %:% foreach(i = seq_len(nrow(rng)), .combine = "rbind") %op%
+    out <- foreach(x = var) %:% foreach(i = seq_len(sum(!is.na(rng[,x]))), .combine = "rbind") %op%
     .inner_loop(data, y, rng[, x, drop = FALSE], i, x, ci, confidence,
                 predict_options, pkg, clean_names)
     names(out) <- var
     out <- ldply(out)
     for (x in var) {
       idx <- which(out$.id %in% x)
-      out[idx, x] <- rng[[x]]
+      out[idx, x] <- rng[[x]][!is.na(rng[[x]])]
       out[!idx, x] <- NA
     }
     out$.id <- NULL
