@@ -16,7 +16,6 @@
 #' @param oob logical, use the out-of-bag data to compute predictions at each step
 #' @param ci use the bias corrected infinitesimal jackknife from Wager, Hastie, and Efron (2014), only works with regression
 #' @param confidence desired confidence for the returned interval (ignored if ci is false)
-#' @param resampling desired resampling method for generating variable prediction grid. can be "none", "bootstrap", or "subsampling"
 #' @param parallel logical indicator of whether a parallel backend should be used if registered
 #' @param clean_names logical indicator of whether to clean factor names in output i.e. "level" instead of "factorname.level."
 #' @return a data.frame with the partial dependence of 'var'
@@ -41,11 +40,11 @@
 #' pd_int <- partial_dependence(fit, swiss, c("Education", "Catholic"), interaction = TRUE, ci = TRUE)
 #' @export
 partial_dependence <- function(fit, data, var, cutoff = 10L, interaction = FALSE, oob = TRUE,
-                               resampling = "none", ci = FALSE, confidence = .95, parallel = FALSE,
+                               ci = FALSE, confidence = .95, parallel = FALSE,
                                clean_names = TRUE) UseMethod("partial_dependence", fit)
 #' @export
 partial_dependence.randomForest <- function(fit, data, var, cutoff = 10L, interaction = FALSE,
-                                            oob = TRUE, resampling = "none", ci = FALSE, confidence = .95,
+                                            oob = TRUE, ci = FALSE, confidence = .95,
                                             parallel = FALSE, clean_names = TRUE) {
   pkg <- "randomForest"
   ## find the target feature in the data.frame
@@ -67,12 +66,11 @@ partial_dependence.randomForest <- function(fit, data, var, cutoff = 10L, intera
   }
 
   .partial_dependence(data, target, var, cutoff, interaction,
-                      resampling, ci, confidence,
-                      parallel, predict_options, pkg, clean_names)
+                      ci, confidence, parallel, predict_options, pkg, clean_names)
 }
 #' @export
 partial_dependence.RandomForest <- function(fit, data = NULL, var, cutoff = 10L, interaction = FALSE,
-                                            oob = TRUE, resampling = "none", ci = FALSE, confidence = .95,
+                                            oob = TRUE, ci = FALSE, confidence = .95,
                                             parallel = FALSE, clean_names = TRUE) {
   pkg <- "party"
   y <- get("response", fit@data@env)
@@ -93,12 +91,11 @@ partial_dependence.RandomForest <- function(fit, data = NULL, var, cutoff = 10L,
   }
 
   .partial_dependence(data, target, var, cutoff, interaction,
-                      resampling, ci, confidence,
-                      parallel, predict_options, pkg, clean_names)
+                      ci, confidence, parallel, predict_options, pkg, clean_names)
 }
 #' @export
 partial_dependence.rfsrc <- function(fit, data = NULL, var, cutoff = 10L, interaction = FALSE,
-                                     oob = TRUE, resampling = "none", ci = FALSE, confidence = .95,
+                                     oob = TRUE, ci = FALSE, confidence = .95,
                                      parallel = FALSE, clean_names = TRUE) {
   pkg <- "randomForestSRC"
   target <- fit$yvar.names
@@ -113,14 +110,12 @@ partial_dependence.rfsrc <- function(fit, data = NULL, var, cutoff = 10L, intera
     stop("invalid target type or unknown error")
   }
 
-  .partial_dependence(data, target, var, cutoff, interaction,
-                      resampling, ci, confidence,
+  .partial_dependence(data, target, var, cutoff, interaction, ci, confidence,
                       parallel, predict_options, pkg, clean_names)
 }
 
 .partial_dependence <- function(data, target, var, cutoff, interaction,
-                                resampling, ci, confidence,
-                                parallel, predict_options, pkg, clean_names) {
+                                ci, confidence, parallel, predict_options, pkg, clean_names) {
   if (length(target) == 1)
     y <- data[[target]]
   else
@@ -160,23 +155,13 @@ partial_dependence.rfsrc <- function(fit, data = NULL, var, cutoff = 10L, intera
   
   rng <- vector("list", length(var))
   names(rng) <- var
-  if (!multi.cut){
-    for (i in 1:length(var))
-      rng[[i]] <- .ivar_points(var[i], data, resampling,
-                               fmin = ifelse(!is.factor(data[[var[i]]]), min(data[[var[i]]], na.rm = TRUE), NA),
-                               fmax = ifelse(!is.factor(data[[var[i]]]), max(data[[var[i]]], na.rm = TRUE), NA),
-                               cutoff = cutoff)
-  } else {
-    for (i in 1:length(var)){
-      rng[[i]] <- .ivar_points(var[i], data, resampling,
-                               fmin = ifelse(!is.factor(data[[var[i]]]), min(data[[var[i]]], na.rm = TRUE), NA),
-                               fmax = ifelse(!is.factor(data[[var[i]]]), max(data[[var[i]]], na.rm = TRUE), NA),
-                               cutoff = cutoff[i])
-    }
-    
-  }
 
-  
+  for (i in 1:length(var))
+    rng[[i]] <- .ivar_points(var[i], data,
+                             fmin = ifelse(!is.factor(data[[var[i]]]), min(data[[var[i]]], na.rm = TRUE), NA),
+                             fmax = ifelse(!is.factor(data[[var[i]]]), max(data[[var[i]]], na.rm = TRUE), NA),
+                             cutoff = cutoff)
+
   tmp <- as.data.frame(matrix(NA, nrow=max(cutoff), ncol=length(var)))
   names(tmp) <- var
   for(ii in 1:length(var)){
@@ -187,10 +172,11 @@ partial_dependence.rfsrc <- function(fit, data = NULL, var, cutoff = 10L, intera
         tmp[jj,ii] <- NA
     }
     if(class(rng[[ii]]) == "factor")
-       tmp[,ii] <- factor(tmp[,ii], labels=levels(rng[[ii]]), levels=labels(rng[[ii]]))
+      tmp[,ii] <- factor(tmp[,ii], labels=levels(rng[[ii]]), levels=labels(rng[[ii]]))
   }
   rng <- tmp
   rm(tmp)
+    
   if (length(var) > 1L & interaction){
     rng <- expand.grid(rng)
     rng <- rng[apply(rng, 1, function(ii) !any(is.na(ii))), ]
@@ -239,22 +225,18 @@ partial_dependence.rfsrc <- function(fit, data = NULL, var, cutoff = 10L, intera
   out
 }
 
-.ivar_points <- function(x, data, resampling = "none",
+.ivar_points <- function(x, data,
                          fmin = ifelse(!is.factor(data[[x]]), min(data[[x]], na.rm = TRUE), NA),
                          fmax = ifelse(!is.factor(data[[x]]), max(data[[x]], na.rm = TRUE), NA),
                          cutoff = 10) {
   if (is.factor(data[[x]])) {
-    factor(rep(levels(data[[x]]), length.out = cutoff),
+    factor(rep(levels(data[[x]]), length.out = min(cutoff, length(unique(levels(data[[x]]))))),
            levels = levels(data[[x]]), ordered = is.ordered(data[[x]]))
   } else {
-    if (resampling != "none") {
-      sample(data[[x]], cutoff, resampling == "bootstrap")
-    } else {
-      if (is.integer(data[[x]]))
-        sort(rep(fmin:fmax, length.out = cutoff))
-      else
-        seq(fmin, fmax, length.out = cutoff)
-    }
+    if (is.integer(data[[x]]))
+      sort(rep(fmin:fmax, length.out = cutoff))
+    else
+      seq(fmin, fmax, length.out = cutoff)
   }
 }
 
