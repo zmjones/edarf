@@ -5,8 +5,8 @@
 \title{Partial dependence using random forests}
 \usage{
 partial_dependence(fit, data, var, cutoff = 10L, interaction = FALSE,
-  oob = TRUE, resampling = "none", ci = FALSE, confidence = 0.95,
-  parallel = FALSE, clean_names = TRUE)
+  oob = TRUE, ci = FALSE, confidence = 0.95, parallel = FALSE,
+  clean_names = TRUE)
 }
 \arguments{
 \item{fit}{object of class 'RandomForest', 'randomForest', or 'rfsrc'}
@@ -21,8 +21,6 @@ partial dependence calculation}
 \item{interaction}{logical, if 'var' is a vector, does this specify an interaction or a list of bivariate partial dependence}
 
 \item{oob}{logical, use the out-of-bag data to compute predictions at each step}
-
-\item{resampling}{desired resampling method for generating variable prediction grid. can be "none", "bootstrap", or "subsampling"}
 
 \item{ci}{use the bias corrected infinitesimal jackknife from Wager, Hastie, and Efron (2014), only works with regression}
 
