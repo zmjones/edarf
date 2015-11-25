@@ -139,6 +139,7 @@ partial_dependence.rfsrc <- function(fit, data = NULL, var, cutoff = 10L, intera
   rng <- as.data.frame(rng)
   if (length(var) > 1L & interaction)
     rng <- expand.grid(rng)
+  rng <- rng[!duplicated(rng), ]
   
   ## check to see if parallel backend registered
   '%op%' <- ifelse(getDoParWorkers() > 1 & parallel, foreach::'%dopar%', foreach::'%do%')
@@ -188,7 +189,7 @@ partial_dependence.rfsrc <- function(fit, data = NULL, var, cutoff = 10L, intera
                          fmax = ifelse(!is.factor(data[[x]]), max(data[[x]], na.rm = TRUE), NA),
                          cutoff = 10) {
   if (is.factor(data[[x]])) {
-    factor(rep(levels(data[[x]]), length.out = min(cutoff, length(unique(levels(data[[x]]))))),
+    factor(rep(levels(data[[x]]), length.out = cutoff),
            levels = levels(data[[x]]), ordered = is.ordered(data[[x]]))
   } else {
     if (is.integer(data[[x]]))
