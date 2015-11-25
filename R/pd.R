@@ -139,7 +139,7 @@ partial_dependence.rfsrc <- function(fit, data = NULL, var, cutoff = 10L, intera
   rng <- as.data.frame(rng)
   if (length(var) > 1L & interaction)
     rng <- expand.grid(rng)
-  rng <- rng[!duplicated(rng), ]
+  rng <- rng[!duplicated(rng), , drop = FALSE]
   
   ## check to see if parallel backend registered
   '%op%' <- ifelse(getDoParWorkers() > 1 & parallel, foreach::'%dopar%', foreach::'%do%')
