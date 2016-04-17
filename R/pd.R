@@ -193,7 +193,7 @@ partial_dependence.rfsrc <- function(fit, data = NULL, var, cutoff = 10L, intera
            levels = levels(data[[x]]), ordered = is.ordered(data[[x]]))
   } else {
     if (is.integer(data[[x]]))
-      sort(rep(fmin:fmax, length.out = cutoff))
+      as.integer(seq(fmin, fmax, length.out = cutoff))
     else
       seq(fmin, fmax, length.out = cutoff)
   }
