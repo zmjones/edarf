@@ -3,6 +3,7 @@
 #' @import ggplot2
 #' @importFrom reshape2 melt
 #' @import assertthat
+#' @importFrom stats as.formula
 #' 
 #' @param pd object of class \code{c("pd", "data.frame")} as returned by
 #' \code{\link{partial_dependence}}
@@ -49,8 +50,7 @@ plot_pd <- function(pd, facet = NULL, to_plot = NULL) {
     rm(keep)
   }
 
-  bounds <- if (atts$ci) c("lower", "upper") else NULL
-  dat <- melt(pd, id.vars = c(atts$target, facet, bounds), na.rm = TRUE)
+  dat <- melt(pd, id.vars = c(atts$target, facet), na.rm = TRUE)
   if (is.character(dat$value)) ## casting factors to integers, ack!
     dat$value <- as.integer(dat$value)
   
@@ -72,15 +72,6 @@ plot_pd <- function(pd, facet = NULL, to_plot = NULL) {
   if (!(is.factor(pd[, var]) & !is.ordered(pd[, var])))
     p <- p + geom_line()
   
-  if (atts$ci) {
-    if (atts$prob)
-      p <- p + geom_errorbar(aes_string(ymin = "lower", y = "Probability", ymax = "upper"),
-                             width = .15, size = .5, alpha = .25)
-    else
-      p <- p + geom_errorbar(aes_string(ymin = "lower", y = atts$target, ymax = "upper"),
-                             width = .15, size = .5, alpha = .25)
-  }
-
   if (length(var) == 1)
     p <- p + labs(x = var)
 
@@ -135,7 +126,8 @@ plot_imp <- function(imp, geom = "point", sort = "decreasing", labels = NULL, sc
     imp$target <- atts$target
     if (class(atts$target) == "factor") {
       imp <- sapply(levels(imp$target), function(x)
-        colMeans(imp[which(imp$target == x), -ncol(imp), drop = FALSE]))
+        colMeans(imp[imp$target == x, -ncol(imp), drop = FALSE]), simplify = FALSE)
+      imp <- do.call("cbind", imp)
       imp <- as.data.frame(imp)
       if (!is.null(labels)) {
         if (length(labels) == nrow(imp)) {
@@ -245,7 +237,7 @@ plot_imp <- function(imp, geom = "point", sort = "decreasing", labels = NULL, sc
 #' fit <- randomForest(hp ~ ., mtcars, proximity = TRUE)
 #' prox <- extract_proximity(fit)
 #' pca <- prcomp(prox, scale = TRUE)
-#' plot_prox(prox, labels = row.names(mtcars))
+#' plot_prox(pca, labels = row.names(mtcars))
 #' 
 #' fit <- randomForest(Species ~ ., iris, proximity = TRUE)
 #' prox <- extract_proximity(fit)
@@ -309,9 +301,9 @@ plot_prox <- function(pca, dims = 1:2, labels = NULL,
       p <- p + scale_alpha(guide = FALSE)
   }
   if (is.null(labels))
-    p <- p + geom_point(position = "dodge")
+    p <- p + geom_point()
   else
-    p <- p + geom_text(position = "dodge")
+    p <- p + geom_text()
 
   if (is.null(xlab))
     xlab <- paste0("PC1 (", round(prop_var[1], 0), "% explained var.)")
@@ -324,9 +316,6 @@ plot_prox <- function(pca, dims = 1:2, labels = NULL,
 #'
 #' @param predicted numeric vector of predictions
 #' @param observed numeric vector of observations
-#' @param variance numeric non-negative vector of estimated variances
-#' @param confidence numeric coverage probability desired,
-#' defaults to .95
 #' @param perfect_line logical whether to plot a blue 45 degree line
 #' on which perfect predictions would fall
 #' @param outlier_idx integer indices of outliers to be labelled
@@ -341,31 +330,20 @@ plot_prox <- function(pca, dims = 1:2, labels = NULL,
 #' @examples
 #' library(randomForest)
 #' library(edarf)
-#' fit <- randomForest(hp ~ ., mtcars, keep.inbag = TRUE)
-#' out <- var_est(fit, mtcars)
-#' plot_pred(out$prediction, mtcars$hp, out$variance,
-#'           outlier_idx = which(abs(out$prediction - mtcars$hp) > .5 * sd(mtcars$hp)),
+#' fit <- randomForest(hp ~ ., mtcars)
+#' pred <- predict(fit, newdata = mtcars, OOB = TRUE)
+#' plot_pred(pred, mtcars$hp,
+#'           outlier_idx = which(abs(pred - mtcars$hp) > .5 * sd(mtcars$hp)),
 #'           labs = row.names(mtcars))
 #' @export
-plot_pred <- function(predicted, observed, variance = NULL, confidence = .95,
-                      perfect_line = TRUE, outlier_idx = NULL, labs = NULL,
+plot_pred <- function(predicted, observed, perfect_line = TRUE, outlier_idx = NULL, labs = NULL,
                       xlab = "Observed", ylab = "Predicted", title = "") {
   if (!(is.numeric(predicted) & is.numeric(observed)))
     stop("predicted, and observed must be numeric")
   out <- data.frame("predicted" = predicted, "observed" = observed)
   out$labs <- labs
-  if (!is.null(variance)) {
-    if (!(all(variance > 0)))
-      stop("The variance must be non-negative and numeric")
-    cl <- qnorm((1 - confidence) / 2, lower.tail = FALSE)
-    se <- sqrt(variance)
-    out$high <- out$predicted + cl * se
-    out$low <- out$predicted - cl * se
-  }
   p <- ggplot(out, aes_string("observed", "predicted"))
   p <- p + geom_point()
-  if (all(c("high", "low") %in% colnames(out)))
-    p <- p + geom_errorbar(data = out, aes_string(ymax = "high", ymin = "low"), alpha = .25)
   if (perfect_line)
     p <- p + geom_abline(aes_string(intercept = 0, slope = 1), colour = "blue")
   if (!is.null(outlier_idx)) {
@@ -376,7 +354,7 @@ plot_pred <- function(predicted, observed, variance = NULL, confidence = .95,
       stop("Labels must be passed to label outliers")
     p <- p + geom_text(data = out[outlier_idx, ],
                        aes_string("observed", "predicted", label = "labs", ymax = "ymax"),
-                       size = 3, hjust = 0, vjust = 0, position = "dodge", parse = FALSE)
+                       size = 3, hjust = 0, vjust = 0, parse = FALSE)
   }
   p <- p + labs(x = xlab, y = ylab, title = title)
   p + theme_bw()    

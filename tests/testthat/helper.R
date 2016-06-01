@@ -1,8 +1,5 @@
-set.seed(1987)
-
-library(randomForest)
-library(party)
-library(randomForestSRC)
+pkgs <- c("randomForest", "randomForestSRC", "party")
+invisible(lapply(pkgs, library, character.only = TRUE))
 
 cutoff <- 3L
 nperm <- 2L
@@ -18,15 +15,15 @@ df_classif <- data.frame(X1, X2, X3, "y" = as.factor(ifelse(df_regr$y > median(d
 df_multi <- data.frame("yr" = df_regr$y, "yc" = df_classif$y, X1, X2, X3)
 
 fits_regr <- list(
-  randomForest(y ~ ., df_regr, keep.inbag = TRUE),
-  randomForest(df_regr[, -which(colnames(df_regr) == "y")], df_regr$y, keep.inbag = TRUE),
+  randomForest(y ~ ., df_regr),
+  randomForest(df_regr[, -which(colnames(df_regr) == "y")], df_regr$y),
   cforest(y ~ ., df_regr, controls = cforest_control(mtry = 1)),
   rfsrc(y ~ ., df_regr)
 )
 
 fits_classif <- list(
-  randomForest(y ~ ., df_classif, keep.inbag = TRUE),
-  randomForest(df_classif[, -which(colnames(df_classif) == "y")], df_classif$y, keep.inbag = TRUE),
+  randomForest(y ~ ., df_classif),
+  randomForest(df_classif[, -which(colnames(df_classif) == "y")], df_classif$y),
   cforest(y ~ ., df_classif, controls = cforest_control(mtry = 1)),
   rfsrc(y ~ ., df_classif)
 )

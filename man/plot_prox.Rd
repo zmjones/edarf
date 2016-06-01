@@ -52,7 +52,7 @@ Plot principle components of the proximity matrix
 fit <- randomForest(hp ~ ., mtcars, proximity = TRUE)
 prox <- extract_proximity(fit)
 pca <- prcomp(prox, scale = TRUE)
-plot_prox(prox, labels = row.names(mtcars))
+plot_prox(pca, labels = row.names(mtcars))
 
 fit <- randomForest(Species ~ ., iris, proximity = TRUE)
 prox <- extract_proximity(fit)

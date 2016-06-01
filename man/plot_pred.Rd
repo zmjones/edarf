@@ -4,19 +4,13 @@
 \alias{plot_pred}
 \title{Plot predicted versus observed values}
 \usage{
-plot_pred(predicted, observed, variance = NULL, confidence = 0.95,
-  perfect_line = TRUE, outlier_idx = NULL, labs = NULL,
-  xlab = "Observed", ylab = "Predicted", title = "")
+plot_pred(predicted, observed, perfect_line = TRUE, outlier_idx = NULL,
+  labs = NULL, xlab = "Observed", ylab = "Predicted", title = "")
 }
 \arguments{
 \item{predicted}{numeric vector of predictions}
 
 \item{observed}{numeric vector of observations}
-
-\item{variance}{numeric non-negative vector of estimated variances}
-
-\item{confidence}{numeric coverage probability desired,
-defaults to .95}
 
 \item{perfect_line}{logical whether to plot a blue 45 degree line
 on which perfect predictions would fall}
@@ -42,10 +36,10 @@ Plot predicted versus observed values
 \examples{
 library(randomForest)
 library(edarf)
-fit <- randomForest(hp ~ ., mtcars, keep.inbag = TRUE)
-out <- var_est(fit, mtcars)
-plot_pred(out$prediction, mtcars$hp, out$variance,
-          outlier_idx = which(abs(out$prediction - mtcars$hp) > .5 * sd(mtcars$hp)),
+fit <- randomForest(hp ~ ., mtcars)
+pred <- predict(fit, newdata = mtcars, OOB = TRUE)
+plot_pred(pred, mtcars$hp,
+          outlier_idx = which(abs(pred - mtcars$hp) > .5 * sd(mtcars$hp)),
           labs = row.names(mtcars))
 }
 

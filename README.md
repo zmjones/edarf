@@ -7,7 +7,6 @@ This package extends the functionality of random forests fit by [party](http://c
 Functionality includes:
 
  - `partial_dependence` which computes the expected prediction made by the random forest if it were marginalized to only depend on a subset of the features.
- - `var_est` which computes variance estimates for predictions.
  - `extract_proximity` (supervised) and `randomforest_distance` (unsupervised) which compute the distance between observations on the training data or new data.
  - `variable_importance` which computes feature importance for arbitrary loss functions, aggregated across the training data or for individual observations. This may also be used for subsets of the feature space in order to detect interactions.
  - `extract_prox` and `plot_prox` which computes or extracts proximity matrices and plots them using a biplot given a matrix of principal components of said matrix

@@ -18,8 +18,7 @@ test_that("variable_importance", {
     expect_that(unname(imp_int["additive"]), equals(sum(imp_int[c("X1", "X2")])))
     plot_imp(imp_int)
 
-    imp_int_local <- variable_importance(fit, c("X1", "X2"), "local", TRUE, nperm = nperm,
-                                         data = df_regr)
+    imp_int_local <- variable_importance(fit, c("X1", "X2"), "local", TRUE, nperm = nperm, data = df_regr)
     expect_that(imp_int_local, is_a("data.frame"))
     expect_that(dim(imp_int_local), equals(c(nrow(df_regr), 4)))
     expect_that(all(sapply(imp_int_local, class) == "numeric"), is_true())

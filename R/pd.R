@@ -14,8 +14,6 @@
 #' partial dependence calculation
 #' @param interaction logical, if 'var' is a vector, does this specify an interaction or a list of bivariate partial dependence
 #' @param oob logical, use the out-of-bag data to compute predictions at each step
-#' @param ci use the bias corrected infinitesimal jackknife from Wager, Hastie, and Efron (2014), only works with regression
-#' @param confidence desired confidence for the returned interval (ignored if ci is false)
 #' @param parallel logical indicator of whether a parallel backend should be used if registered
 #' @param clean_names logical indicator of whether to clean factor names in output i.e. "level" instead of "factorname.level."
 #' @return a data.frame with the partial dependence of 'var'
@@ -35,17 +33,15 @@
 #' pd_int <- partial_dependence(fit, iris, c("Petal.Width", "Sepal.Length"), interaction = TRUE)
 #'
 #' ## Regression
-#' fit <- randomForest(Fertility ~ ., swiss, keep.inbag = TRUE)
-#' pd <- partial_dependence(fit, swiss, "Education", ci = TRUE)
-#' pd_int <- partial_dependence(fit, swiss, c("Education", "Catholic"), interaction = TRUE, ci = TRUE)
+#' fit <- randomForest(Fertility ~ ., swiss)
+#' pd <- partial_dependence(fit, swiss, "Education")
+#' pd_int <- partial_dependence(fit, swiss, c("Education", "Catholic"), interaction = TRUE)
 #' @export
-partial_dependence <- function(fit, data, var, cutoff = 10L, interaction = FALSE, oob = TRUE,
-                               ci = FALSE, confidence = .95, parallel = FALSE,
+partial_dependence <- function(fit, data, var, cutoff = 10L, interaction = FALSE, oob = TRUE, parallel = FALSE,
                                clean_names = TRUE) UseMethod("partial_dependence", fit)
 #' @export
 partial_dependence.randomForest <- function(fit, data, var, cutoff = 10L, interaction = FALSE,
-                                            oob = TRUE, ci = FALSE, confidence = .95,
-                                            parallel = FALSE, clean_names = TRUE) {
+                                            oob = TRUE, parallel = FALSE, clean_names = TRUE) {
   pkg <- "randomForest"
   ## find the target feature in the data.frame
   check <- lapply(1:ncol(data), function(x)
@@ -65,13 +61,11 @@ partial_dependence.randomForest <- function(fit, data, var, cutoff = 10L, intera
     stop("invalid target type or unknown error")
   }
 
-  .partial_dependence(data, target, var, cutoff, interaction,
-                      ci, confidence, parallel, predict_options, pkg, clean_names)
+  .partial_dependence(data, target, var, cutoff, interaction, parallel, predict_options, pkg, clean_names)
 }
 #' @export
 partial_dependence.RandomForest <- function(fit, data = NULL, var, cutoff = 10L, interaction = FALSE,
-                                            oob = TRUE, ci = FALSE, confidence = .95,
-                                            parallel = FALSE, clean_names = TRUE) {
+                                            oob = TRUE, parallel = FALSE, clean_names = TRUE) {
   pkg <- "party"
   y <- get("response", fit@data@env)
   data <- data.frame(get("input", fit@data@env), y)
@@ -90,13 +84,11 @@ partial_dependence.RandomForest <- function(fit, data = NULL, var, cutoff = 10L,
     predict_options <- list(object = fit, type = "response")
   }
 
-  .partial_dependence(data, target, var, cutoff, interaction,
-                      ci, confidence, parallel, predict_options, pkg, clean_names)
+  .partial_dependence(data, target, var, cutoff, interaction, parallel, predict_options, pkg, clean_names)
 }
 #' @export
 partial_dependence.rfsrc <- function(fit, data = NULL, var, cutoff = 10L, interaction = FALSE,
-                                     oob = TRUE, ci = FALSE, confidence = .95,
-                                     parallel = FALSE, clean_names = TRUE) {
+                                     oob = TRUE, parallel = FALSE, clean_names = TRUE) {
   pkg <- "randomForestSRC"
   target <- fit$yvar.names
   data <- data.frame(fit$xvar, fit$yvar) ## rfsrc casts integers to numerics
@@ -110,20 +102,16 @@ partial_dependence.rfsrc <- function(fit, data = NULL, var, cutoff = 10L, intera
     stop("invalid target type or unknown error")
   }
 
-  .partial_dependence(data, target, var, cutoff, interaction, ci, confidence,
-                      parallel, predict_options, pkg, clean_names)
+  .partial_dependence(data, target, var, cutoff, interaction, parallel, predict_options, pkg, clean_names)
 }
 
-.partial_dependence <- function(data, target, var, cutoff, interaction,
-                                ci, confidence, parallel, predict_options, pkg, clean_names) {
+.partial_dependence <- function(data, target, var, cutoff, interaction, parallel, predict_options, pkg, clean_names) {
   if (length(target) == 1)
     y <- data[[target]]
   else
     y <- data[, target]
   if (class(y) == "factor")
     target <- levels(y)
-  if (!(class(y) %in% c("integer", "numeric")))
-    ci <- FALSE
   if (length(var) == 1)
     interaction <- FALSE
   if (class(y) == "data.frame")
@@ -147,8 +135,7 @@ partial_dependence.rfsrc <- function(fit, data = NULL, var, cutoff = 10L, intera
   
   if (length(var) > 1 & !interaction) {
     out <- foreach(x = var) %:% foreach(i = seq_len(nrow(rng)), .combine = "rbind") %op%
-    .inner_loop(data, y, rng[, x, drop = FALSE], i, x, ci, confidence,
-                predict_options, pkg, clean_names)
+    .inner_loop(data, y, rng[, x, drop = FALSE], i, x, predict_options, pkg, clean_names)
     names(out) <- var
     out <- ldply(out)
     for (x in var) {
@@ -158,17 +145,12 @@ partial_dependence.rfsrc <- function(fit, data = NULL, var, cutoff = 10L, intera
     }
     out$.id <- NULL
     
-    if (ci)
-      colnames(out) <- c("lower", target, "upper", var)
-    else
-      colnames(out) <- c(target, var)
+    colnames(out) <- c(target, var)
   } else {
     pred <- foreach(i = seq_len(nrow(rng)), .combine = comb) %op%
-    .inner_loop(data, y, rng, i, var, ci, confidence, predict_options, pkg, clean_names)
+    .inner_loop(data, y, rng, i, var, predict_options, pkg, clean_names)
 
-    if (ci)
-      colnames(pred) <- c("lower", target, "upper")
-    if (!is.data.frame(y) & !ci)
+    if (!is.data.frame(y))
       colnames(pred) <- target
 
     out <- cbind(pred, rng)
@@ -180,7 +162,6 @@ partial_dependence.rfsrc <- function(fit, data = NULL, var, cutoff = 10L, intera
   attr(out, "interaction") <- length(var) > 1 & interaction
   attr(out, "multivariate") <- class(y) == "data.frame"
   attr(out, "var") <- var
-  attr(out, "ci") <- ci
   out
 }
 
@@ -199,17 +180,13 @@ partial_dependence.rfsrc <- function(fit, data = NULL, var, cutoff = 10L, intera
   }
 }
 
-.inner_loop <- function(data, y, rng, idx, var, ci, confidence, predict_options, pkg, clean_names) {
+.inner_loop <- function(data, y, rng, idx, var, predict_options, pkg, clean_names) {
   data[, var] <- rng[idx, ]
   if (class(y) %in% c("numeric", "integer")) {
-    if (ci)
-      pred <- colMeans(var_est(predict_options$object, data))
-    else {
       pred <- do.call("predict", c(predict_options, list(newdata = data)))
       if (pkg == "randomForestSRC")
         pred <- pred$predicted
       pred <- mean(pred)
-    }
   } else if (class(y) == "factor") {
     ## if y is a factor and we want class probs return the mean prob across
     ## obs. for each observation. predict.cforest returns a list, which is row binded
@@ -234,12 +211,5 @@ partial_dependence.rfsrc <- function(fit, data = NULL, var, cutoff = 10L, intera
     }
   }
   out <- unlist(pred)
-  if (ci) {
-    cl <- qnorm((1 - confidence) / 2, lower.tail = FALSE)
-    se <- unname(sqrt(out["variance"]))
-    out["low"]<- out["prediction"] - cl * se
-    out["high"] <- out["prediction"] + cl * se
-    out <- out[c("low", "prediction", "high")]
-  }
   out
 }
