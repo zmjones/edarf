@@ -7,7 +7,7 @@ Description: Functions useful for exploratory data analysis
     dependence, observation, class, and variable-wise marginal and joint permutation
     importance as well as observation-specific measures of distance 
     (supervised or unsupervised). All of the aforementioned functions are
-    accompanied by ggplot2 plotting functions.
+    accompanied by 'ggplot2' plotting functions.
 Author: Zachary M. Jones <zmj@zmjones.com> and Fridolin Linder
     <fridolin.linder@gmail.com>
 Maintainer: Zachary M. Jones <zmj@zmjones.com>
