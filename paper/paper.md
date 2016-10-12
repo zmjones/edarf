@@ -6,9 +6,12 @@ tags:
   - exploratory data analysis
 authors:
  - name: Zachary M. Jones
-   affiliation: Pennsylvania State University
+   affiliation: 1
  - name: Fridolin J. Linder
-   affiliation: Pennsylvania State University
+   affiliation: 1
+affiliations:
+  - name: Pennsylvania State University
+    index: 1
 date: 6 October 2016
 bibliography: paper.bib
 ---
