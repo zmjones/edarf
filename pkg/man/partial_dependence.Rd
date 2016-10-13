@@ -51,4 +51,7 @@ fit <- randomForest(Fertility ~ ., swiss)
 pd <- partial_dependence(fit, swiss, "Education")
 pd_int <- partial_dependence(fit, swiss, c("Education", "Catholic"), interaction = TRUE)
 }
+\seealso{
+\code{\link{plot_pd}} for plotting \code{partial_dependence}.
+}
 

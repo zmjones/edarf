@@ -26,4 +26,7 @@ extract_proximity(fit)
 fit <- randomForest(Species ~ ., iris, proximity = TRUE)
 extract_proximity(fit)
 }
+\seealso{
+\code{\link{plot_prox}} for plotting principal components of proximity matrices.
+}
 

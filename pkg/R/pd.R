@@ -20,6 +20,8 @@
 #' if 'var' has length = 1 then the output will be a data.frame with a column for the predicted value at each value of 'var', averaged over the values of all other predictors.
 #' if 'var' has length > 1 and interaction is true or false then the output will be a data.frame with a column for each element of 'var' and the predicted value for each combination.
 #'
+#' @seealso \code{\link{plot_pd}} for plotting \code{partial_dependence}.
+#'
 #' @examples
 #' library(randomForest)
 #' library(edarf)

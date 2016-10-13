@@ -16,7 +16,8 @@
 #' @param data optional (unless using randomForest) data.frame with which to calculate importance
 #'
 #' @return a named numeric vector for type = "aggregate" or a data.frame for type = "local"
-#'
+#' @seealso \code{\link{plot_imp}} for plotting the results of \code{variable_importance}.
+#' 
 #' @examples
 #' library(randomForest)
 #' data(iris)

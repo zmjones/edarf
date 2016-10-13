@@ -10,6 +10,8 @@
 #'
 #' @return an n x n matrix where position i, j gives the proportion of times observation i and j are in the same teriminal node across all trees
 #'
+#' @seealso \code{\link{plot_prox}} for plotting principal components of proximity matrices.
+#'
 #' @examples
 #' fit <- randomForest(hp ~ ., mtcars, proximity = TRUE)
 #' extract_proximity(fit)

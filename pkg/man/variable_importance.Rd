@@ -46,4 +46,7 @@ library(randomForestSRC)
 fit <- rfsrc(mpg ~ ., mtcars)
 variable_importance(fit, var = colnames(mtcars)[-1], type = "aggregate", nperm = 2, oob = TRUE)
 }
+\seealso{
+\code{\link{plot_imp}} for plotting the results of \code{variable_importance}.
+}
 
