@@ -21,17 +21,17 @@ library(randomForestSRC)
 library(party)
 
 fits_regr <- list(
-  randomForest(y ~ ., df_regr),
-  randomForest(df_regr[, -which(colnames(df_regr) == "y")], df_regr$y),
+  randomForest(y ~ ., df_regr, proximity = TRUE),
+  randomForest(df_regr[, -which(colnames(df_regr) == "y")], df_regr$y, proximity = TRUE),
   cforest(y ~ ., df_regr, controls = cforest_control(mtry = 1)),
-  rfsrc(y ~ ., df_regr)
+  rfsrc(y ~ ., df_regr, proximity = "inbag")
 )
 
 fits_classif <- list(
-  randomForest(y ~ ., df_classif),
-  randomForest(df_classif[, -which(colnames(df_classif) == "y")], df_classif$y),
+  randomForest(y ~ ., df_classif, proximity = TRUE),
+  randomForest(df_classif[, -which(colnames(df_classif) == "y")], df_classif$y, proximity = TRUE),
   cforest(y ~ ., df_classif, controls = cforest_control(mtry = 1)),
-  rfsrc(y ~ ., df_classif)
+  rfsrc(y ~ ., df_classif, proximity = "inbag")
 )
 
 fits_multi <- list(
