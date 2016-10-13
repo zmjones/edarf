@@ -9,6 +9,13 @@
 #' @param ... arguments to be passed to \code{extract_proximity}
 #'
 #' @return an n x n matrix where position i, j gives the proportion of times observation i and j are in the same teriminal node across all trees
+#'
+#' @examples
+#' fit <- randomForest(hp ~ ., mtcars, proximity = TRUE)
+#' extract_proximity(fit)
+#'
+#' fit <- randomForest(Species ~ ., iris, proximity = TRUE)
+#' extract_proximity(fit)
 #' @export
 extract_proximity <- function(fit, newdata) UseMethod("extract_proximity")
 #' @export
