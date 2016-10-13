@@ -233,7 +233,6 @@ plot_imp <- function(imp, geom = "point", sort = "decreasing", labels = NULL, sc
 #' @return a ggplot object
 #'
 #' @examples
-#' \dontrun{
 #' fit <- randomForest(hp ~ ., mtcars, proximity = TRUE)
 #' prox <- extract_proximity(fit)
 #' pca <- prcomp(prox, scale = TRUE)
@@ -243,8 +242,6 @@ plot_imp <- function(imp, geom = "point", sort = "decreasing", labels = NULL, sc
 #' prox <- extract_proximity(fit)
 #' pca <- prcomp(prox, scale = TRUE)
 #' plot_prox(pca, color = iris$Species, color_label = "Species", size = 2)
-#' }
-#' 
 #' @export
 plot_prox <- function(pca, dims = 1:2, labels = NULL,
                       alpha = 1, alpha_label = NULL,
