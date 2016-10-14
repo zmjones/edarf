@@ -6,6 +6,8 @@ This package extends the functionality of random forests fit by [party](http://c
 
 The subdirectory `pkg` contains the actual package. The package can be installed with [devtools](https://cran.r-project.org/web/packages/devtools/index.html).
 
+Documentation of functions as well as a vignette can be found [here](http://zmjones.github.io/edarf/).
+
 ```{r}
 devtools::install_github("zmjones/edarf", subdir = "pkg")
 ```
