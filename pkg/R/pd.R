@@ -167,19 +167,41 @@ partial_dependence.rfsrc <- function(fit, data = NULL, var, cutoff = 10L, intera
   out
 }
 
+generateFeatureGrid = function(features, data, resample, gridsize, fmin, fmax) {
+  sapply(features, function(feature) {
+      nunique = length(unique(data[[feature]]))
+      cutoff = ifelse(gridsize >= nunique, nunique, gridsize)
+      if (resample == "none") {
+        switch(paste0(class(data[[feature]]), collapse = ":"),
+          "integer" = as.integer(seq.int(fmin[[feature]], fmax[[feature]], length.out = cutoff)),
+          "numeric" = seq(fmin[[feature]], fmax[[feature]], length.out = cutoff),
+          "ordered:factor" = sort(unique(data[[feature]]))[as.integer(seq.int(1, nunique, length.out = cutoff))],
+          "factor" = sample(unique(data[[feature]]), size = cutoff) ## impossible to order selection if cutoff < nunique w/o ordering
+        )
+
+      } else {
+        if (is.ordered(data[[feature]])) {
+          sort(sample(data[[feature]], size = cutoff, replace = resample == "bootstrap"))
+        } else {
+          sample(data[[feature]], size = cutoff, replace = resample == "bootstrap")
+        }
+      }
+  }, simplify = FALSE)
+}
+
+
 .ivar_points <- function(x, data,
-                         fmin = ifelse(!is.factor(data[[x]]), min(data[[x]], na.rm = TRUE), NA),
-                         fmax = ifelse(!is.factor(data[[x]]), max(data[[x]], na.rm = TRUE), NA),
+                         fmin = ifelse(is.ordered(data[[x]]) | is.numeric(data[[x]]), min(data[[x]], na.rm = TRUE), NA),
+                         fmax = ifelse(is.ordered(data[[x]]) | is.numeric(data[[x]]), max(data[[x]], na.rm = TRUE), NA),
                          cutoff = 10) {
-  if (is.factor(data[[x]])) {
-    factor(rep(levels(data[[x]]), length.out = cutoff),
-           levels = levels(data[[x]]), ordered = is.ordered(data[[x]]))
-  } else {
-    if (is.integer(data[[x]]))
-      as.integer(seq(fmin, fmax, length.out = cutoff))
-    else
-      seq(fmin, fmax, length.out = cutoff)
-  }
+      nunique = length(unique(data[[x]]))
+      cutoff = ifelse(gridsize >= nunique, nunique, gridsize)
+      switch(paste0(class(data[[x]]), collapse = ":"),
+          "integer" = as.integer(seq.int(fmin[[x]], fmax[[x]], length.out = cutoff)),
+          "numeric" = seq(fmin[[x]], fmax[[x]], length.out = cutoff),
+          "ordered:factor" = sort(unique(data[[x]]))[as.integer(seq.int(1, nunique, length.out = cutoff))],
+          "factor" = sample(unique(data[[x]]), size = cutoff) ## impossible to order selection if cutoff < nunique w/o ordering
+      )
 }
 
 .inner_loop <- function(data, y, rng, idx, var, predict_options, pkg, clean_names) {
