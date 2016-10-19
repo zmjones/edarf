@@ -25,7 +25,6 @@ Suggests:
     party,
     randomForest,
     randomForestSRC,
-    scales,
     doParallel,
     testthat,
     rmarkdown,
