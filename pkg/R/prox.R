@@ -13,6 +13,8 @@
 #' @seealso \code{\link{plot_prox}} for plotting principal components of proximity matrices.
 #'
 #' @examples
+#' library(randomForest)
+#' 
 #' fit <- randomForest(hp ~ ., mtcars, proximity = TRUE)
 #' extract_proximity(fit)
 #'

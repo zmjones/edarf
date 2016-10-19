@@ -48,6 +48,8 @@ a ggplot object
 Plot principle components of the proximity matrix
 }
 \examples{
+library(randomForest)
+
 fit <- randomForest(hp ~ ., mtcars, proximity = TRUE)
 prox <- extract_proximity(fit)
 pca <- prcomp(prox, scale = TRUE)

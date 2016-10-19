@@ -20,6 +20,8 @@ an n x n matrix where position i, j gives the proportion of times observation i 
 Extracts proximity matrices from random forest objects from the party, randomForest or randomForestSRC packages
 }
 \examples{
+library(randomForest)
+
 fit <- randomForest(hp ~ ., mtcars, proximity = TRUE)
 extract_proximity(fit)
 

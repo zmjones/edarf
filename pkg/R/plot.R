@@ -233,6 +233,8 @@ plot_imp <- function(imp, geom = "point", sort = "decreasing", labels = NULL, sc
 #' @return a ggplot object
 #'
 #' @examples
+#' library(randomForest)
+#' 
 #' fit <- randomForest(hp ~ ., mtcars, proximity = TRUE)
 #' prox <- extract_proximity(fit)
 #' pca <- prcomp(prox, scale = TRUE)
