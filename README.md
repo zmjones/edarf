@@ -15,7 +15,7 @@ devtools::install_github("zmjones/edarf", subdir = "pkg")
 Functionality includes:
 
  - `partial_dependence` which computes the expected prediction made by the random forest if it were marginalized to only depend on a subset of the features.
- - `extract_proximity` (supervised) and `randomforest_distance` (unsupervised) which compute the distance between observations on the training data or new data.
+ - `extract_proximity` extracts the distance between observations on the training data or new data given a fitted model.
  - `variable_importance` which computes feature importance for arbitrary loss functions, aggregated across the training data or for individual observations. This may also be used for subsets of the feature space in order to detect interactions.
  - `extract_proximity` and `plot_prox` which computes or extracts proximity matrices and plots them using a biplot given a matrix of principal components of said matrix.
 
