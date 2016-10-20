@@ -1,4 +1,5 @@
 ![](https://travis-ci.org/zmjones/edarf.svg) ![](http://www.r-pkg.org/badges/version/edarf)
+[![DOI](https://zenodo.org/badge/23669422.svg)](https://zenodo.org/badge/latestdoi/23669422)
 
 Functions useful for exploratory data analysis using random forests.
 
