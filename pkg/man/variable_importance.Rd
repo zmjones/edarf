@@ -4,7 +4,7 @@
 \alias{variable_importance}
 \title{Variable importance using random forests}
 \usage{
-variable_importance(fit, var, type, interaction, oob, nperm, parallel, data)
+variable_importance(fit, var, type, interaction, nperm, parallel, data)
 }
 \arguments{
 \item{fit}{object of class 'RandomForest', 'randomForest', or 'rfsrc'}
@@ -14,8 +14,6 @@ variable_importance(fit, var, type, interaction, oob, nperm, parallel, data)
 \item{type}{character, either "aggregate," (default) which gives the average loss under permutation or "local" which gives the residual across all observations}
 
 \item{interaction}{logcal, compute the joint and additive importance for observations (\code{type = "local"}) or variables \code{type = "aggregate"}}
-
-\item{oob}{logical, use the out of bag data data}
 
 \item{nperm}{positive integer giving the number of times to permute the indicated variables (default 10)}
 
@@ -44,7 +42,7 @@ variable_importance(fit, var = colnames(swiss)[-1], type = "local", nperm = 2)
 data(mtcars)
 library(randomForestSRC)
 fit <- rfsrc(mpg ~ ., mtcars)
-variable_importance(fit, var = colnames(mtcars)[-1], type = "aggregate", nperm = 2, oob = TRUE)
+variable_importance(fit, var = colnames(mtcars)[-1], type = "aggregate", nperm = 2)
 }
 \references{
 Breiman, Leo. "Random forests." Machine learning 45.1 (2001): 5-32.

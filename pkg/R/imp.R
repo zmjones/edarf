@@ -10,7 +10,6 @@
 #' @param var character, variables to find the importance of
 #' @param type character, either "aggregate," (default) which gives the average loss under permutation or "local" which gives the residual across all observations
 #' @param interaction logcal, compute the joint and additive importance for observations (\code{type = "local"}) or variables \code{type = "aggregate"}
-#' @param oob logical, use the out of bag data data
 #' @param nperm positive integer giving the number of times to permute the indicated variables (default 10)
 #' @param parallel logical whether to run in parallel using the registered backend (default FALSE)
 #' @param data optional (unless using randomForest) data.frame with which to calculate importance
@@ -35,32 +34,32 @@
 #' data(mtcars)
 #' library(randomForestSRC)
 #' fit <- rfsrc(mpg ~ ., mtcars)
-#' variable_importance(fit, var = colnames(mtcars)[-1], type = "aggregate", nperm = 2, oob = TRUE)
+#' variable_importance(fit, var = colnames(mtcars)[-1], type = "aggregate", nperm = 2)
 #' @export
-variable_importance <- function(fit, var, type, interaction, oob, nperm, parallel, data)
+variable_importance <- function(fit, var, type, interaction, nperm, parallel, data)
   UseMethod("variable_importance")
 #' @export
 variable_importance.randomForest <- function(fit, var, type = "aggregate", interaction = FALSE,
-                                             oob = TRUE, nperm = 100, parallel = FALSE,
+                                             nperm = 100, parallel = FALSE,
                                              data = NULL) {
   out <- .variable_importance(fit, var, type, interaction, nperm, parallel, data,
-                              y = fit$y, list(object = fit, type = "response", OOB = oob),
+                              y = fit$y, list(object = fit, type = "response"),
                               "randomForest")
   return(out)
 }
 #' @export
 variable_importance.RandomForest <- function(fit, var, type = "aggregate", interaction = FALSE,
-                                             oob = TRUE, nperm = 100, parallel = FALSE, data = NULL) {
+                                             nperm = 100, parallel = FALSE, data = NULL) {
   out <- .variable_importance(fit, var, type, interaction, nperm, parallel,
                               get("input", fit@data@env),
                               get("response", fit@data@env)[, 1],
-                              list(object = fit, type = "response", OOB = oob),
+                              list(object = fit, type = "response"),
                               "party")
   return(out)
 }
 #' @export
 variable_importance.rfsrc <- function(fit, var, type = "aggregate", interaction = FALSE,
-                                      oob = TRUE, nperm = 100, parallel = FALSE, data = NULL) {
+                                      nperm = 100, parallel = FALSE, data = NULL) {
   out <- .variable_importance(fit, var, type, interaction, nperm, parallel,
                               fit$xvar, fit$yvar, list(object = fit), "randomForestSRC")
   return(out)
@@ -81,7 +80,7 @@ variable_importance.rfsrc <- function(fit, var, type = "aggregate", interaction 
 }
 
 .variable_importance <- function(fit, var, type, interaction = FALSE, nperm, parallel,
-                                 data, y, predict_options, pkg, oob = NULL) {
+                                 data, y, predict_options, pkg) {
   '%op%' <- ifelse(getDoParWorkers() > 1 & parallel, foreach::'%dopar%', foreach::'%do%')
   ensemble_pred <- do.call("predict", c(predict_options, list(newdata = data)))
 
@@ -140,7 +139,6 @@ variable_importance.rfsrc <- function(fit, var, type = "aggregate", interaction 
   attr(out, "class") <- c("importance", ifelse(type == "aggregate", "numeric", "data.frame"))
   attr(out, "type") <- type
   attr(out, "var") <- var
-  attr(out, "oob") <- oob
   attr(out, "interaction") <- interaction
   attr(out, "target") <- y
   out

@@ -111,7 +111,7 @@ plot_pd <- function(pd, facet = NULL, to_plot = NULL) {
 #' plot_imp(imp)
 #'
 #' imp <- variable_importance(fit, var = colnames(iris)[-5], type = "aggregate",
-#'                            interaction = FALSE, nperm = 2, oob = TRUE, data = iris)
+#'                            interaction = FALSE, nperm = 2, data = iris)
 #' plot_imp(imp)
 #'
 #' data(swiss)
