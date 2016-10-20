@@ -17,6 +17,8 @@
 #'
 #' @return a named numeric vector for type = "aggregate" or a data.frame for type = "local"
 #' @seealso \code{\link{plot_imp}} for plotting the results of \code{variable_importance}.
+#' @references
+#' Breiman, Leo. "Random forests." Machine learning 45.1 (2001): 5-32.
 #' 
 #' @examples
 #' library(randomForest)

@@ -51,6 +51,9 @@ fit <- randomForest(Fertility ~ ., swiss)
 pd <- partial_dependence(fit, swiss, "Education")
 pd_int <- partial_dependence(fit, swiss, c("Education", "Catholic"), interaction = TRUE)
 }
+\references{
+Friedman, Jerome H. "Greedy function approximation: a gradient boosting machine." Annals of statistics (2001): 1189-1232.
+}
 \seealso{
 \code{\link{plot_pd}} for plotting \code{partial_dependence}.
 }

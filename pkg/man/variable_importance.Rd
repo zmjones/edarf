@@ -46,6 +46,9 @@ library(randomForestSRC)
 fit <- rfsrc(mpg ~ ., mtcars)
 variable_importance(fit, var = colnames(mtcars)[-1], type = "aggregate", nperm = 2, oob = TRUE)
 }
+\references{
+Breiman, Leo. "Random forests." Machine learning 45.1 (2001): 5-32.
+}
 \seealso{
 \code{\link{plot_imp}} for plotting the results of \code{variable_importance}.
 }

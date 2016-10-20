@@ -21,6 +21,9 @@
 #' if 'var' has length > 1 and interaction is true or false then the output will be a data.frame with a column for each element of 'var' and the predicted value for each combination.
 #'
 #' @seealso \code{\link{plot_pd}} for plotting \code{partial_dependence}.
+#' @references
+#'
+#' Friedman, Jerome H. "Greedy function approximation: a gradient boosting machine." Annals of statistics (2001): 1189-1232.
 #'
 #' @examples
 #' library(randomForest)
