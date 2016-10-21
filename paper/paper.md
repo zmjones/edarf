@@ -10,6 +10,7 @@ authors:
    orcid: 0000-0002-7523-0471
  - name: Fridolin J. Linder
    affiliation: 1
+   orcid: 0000-0002-0499-0676
 affiliations:
   - name: Pennsylvania State University
     index: 1
