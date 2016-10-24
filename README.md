@@ -4,9 +4,9 @@
 
 Functions useful for exploratory data analysis using random forests.
 
-This package extends the functionality of random forests fit by [party](http://cran.r-project.org/web/packages/party/index.html) (multivariate, regression, and classification), [randomForestSRC](http://cran.r-project.org/web/packages/randomForestSRC/index.html) (regression, classification, and survival), and [randomForest](http://cran.r-project.org/web/packages/randomForest/index.html) (regression and classification).
+This package extends the functionality of random forests fit by [party](https://CRAN.R-project.org/package=party) (multivariate, regression, and classification), [randomForestSRC](https://CRAN.R-project.org/package=randomForestSRC) (regression, classification, and survival), and [randomForest](https://CRAN.R-project.org/package=randomForest) (regression and classification).
 
-The subdirectory `pkg` contains the actual package. The package can be installed with [devtools](https://cran.r-project.org/web/packages/devtools/index.html).
+The subdirectory `pkg` contains the actual package. The package can be installed with [devtools](https://cran.r-project.org/package=devtools).
 
 Documentation of functions as well as a vignette can be found [here](http://zmjones.github.io/edarf/).
 
