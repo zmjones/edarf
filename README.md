@@ -1,5 +1,4 @@
 ![](https://travis-ci.org/zmjones/edarf.svg) ![](http://www.r-pkg.org/badges/version/edarf)
-![](http://cranlogs.r-pkg.org/badges/grand-total/edarf)
 ![](http://cranlogs.r-pkg.org/badges/edarf)
 [![DOI](https://zenodo.org/badge/23669422.svg)](https://zenodo.org/badge/latestdoi/23669422)
 [![status](http://joss.theoj.org/papers/d29df349c8450ef958c0fde5bf164371/status.svg)](http://joss.theoj.org/papers/d29df349c8450ef958c0fde5bf164371)
