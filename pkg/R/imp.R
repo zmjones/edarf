@@ -2,19 +2,17 @@
 #'
 #' Computes local or aggregate variable importance for a set of predictors from a fitted random forest object from the party, randomForest, or randomForestSRC package
 #'
-#' @importFrom iterators icount
-#' @importFrom foreach foreach %dopar% %do% %:% getDoParWorkers
 #' @importFrom stats predict
+#' @importFrom mmpf permutationImportance
 #'
 #' @param fit object of class 'RandomForest', 'randomForest', or 'rfsrc'
-#' @param var character, variables to find the importance of
-#' @param type character, either "aggregate," (default) which gives the average loss under permutation or "local" which gives the residual across all observations
+#' @param vars character, variables to find the importance of
 #' @param interaction logcal, compute the joint and additive importance for observations (\code{type = "local"}) or variables \code{type = "aggregate"}
 #' @param nperm positive integer giving the number of times to permute the indicated variables (default 10)
-#' @param parallel logical whether to run in parallel using the registered backend (default FALSE)
 #' @param data optional (unless using randomForest) data.frame with which to calculate importance
+#' @param ... additional arguments to be passed to \code{permutationImportance}.
 #'
-#' @return a named numeric vector for type = "aggregate" or a data.frame for type = "local"
+#' @return a named list of \code{vars} with the return from \code{permutationImportance} for each.
 #' @seealso \code{\link{plot_imp}} for plotting the results of \code{variable_importance}.
 #' @references
 #' Breiman, Leo. "Random forests." Machine learning 45.1 (2001): 5-32.
@@ -22,124 +20,99 @@
 #' @examples
 #' library(randomForest)
 #' data(iris)
-#'
 #' fit <- randomForest(Species ~ ., iris)
-#' variable_importance(fit, var = colnames(iris)[-5], type = "aggregate", nperm = 2, data = iris)
-#'
-#' library(party)
-#' data(swiss)
-#' fit <- cforest(Fertility ~ ., swiss)
-#' variable_importance(fit, var = colnames(swiss)[-1], type = "local", nperm = 2)
-#'
-#' data(mtcars)
-#' library(randomForestSRC)
-#' fit <- rfsrc(mpg ~ ., mtcars)
-#' variable_importance(fit, var = colnames(mtcars)[-1], type = "aggregate", nperm = 2)
+#' variable_importance(fit, nperm = 2, data = iris)
 #' @export
-variable_importance <- function(fit, var, type, interaction, nperm, parallel, data)
+variable_importance <- function(fit, vars, interaction, nperm, data)
   UseMethod("variable_importance")
 #' @export
-variable_importance.randomForest <- function(fit, var, type = "aggregate", interaction = FALSE,
-                                             nperm = 100, parallel = FALSE,
-                                             data = NULL) {
-  out <- .variable_importance(fit, var, type, interaction, nperm, parallel, data,
-                              y = fit$y, list(object = fit, type = "response"),
-                              "randomForest")
-  return(out)
+variable_importance.randomForest <- function(fit, vars,
+  interaction = FALSE, nperm = 100L, data, ...) {
+
+  vars <- if (missing(vars)) attributes(fit$terms)$term.labels else vars
+  args <- list(
+    "data" = data,
+    "vars" = vars,
+    "y" =  if (!is.null(fit$terms)) deparse(attr(fit$terms, "variables")[[2]]) else colnames(data)[which(sapply(data, function(x) all.equal(x, fit$y, check.attributes = FALSE)) == "TRUE")],
+    "nperm" = nperm,
+    "model" = fit,
+    "predict.fun" = function(object, newdata) predict(object, newdata),
+    ...
+  )
+  
+  if (length(vars) > 1L & !interaction)
+    imp <- sapply(vars, function(x) {    
+      args$vars <- x
+      do.call("permutationImportance", args)
+    }, simplify = FALSE)
+  else
+    imp <- do.call("permutationImportance", args)
+
+  attr(imp, "class") <- c("imp", class(imp))
+  attr(imp, "target") <- args$y
+  attr(imp, "nperm") <- nperm
+  imp
 }
 #' @export
-variable_importance.RandomForest <- function(fit, var, type = "aggregate", interaction = FALSE,
-                                             nperm = 100, parallel = FALSE, data = NULL) {
-  out <- .variable_importance(fit, var, type, interaction, nperm, parallel,
-                              get("input", fit@data@env),
-                              get("response", fit@data@env)[, 1],
-                              list(object = fit, type = "response"),
-                              "party")
-  return(out)
+variable_importance.RandomForest <- function(fit, vars,
+  interaction = FALSE, nperm = 100L, data = NULL, ...) {
+
+  target <- names(get("response", fit@data@env))
+  data <- data.frame(get("input", fit@data@env),
+    get("response", fit@data@env))
+  vars <- if (missing(vars)) colnames(get("input", fit@data@env)) else vars
+
+  args <- list(
+    "data" = data,
+    "y" = target,
+    "vars" = vars,
+    "nperm" = nperm,
+    "model" = fit,
+    "predict.fun" = function(object, newdata) object@predict_response(newdata),
+    ...
+  )
+  
+  if (length(vars) > 1L & !interaction)
+    imp <- sapply(vars, function(x) {
+      args$vars <- x
+      do.call("permutationImportance", args)
+    }, simplify = FALSE)
+  else
+    imp <- do.call("permutationImportance", args)
+
+  attr(imp, "class") <- c("imp", class(imp))
+  attr(imp, "target") <- args$y
+  attr(imp, "nperm") <- nperm
+  imp
 }
 #' @export
-variable_importance.rfsrc <- function(fit, var, type = "aggregate", interaction = FALSE,
-                                      nperm = 100, parallel = FALSE, data = NULL) {
-  out <- .variable_importance(fit, var, type, interaction, nperm, parallel,
-                              fit$xvar, fit$yvar, list(object = fit), "randomForestSRC")
-  return(out)
-}
+variable_importance.rfsrc <- function(fit, vars,
+  interaction = FALSE, nperm = 100, data = NULL, ...) {
 
-.permute_data <- function(data, x) {
-  pdata <- data
-  n <- nrow(data)
-  pidx <- sapply(x, function(z) sample(1:n, size = n, replace = FALSE))
-  if (length(x) == 1) {
-    pidx <- pidx[, 1]
-    pdata[, x] <- pdata[pidx, x]
-  } else {
-    for (i in 1:length(x))
-      pdata[, x[i]] <- pdata[pidx[, i], x[i]]
-  }
-  return(pdata)
-}
+  data <- data.frame(fit$xvar, fit$yvar)
+  names(data)[(ncol(fit$xvar) + 1):ncol(data)] <- fit$yvar.names
+  vars <- if (missing(vars)) colnames(fit$xvar) else vars
+  
+  args <- list(
+    "data" = data,
+    "vars" = vars,
+    "y" = fit$yvar.names,
+    "nperm" = nperm,
+    "model" = fit,
+    "predict.fun" = function(object, newdata) predict(object, newdata)[["predicted"]],
+    ...
+  )
 
-.variable_importance <- function(fit, var, type, interaction = FALSE, nperm, parallel,
-                                 data, y, predict_options, pkg) {
-  '%op%' <- ifelse(getDoParWorkers() > 1 & parallel, foreach::'%dopar%', foreach::'%do%')
-  ensemble_pred <- do.call("predict", c(predict_options, list(newdata = data)))
+  if (length(vars) > 1L & !interaction)
+    imp <- sapply(vars, function(x) {
+      args$vars <- x
+      do.call("permutationImportance", args)
+    }, simplify = FALSE)
+  else
+    imp <- do.call("permutationImportance", args)
 
-  x <- NULL ## initialize global variables
-
-  if (pkg == "randomForestSRC") ensemble_pred <- ensemble_pred$predicted
-
-  inner_loop <- function(data, x, predict_options, y, ensemble_output) {
-    pdata <- .permute_data(data, x)
-    p <- do.call("predict", c(predict_options, list(newdata = pdata)))
-    if (pkg == "randomForestSRC") p <- p$predicted
-    loss(p, y) - ensemble_output
-  }
-
-  if (type == "local") {
-    if (is.factor(y) & !is.ordered(y)) loss <- function(x, y) ifelse(x != y, 1, 0)
-    else if (is.ordered(y)) loss <- function(x, y) as.integer(x) - as.integer(y)
-    else loss <- function(x, y) x - y
-    ensemble_resid <- loss(ensemble_pred, y)
-    comb <- function(...) rowMeans(do.call("cbind", list(...)))
-
-    out <- foreach(x = var, .combine = "cbind", .packages = pkg) %:%
-      foreach(icount(nperm), .combine = comb, .packages = pkg) %op%
-      inner_loop(data, x, predict_options, y, ensemble_resid)
-    out <- as.data.frame(out)
-    colnames(out) <- var
-    if (interaction) {
-      int <- foreach(icount(nperm), .combine = comb, .packages = pkg) %op%
-        inner_loop(data, var, predict_options, y, ensemble_resid)
-      out$additive <- rowSums(out[, var])
-      out$joint <- int
-    }
-  } else if (type == "aggregate") {
-    if (is.factor(y) & !is.ordered(y)) loss <- function(x, y) mean(x != y)
-    else loss <- function(x, y) mean((x - y)^2)
-    ensemble_loss <- loss(ensemble_pred, y)
-    comb <- function(...) mean(do.call("c", list(...)))
-
-    out <- foreach(x = var, .combine = "c", .packages = pkg) %:%
-      foreach(icount(nperm), .combine = comb, .packages = pkg) %op% {
-        inner_loop(data, x, predict_options, y, ensemble_loss)
-      }
-    names(out) <- var
-    if (interaction) {
-      int <- foreach(icount(nperm), .combine = comb) %op% {
-        inner_loop(data, var, predict_options, y, ensemble_loss)
-      }
-      additive <- sum(out)
-      out <- c(out, additive, int)
-      names(out) <- c(var, "additive", "joint")
-    }
-  } else {
-    stop("unsupported type argument")
-  }
-
-  attr(out, "class") <- c("importance", ifelse(type == "aggregate", "numeric", "data.frame"))
-  attr(out, "type") <- type
-  attr(out, "var") <- var
-  attr(out, "interaction") <- interaction
-  attr(out, "target") <- y
-  out
+  attr(imp, "class") <- c("imp", class(imp))
+  attr(imp, "target") <- args$y
+  attr(imp, "nperm") <- nperm
+  imp
 }

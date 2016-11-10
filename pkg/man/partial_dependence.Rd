@@ -4,31 +4,28 @@
 \alias{partial_dependence}
 \title{Partial dependence using random forests}
 \usage{
-partial_dependence(fit, data, var, cutoff = 10L, interaction = FALSE,
-  oob = TRUE, parallel = FALSE, clean_names = TRUE)
+partial_dependence(fit, vars, n, interaction, uniform, data, ...)
 }
 \arguments{
 \item{fit}{object of class 'RandomForest', 'randomForest', or 'rfsrc'}
 
-\item{data}{the data.frame used to fit the model, only needed for randomForest}
+\item{vars}{a character vector of the predictors of interest}
 
-\item{var}{a character vector of the predictors of interest, which must match the input matrix}
+\item{n}{two dimensional integer vector giving the resolution of the grid. the first element gives the grid on \code{vars} and the second on the other columns, which are subsampled.}
 
-\item{cutoff}{the maximal number of unique points in each element of 'var' used in the
+\item{interaction}{logical, if 'vars' is a vector, does this specify an interaction or a list of bivariate partial dependence}
+
+\item{uniform}{logical, indicates whether a uniform or random grid is to be construct
 partial dependence calculation}
 
-\item{interaction}{logical, if 'var' is a vector, does this specify an interaction or a list of bivariate partial dependence}
+\item{data}{the data.frame used to fit the model, only needed for 'randomForest'}
 
-\item{oob}{logical, use the out-of-bag data to compute predictions at each step}
-
-\item{parallel}{logical indicator of whether a parallel backend should be used if registered}
-
-\item{clean_names}{logical indicator of whether to clean factor names in output i.e. "level" instead of "factorname.level."}
+\item{...}{additional arguments to be passed to \code{marginalPrediction}}
 }
 \value{
-a data.frame with the partial dependence of 'var'
-if 'var' has length = 1 then the output will be a data.frame with a column for the predicted value at each value of 'var', averaged over the values of all other predictors.
-if 'var' has length > 1 and interaction is true or false then the output will be a data.frame with a column for each element of 'var' and the predicted value for each combination.
+a data.frame with the partial dependence of 'vars'
+if 'vars' has length = 1 then the output will be a data.frame with a column for the predicted value at each value of 'vars', averaged over the values of all other predictors.
+if 'vars' has length > 1 and interaction is true or false then the output will be a data.frame with a column for each element of 'vars' and the predicted value for each combination.
 }
 \description{
 Calculates the partial dependence of the response on an arbitrary dimensional set of predictors
@@ -43,13 +40,16 @@ data(swiss)
 
 ## classification
 fit <- randomForest(Species ~ ., iris)
-pd <- partial_dependence(fit, iris, c("Petal.Width", "Sepal.Length"))
-pd_int <- partial_dependence(fit, iris, c("Petal.Width", "Sepal.Length"), interaction = TRUE)
+pd <- partial_dependence(fit, c("Sepal.Width", "Sepal.Length"),
+  data = iris[, -ncol(iris)])
+pd_int <- partial_dependence(fit, c("Petal.Width", "Sepal.Length"), 
+  interaction = TRUE, data = iris[, -ncol(iris)])
 
 ## Regression
 fit <- randomForest(Fertility ~ ., swiss)
-pd <- partial_dependence(fit, swiss, "Education")
-pd_int <- partial_dependence(fit, swiss, c("Education", "Catholic"), interaction = TRUE)
+pd <- partial_dependence(fit, c("Education", "Examination"), data = swiss[, -1])
+pd_int <- partial_dependence(fit, c("Education", "Examination"),
+  interaction = TRUE, data = swiss[, -1])
 }
 \references{
 Friedman, Jerome H. "Greedy function approximation: a gradient boosting machine." Annals of statistics (2001): 1189-1232.

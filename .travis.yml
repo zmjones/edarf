@@ -13,6 +13,9 @@ r_packages:
   - randomForest
   - randomForestSRC
 
+r_github_packages:
+  - zmjones/mmpf
+
 notifications:
   email:
     on_success: change

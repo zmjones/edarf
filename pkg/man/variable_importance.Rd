@@ -4,25 +4,23 @@
 \alias{variable_importance}
 \title{Variable importance using random forests}
 \usage{
-variable_importance(fit, var, type, interaction, nperm, parallel, data)
+variable_importance(fit, vars, interaction, nperm, data)
 }
 \arguments{
 \item{fit}{object of class 'RandomForest', 'randomForest', or 'rfsrc'}
 
-\item{var}{character, variables to find the importance of}
-
-\item{type}{character, either "aggregate," (default) which gives the average loss under permutation or "local" which gives the residual across all observations}
+\item{vars}{character, variables to find the importance of}
 
 \item{interaction}{logcal, compute the joint and additive importance for observations (\code{type = "local"}) or variables \code{type = "aggregate"}}
 
 \item{nperm}{positive integer giving the number of times to permute the indicated variables (default 10)}
 
-\item{parallel}{logical whether to run in parallel using the registered backend (default FALSE)}
-
 \item{data}{optional (unless using randomForest) data.frame with which to calculate importance}
+
+\item{...}{additional arguments to be passed to \code{permutationImportance}.}
 }
 \value{
-a named numeric vector for type = "aggregate" or a data.frame for type = "local"
+a named list of \code{vars} with the return from \code{permutationImportance} for each.
 }
 \description{
 Computes local or aggregate variable importance for a set of predictors from a fitted random forest object from the party, randomForest, or randomForestSRC package
@@ -30,19 +28,8 @@ Computes local or aggregate variable importance for a set of predictors from a f
 \examples{
 library(randomForest)
 data(iris)
-
 fit <- randomForest(Species ~ ., iris)
-variable_importance(fit, var = colnames(iris)[-5], type = "aggregate", nperm = 2, data = iris)
-
-library(party)
-data(swiss)
-fit <- cforest(Fertility ~ ., swiss)
-variable_importance(fit, var = colnames(swiss)[-1], type = "local", nperm = 2)
-
-data(mtcars)
-library(randomForestSRC)
-fit <- rfsrc(mpg ~ ., mtcars)
-variable_importance(fit, var = colnames(mtcars)[-1], type = "aggregate", nperm = 2)
+variable_importance(fit, nperm = 2, data = iris)
 }
 \references{
 Breiman, Leo. "Random forests." Machine learning 45.1 (2001): 5-32.

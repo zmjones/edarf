@@ -4,24 +4,14 @@
 \alias{plot_imp}
 \title{Plot variable importance from random forests}
 \usage{
-plot_imp(imp, geom = "point", sort = "decreasing", labels = NULL,
-  scales = "free_y", se = TRUE)
+plot_imp(imp, sort = "decreasing")
 }
 \arguments{
 \item{imp}{object of class \code{c("importance", "data.frame")} as returned by
 \code{\link{variable_importance}}}
 
-\item{geom}{character describing type of plot desired: "point" or "bar"}
-
 \item{sort}{character indicating if sorting of the output is to be done.
-can be "none", "ascending", or "descending." only applicable when the importance type is "aggregate," or "local" and and the outcome variable is a "factor"}
-
-\item{labels}{character vector giving labels to variables,
-must have length equal to the number of rows or length of \code{imp}}
-
-\item{scales}{character, "free", "fixed", "free_x", or "free_y", only applicable when \code{type = "local"} and the outcome is an ordered factor or numeric}
-
-\item{se}{logical, plot a standard error ribbon around the estimated residual density under permutation, only applicable when \code{type = "local"} and the outcome is an ordered factor or numeric}
+can be "ascending", or "descending."}
 }
 \value{
 a ggplot2 object
@@ -33,20 +23,7 @@ Plot variable importance from random forests
 library(randomForest)
 data(iris)
 fit <- randomForest(Species ~ ., iris)
-
-## class-specific importance for all variables
-imp <- variable_importance(fit, var = colnames(iris)[-5],
-                           type = "local", interaction = TRUE, nperm = 2, data = iris)
-plot_imp(imp)
-
-imp <- variable_importance(fit, var = colnames(iris)[-5], type = "aggregate",
-                           interaction = FALSE, nperm = 2, data = iris)
-plot_imp(imp)
-
-data(swiss)
-fit <- randomForest(Fertility ~ ., swiss)
-imp <- variable_importance(fit, var = colnames(swiss)[-1],
-                           type = "local", interaction = TRUE, nperm = 2, data = swiss)
+imp <- variable_importance(fit, nperm = 2, data = iris)
 plot_imp(imp)
 }
 

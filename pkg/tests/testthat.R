@@ -3,7 +3,6 @@ library(edarf)
 
 set.seed(1987)
 
-cutoff <- 3L
 nperm <- 2L
 n <- 50
 
@@ -39,4 +38,3 @@ fits_multi <- list(
 )
 
 test_check("edarf")
-

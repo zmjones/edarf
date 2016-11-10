@@ -1,8 +1,7 @@
 #' Plot partial dependence from random forests
 #'
-#' @import ggplot2
-#' @importFrom reshape2 melt
-#' @import assertthat
+#' @importFrom ggplot2 ggplot facet_wrap geom_point geom_line labs geom_text
+#' @importFrom data.table melt
 #' @importFrom stats as.formula
 #' 
 #' @param pd object of class \code{c("pd", "data.frame")} as returned by
@@ -10,8 +9,6 @@
 #' @param facet a character vector indicating the variable that should be used
 #' to facet on if interaction is plotted. If not specified the variable with less 
 #' unique values is chosen.
-#' @param to_plot a character vector indicating what variables to plot. If not
-#' specified then all variables are plotted
 #' @return a ggplot2 object
 #' 
 #' @examples
@@ -19,17 +16,15 @@
 #' library(edarf)
 #' data(iris)
 #' fit <- randomForest(Species ~ ., iris)
-#' pd <- partial_dependence(fit, iris, "Petal.Width")
+#' pd <- partial_dependence(fit, "Petal.Width", data = iris)
 #' plot_pd(pd)
 #' @export
-plot_pd <- function(pd, facet = NULL, to_plot = NULL) {
+plot_pd <- function(pd, facet = NULL) {
   atts <- attributes(pd)
-  if (atts$multivariate)
-    stop("multivariate plots not supported.")
   if (is.null(facet) & atts$interaction)
-    facet <- names(which.min(apply(pd[, atts$var], 2, function(x) length(unique(x)))))
+    facet <- names(which.min(apply(pd[, atts$vars], 2, function(x) length(unique(x)))))
   if (!is.null(facet)) {
-    if (!any(facet %in% atts$var))
+    if (!any(facet %in% atts$vars))
       stop("facet must be one of the variables in the pd argument.")
     ordering <- unique(sort(pd[[facet]]))
     if (is.factor(pd[[facet]]))
@@ -37,172 +32,69 @@ plot_pd <- function(pd, facet = NULL, to_plot = NULL) {
     else
       labels <- paste0(facet, " = ", as.character(signif(ordering, 3)))
     pd[[facet]] <- factor(pd[[facet]], levels = ordering, labels = labels)
-    var <- atts$var[atts$var != facet]
+    vars <- atts$vars[atts$vars != facet]
   } else {
-    var <- atts$var
-  }
-  
-  if(!is.null(to_plot)){
-    if(!all(to_plot %in% atts$target)) stop("to_plot contains variables that are not in the partial dependencies")
-    keep <- atts$names[!(atts$names %in% atts$target)]
-    atts$target <- to_plot
-    pd <- pd[,c(to_plot, keep)]
-    rm(keep)
+    vars <- atts$vars
   }
 
   dat <- melt(pd, id.vars = c(atts$target, facet), na.rm = TRUE)
-  if (is.character(dat$value)) ## casting factors to integers, ack!
-    dat$value <- as.integer(dat$value)
-  
-  #### Not sure if below if statement is right. 
-  if (length(atts$target) > 1 | (length(atts$target) == 1 & atts$prob)) 
-    dat <- melt(dat, id.vars = c("variable", "value", facet), value.name = "Probability",
-                variable.name = "Class", na.rm = TRUE)
-
-  if (length(var) == 1 & !atts$prob) {
-    p <- ggplot(dat, aes_string("value", atts$target))
-  } else if (!atts$prob) {
-    p <- ggplot(dat, aes_string("value", atts$target, group = "variable"))
-  } else {
-    p <- ggplot(dat, aes_string("value", "Probability", colour = "Class"))
+  if (is.character(dat$value)) { ## casting factors to numerics, ack!
+    dat$value <- as.numeric(dat$value)
   }
-
-  p <- p + geom_point()
-
-  if (!(is.factor(pd[, var]) & !is.ordered(pd[, var])))
-    p <- p + geom_line()
   
-  if (length(var) == 1)
-    p <- p + labs(x = var)
+  if (length(atts$target) > 1)
+    dat <- melt(dat, id.vars = c("variable", "value", facet),
+      value.name = "prediction", variable.name = "class", na.rm = TRUE)
 
-  if (length(atts$var) > 1) {
+  if (length(atts$target) == 1) {
+    p <- ggplot(dat, aes_string("value", atts$target))
+  } else {
+    p <- ggplot(dat, aes_string("value", "prediction", colour = "class"))
+  }
+    
+  p <- p + geom_point() + geom_line()
+
+  if (length(vars) == 1)
+    p <- p + labs(x = vars)
+
+  if (length(atts$vars) > 1) {
     if (!atts$interaction) {
       p <- p + facet_wrap(~ variable, scales = "free_x")
     } else {
-      p <- p + facet_wrap(as.formula(paste0("~ ", facet)))
+      p <- p + facet_wrap(as.formula(paste0("~", facet)))
     }
   }
-  p + theme_bw()
+  p
 }
 #' Plot variable importance from random forests
 #'
 #' @import ggplot2
-#' @importFrom reshape2 melt
-#' @import assertthat
+#' @importFrom data.table melt
 #' 
 #' @param imp object of class \code{c("importance", "data.frame")} as returned by
 #' \code{\link{variable_importance}}
-#' @param geom character describing type of plot desired: "point" or "bar"
 #' @param sort character indicating if sorting of the output is to be done.
-#' can be "none", "ascending", or "descending." only applicable when the importance type is "aggregate," or "local" and and the outcome variable is a "factor"
-#' @param labels character vector giving labels to variables,
-#' must have length equal to the number of rows or length of \code{imp}
-#' @param scales character, "free", "fixed", "free_x", or "free_y", only applicable when \code{type = "local"} and the outcome is an ordered factor or numeric
-#' @param se logical, plot a standard error ribbon around the estimated residual density under permutation, only applicable when \code{type = "local"} and the outcome is an ordered factor or numeric
+#' can be "ascending", or "descending."
 #' @return a ggplot2 object
 #' @examples
 #' library(randomForest)
 #' data(iris)
 #' fit <- randomForest(Species ~ ., iris)
-#'
-#' ## class-specific importance for all variables
-#' imp <- variable_importance(fit, var = colnames(iris)[-5],
-#'                            type = "local", interaction = TRUE, nperm = 2, data = iris)
-#' plot_imp(imp)
-#'
-#' imp <- variable_importance(fit, var = colnames(iris)[-5], type = "aggregate",
-#'                            interaction = FALSE, nperm = 2, data = iris)
-#' plot_imp(imp)
-#'
-#' data(swiss)
-#' fit <- randomForest(Fertility ~ ., swiss)
-#' imp <- variable_importance(fit, var = colnames(swiss)[-1],
-#'                            type = "local", interaction = TRUE, nperm = 2, data = swiss)
+#' imp <- variable_importance(fit, nperm = 2, data = iris)
 #' plot_imp(imp)
 #' @export
-plot_imp <- function(imp, geom = "point", sort = "decreasing", labels = NULL, scales = "free_y", se = TRUE) {
+plot_imp <- function(imp, sort = "decreasing") {
   atts <- attributes(imp)
-  if (atts$type == "local") {
-    imp$target <- atts$target
-    if (class(atts$target) == "factor") {
-      imp <- sapply(levels(imp$target), function(x)
-        colMeans(imp[imp$target == x, -ncol(imp), drop = FALSE]), simplify = FALSE)
-      imp <- do.call("cbind", imp)
-      imp <- as.data.frame(imp)
-      if (!is.null(labels)) {
-        if (length(labels) == nrow(imp)) {
-          imp$labels <- labels
-        } else {
-          stop("length of labels does not match length of importance output")
-        }
-      } else {
-        imp$labels <- row.names(imp)
-      }
-      row.names(imp) <- NULL
-      imp <- melt(imp, id.vars = "labels", variable.name = "Class")
-      if (geom == "point") {
-        p <- ggplot(imp, aes_string("value", "labels", color = "Class")) +
-          geom_point()
-      } else if (geom == "bar") {
-        p <- ggplot(imp, aes_string("labels", "value", fill = "Class")) +
-          geom_bar(stat = "identity", position = "dodge") + coord_flip()
-      } else {
-        stop("invalid input to geom argument")
-      }
-    } else if (is.ordered(atts$target) | is.numeric(atts$target)) {
-      imp <- melt(imp, id.vars = "target")
-      p <- ggplot(imp, aes_string("target", "value")) +
-        stat_smooth(method = "loess", se = se) +
-        facet_wrap(~ variable, scales = scales)
-    } else {
-      stop("")
-    }
-    if (is.factor(atts$target)) {
-      xlab <- "Permutation Importance"
-      ylab <- ""
-    } else {
-      xlab <- "Feature Value"
-      ylab <- "Residual Under Permutation"
-    }
-  } else { ## type == "aggregate"
-    imp <- data.frame(value = imp)
-    if (!is.null(labels)) {
-      if (length(labels) == length(imp)) {
-        imp$labels <- labels
-      } else {
-        stop("length of labels does not match length of importance output")
-      }
-    } else {
-      if (atts$interaction) {
-        imp$labels <- c(atts$var, "additive", "joint")
-      } else {
-        imp$labels <- atts$var
-      }
-    }
-    if (sort == "increasing") {
-      imp$labels <- factor(imp$labels, levels = imp$labels[order(imp$value, decreasing = FALSE)])
-    } else if (sort == "decreasing") {
-      imp$labels <- factor(imp$labels, levels = imp$labels[order(imp$value, decreasing = TRUE)])
-    } else {
-      stop("invalid input to sort argument")
-    }
-    if (geom == "point") {
-      p <- ggplot(imp, aes_string("value", "labels")) + geom_point()
-    } else if (geom == "bar") {
-      p <- ggplot(imp, aes_string("labels", "value")) + geom_bar(stat = "identity") + coord_flip()
-    } else {
-      stop("invalid input to geom argument")
-    }
-    if (geom == "bar") {
-      ylab <- "Permutation Importance"
-      xlab <- ""
-    } else {
-      xlab <- "Permutation Importance"
-      ylab <- ""
-    }
+  if (is.list(imp) && all(sapply(imp, length) == 1)) {
+    dat <- data.frame(variable = names(imp), values = unname(unlist(imp)))
+    dat$variable <- factor(dat$variable,
+      dat$variable[order(dat$values, decreasing = sort == "decreasing")])
+    p <- ggplot(dat, aes_string("variable", "values")) + geom_point()
+    p <- p + labs(y = "permutation importance", x = NULL)
+  } else {
+    stop("plot_imp only plots importance for multiple variables where there is one importance estimate per variable")
   }
-  p <- p + labs(x = xlab, y = ylab)
-  p + theme_bw()
+  p
 }
 #' Plot principle components of the proximity matrix
 #'
@@ -246,11 +138,10 @@ plot_imp <- function(imp, geom = "point", sort = "decreasing", labels = NULL, sc
 #' plot_prox(pca, color = iris$Species, color_label = "Species", size = 2)
 #' @export
 plot_prox <- function(pca, dims = 1:2, labels = NULL,
-                      alpha = 1, alpha_label = NULL,
-                      color = "black", color_label = NULL,
-                      shape = "1", shape_label = NULL,
-                      size = 2, size_label = NULL,
-                      xlab = NULL, ylab = NULL, title = "") {
+  alpha = 1, alpha_label = NULL, color = "black", color_label = NULL,
+  shape = "1", shape_label = NULL, size = 2, size_label = NULL,
+  xlab = NULL, ylab = NULL, title = "") {
+  
   if (is.numeric(color))
     stop("gradient coloring not supported. add this outside of this function.")
   nobs_factor <- sqrt(nrow(pca$x) - 1)
@@ -269,10 +160,10 @@ plot_prox <- function(pca, dims = 1:2, labels = NULL,
   if (!is.null(labels)) {
     plt$labels <- labels
     p <- ggplot(plt, aes_string("PC1", "PC2", color = "color", shape = "shape",
-                                alpha = "alpha", size = "size", ymax = "ymax", label = "labels"))
+      alpha = "alpha", size = "size", ymax = "ymax", label = "labels"))
   } else {
     p <- ggplot(plt, aes_string("PC1", "PC2", color = "color", shape = "shape",
-                                alpha = "alpha", size = "size", ymax = "ymax"))
+      alpha = "alpha", size = "size", ymax = "ymax"))
   }
   
   if (!is.null(color)) {
@@ -332,11 +223,13 @@ plot_prox <- function(pca, dims = 1:2, labels = NULL,
 #' fit <- randomForest(hp ~ ., mtcars)
 #' pred <- predict(fit, newdata = mtcars, OOB = TRUE)
 #' plot_pred(pred, mtcars$hp,
-#'           outlier_idx = which(abs(pred - mtcars$hp) > .5 * sd(mtcars$hp)),
-#'           labs = row.names(mtcars))
+#'   outlier_idx = which(abs(pred - mtcars$hp) > .5 * sd(mtcars$hp)),
+#'   labs = row.names(mtcars))
 #' @export
-plot_pred <- function(predicted, observed, perfect_line = TRUE, outlier_idx = NULL, labs = NULL,
-                      xlab = "Observed", ylab = "Predicted", title = "") {
+plot_pred <- function(predicted, observed, perfect_line = TRUE,
+  outlier_idx = NULL, labs = NULL,
+  xlab = "Observed", ylab = "Predicted", title = "") {
+  
   if (!(is.numeric(predicted) & is.numeric(observed)))
     stop("predicted, and observed must be numeric")
   out <- data.frame("predicted" = predicted, "observed" = observed)
@@ -352,9 +245,8 @@ plot_pred <- function(predicted, observed, perfect_line = TRUE, outlier_idx = NU
     if (is.null(labs))
       stop("Labels must be passed to label outliers")
     p <- p + geom_text(data = out[outlier_idx, ],
-                       aes_string("observed", "predicted", label = "labs", ymax = "ymax"),
-                       size = 3, hjust = 0, vjust = 0, parse = FALSE)
+      aes_string("observed", "predicted", label = "labs", ymax = "ymax"),
+      size = 3, hjust = 0, vjust = 0, parse = FALSE)
   }
-  p <- p + labs(x = xlab, y = ylab, title = title)
-  p + theme_bw()    
+  p + labs(x = xlab, y = ylab, title = title)
 }
