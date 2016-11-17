@@ -1,6 +1,6 @@
 #' Plot partial dependence from random forests
 #'
-#' @importFrom ggplot2 ggplot facet_wrap geom_point geom_line labs geom_text
+#' @import ggplot2
 #' @importFrom data.table melt
 #' @importFrom stats as.formula
 #' 
@@ -21,8 +21,10 @@
 #' @export
 plot_pd <- function(pd, facet = NULL) {
   atts <- attributes(pd)
-  if (is.null(facet) & atts$interaction)
-    facet <- names(which.min(apply(pd[, atts$vars], 2, function(x) length(unique(x)))))
+  if (length(atts$vars) > 2 & atts$interaction) {
+    stop("too many variables to plot.")
+  }
+
   if (!is.null(facet)) {
     if (!any(facet %in% atts$vars))
       stop("facet must be one of the variables in the pd argument.")
@@ -37,22 +39,30 @@ plot_pd <- function(pd, facet = NULL) {
     vars <- atts$vars
   }
 
-  dat <- melt(pd, id.vars = c(atts$target, facet), na.rm = TRUE)
-  if (is.character(dat$value)) { ## casting factors to numerics, ack!
-    dat$value <- as.numeric(dat$value)
-  }
-  
-  if (length(atts$target) > 1)
-    dat <- melt(dat, id.vars = c("variable", "value", facet),
-      value.name = "prediction", variable.name = "class", na.rm = TRUE)
+  if (!is.null(facet) | !atts$interaction) {
+    dat <- melt(pd, id.vars = c(atts$target, facet), na.rm = TRUE)
 
-  if (length(atts$target) == 1) {
-    p <- ggplot(dat, aes_string("value", atts$target))
+    if (is.character(dat$value)) { ## casting factors to numerics, ack!
+      dat$value <- as.numeric(dat$value)
+    }
+  
+    if (length(atts$target) > 1)
+      dat <- melt(dat, id.vars = c("variable", "value", facet),
+        value.name = "prediction", variable.name = "class", na.rm = TRUE)
+
+    if (length(atts$target) == 1) {
+      p <- ggplot(dat, aes_string("value", atts$target))
+    } else {
+      p <- ggplot(dat, aes_string("value", "prediction", colour = "class"))
+    }
+
+    p <- p + geom_line() + geom_point()
   } else {
-    p <- ggplot(dat, aes_string("value", "prediction", colour = "class"))
+    dat <- pd
+    dat <- melt(dat, id.vars = vars)
+    p <- ggplot(dat, aes_string(vars[1], vars[2], fill = "value")) + geom_raster()
+    facet <- "variable"
   }
-    
-  p <- p + geom_point() + geom_line()
 
   if (length(vars) == 1)
     p <- p + labs(x = vars)

@@ -13,7 +13,7 @@ vignette: >
 knitr::opts_chunk$set(error = TRUE)
 ```
 
-This package allows you to compute the partial dependence of an arbitrarily large set of covariates, compute permutation importance, and case/observation-level distance between data points given a fitted random forest from the following packages (outcome variable types supported in parenthesis): [party](https://cran.r-project.org/package=party) (multivariate, regression, and classification), [randomForestSRC](https://cran.r-project.org/package=randomForestSRC) (regression, classification, and survival), and [randomForest](https://cran.r-project.org/package=randomForest) (regression and classification).
+This package allows you to compute the partial dependence of covariates, compute permutation importance, and case/observation-level distance between data points given a fitted random forest from the following packages (outcome variable types supported in parenthesis): [party](https://cran.r-project.org/package=party) (multivariate, regression, and classification), [randomForestSRC](https://cran.r-project.org/package=randomForestSRC) (regression, classification, and survival), and [randomForest](https://cran.r-project.org/package=randomForest) (regression and classification).
 
 The function `partial_dependence` outputs a `data.frame` of class `pd`. By default all of the supported random forest classifiers will return probabilities.
 
@@ -25,19 +25,19 @@ library(edarf)
 data(iris)
 library(party)
 fit <- cforest(Species ~ ., iris, controls = cforest_unbiased(mtry = 2))
-pd <- partial_dependence(fit, vars = c("Sepal.Width", "Sepal.Length"), n = c(10, 25))
+pd <- partial_dependence(fit, vars = "Petal.Width", n = c(10, 25))
 print(pd)
 ```
 
-The parameter `n` is a numeric vector of length two, which controls via its first element the size of the grid to evaluate the columns specified by the `vars` argument at, and the second element gives the number of rows of the other variables to sample when marginalizing the prediction function. All the actual computation is performed in the [mmpf](https://github.com/zmjones/mmpf/) package using the function `marginalPrediction`. Additional arguments can be passed to this function by name (i.e., using `...`).
+The parameter `n` is a numeric vector of length two, which controls via its first element the size of the grid to evaluate the columns specified by the `vars` argument at, and the second element gives the number of rows of the other variables to sample when marginalizing the prediction function. All the actual computation is performed in the [mmpf](https://cran.r-project.org/package=mmpf) package using the function `marginalPrediction`. Additional arguments can be passed to this function by name (i.e., using `...`).
 
-Output from `partial_dependence` can be visualized using `plot_pd`, which uses [ggplot2](https://cran.r-project.org/package=ggplot2) to create simple but (hopefully) effective visualizations. In this simple case a line plot with a line for each class.
+Output from `partial_dependence` can be visualized using `plot_pd`, which uses [ggplot2](https://cran.r-project.org/package=ggplot2) to create simple visualizations. In this simple case a line plot for each class.
 
 ```{r, fig.width = 8, fig.height = 4}
 plot_pd(pd)
 ```
 
-The `partial_dependence` method can also either return interactions (the partial dependence on unique combinations of a subset of the feature space) or a list of bivariate partial dependence estimates (when multiple features are specified in `vars` but `interaction = FALSE`).
+The `partial_dependence` method can also either return interactions (the partial dependence on unique combinations of a subset of the covariates) or a list of bivariate partial dependence estimates (when multiple covariates are specified in `vars` but `interaction = FALSE`).
 
 ```{r, fig.width = 8, fig.height = 4}
 pd_list <- partial_dependence(fit, c("Petal.Width", "Petal.Length"), n = c(10, 25), interaction = FALSE)
@@ -45,8 +45,8 @@ plot_pd(pd_list)
 ```
 
 ```{r, fig.width = 8, fig.height = 8}
-pd_int <- partial_dependence(fit, c("Sepal.Length", "Sepal.Width"), n = c(10, 25), interaction = TRUE)
-plot_pd(pd_int, facet = "Sepal.Width")
+pd_int <- partial_dependence(fit, c("Petal.Length", "Petal.Width"), n = c(10, 25), interaction = TRUE)
+plot_pd(pd_int)
 ```
 
 When an interaction is computed the `facet` argument is used to construct plots wheren the feature not set to be the facet is shown conditional on a particular value of the `facet` feature. This works best when said feature is an integer or a factor.

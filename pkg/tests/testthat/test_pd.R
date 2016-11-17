@@ -36,10 +36,11 @@ test_that("classification", {
       data = df_classif)
     expect_that(colnames(pd_int), equals(c("0", "1", "X1", "X3")))
     plot_pd(pd_int, "X3")
+    plot_pd(pd_int)
 
     pd_lst <- partial_dependence(fit, c("X1", "X3"), n, data = df_classif)
     expect_that(colnames(pd_lst), equals(c("0", "1", "X1", "X3")))
-    plot_pd(pd_lst)
+    expect_warning(plot_pd(pd_lst))
   })
 })
 

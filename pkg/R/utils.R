@@ -6,12 +6,13 @@ renameColumns.randomForest <- function(fit, pd) {
   if (is.matrix(pd$prediction)) {
     target <- colnames(fit$err.rate)[-1]
     colnames(pd$prediction) <- target
+    pd$prediction = as.data.frame(pd$prediction, check.names = FALSE)
     names(pd)[1] <- ""
   } else {
     if (!is.null(fit$terms)) {
       target <- deparse(attr(fit$terms, "variables")[[2]])
     } else {
-      ## with randomForest.default it is annoying/impoosible to
+      ## with randomForest.default it is annoying/imposible to
       ## extract the target variable name from the object
       target <- "prediction"
     }
@@ -20,7 +21,8 @@ renameColumns.randomForest <- function(fit, pd) {
 
   if (ncol(pd$points) > 1L)
     names(pd)[2] <- ""
-  as.data.frame(pd, stringsAsFactors = FALSE, check.names = FALSE)
+
+  as.data.frame(do.call(cbind, pd), stringsAsFactors = FALSE, check.names = FALSE)
 }
 
 renameColumns.RandomForest <- function(fit, pd) {
@@ -37,7 +39,7 @@ renameColumns.RandomForest <- function(fit, pd) {
   if (ncol(pd$points) > 1L)
     names(pd)[2] <- ""
 
-  as.data.frame(pd, stringsAsFactors = FALSE, check.names = FALSE)
+  as.data.frame(do.call(cbind, pd), stringsAsFactors = FALSE, check.names = FALSE)
 }
 
 renameColumns.rfsrc <- function(fit, pd) {
@@ -51,5 +53,5 @@ renameColumns.rfsrc <- function(fit, pd) {
   if (ncol(pd$points) > 1L)
     names(pd)[2] <- ""
   
-  as.data.frame(pd, stringsAsFactors = FALSE, check.names = FALSE)
+  as.data.frame(do.call(cbind, pd), stringsAsFactors = FALSE, check.names = FALSE)
 }
