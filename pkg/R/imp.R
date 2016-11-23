@@ -99,8 +99,7 @@ variable_importance.rfsrc <- function(fit, vars,
     "y" = fit$yvar.names,
     "nperm" = nperm,
     "model" = fit,
-    "predict.fun" = function(object, newdata)
-      predict(object, newdata)[[if (is.factor(fit$yvar)) "class" else "predicted"]],
+    "predict.fun" = function(object, newdata) predict(object, newdata)[["predicted"]],
     ...
   )
 
