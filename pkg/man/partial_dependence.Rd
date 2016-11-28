@@ -7,7 +7,7 @@
 partial_dependence(fit, vars, n, interaction, uniform, data, ...)
 }
 \arguments{
-\item{fit}{object of class 'RandomForest', 'randomForest', or 'rfsrc'}
+\item{fit}{object of class 'RandomForest', 'randomForest', 'rfsrc', or `ranger`}
 
 \item{vars}{a character vector of the predictors of interest}
 
@@ -29,7 +29,7 @@ if 'vars' has length > 1 and interaction is true or false then the output will b
 }
 \description{
 Calculates the partial dependence of the response on an arbitrary dimensional set of predictors
-from a fitted random forest object from the party, randomForest, or randomForestSRC packages
+from a fitted random forest object from the party, randomForest, randomForestSRC, or ranger packages
 }
 \examples{
 library(randomForest)

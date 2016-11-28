@@ -1,13 +1,13 @@
 #' Partial dependence using random forests
 #'
 #' Calculates the partial dependence of the response on an arbitrary dimensional set of predictors
-#' from a fitted random forest object from the party, randomForest, or randomForestSRC packages
+#' from a fitted random forest object from the party, randomForest, randomForestSRC, or ranger packages
 #'
 #' @importFrom data.table rbindlist
 #' @importFrom stats predict
 #' @importFrom mmpf marginalPrediction
 #' 
-#' @param fit object of class 'RandomForest', 'randomForest', or 'rfsrc'
+#' @param fit object of class 'RandomForest', 'randomForest', 'rfsrc', or `ranger`
 #' @param vars a character vector of the predictors of interest
 #' @param n two dimensional integer vector giving the resolution of the grid. the first element gives the grid on \code{vars} and the second on the other columns, which are subsampled.
 #' @param interaction logical, if 'vars' is a vector, does this specify an interaction or a list of bivariate partial dependence
@@ -145,6 +145,66 @@ partial_dependence.rfsrc <- function(fit, vars = colnames(data),
   attr(pd, "class") <- c("pd", "data.frame")
   attr(pd, "interaction") <- interaction == TRUE
   attr(pd, "target") <- if (is.factor(fit$yvar)) levels(fit$yvar) else fit$yvar.names
+  attr(pd, "vars") <- vars
+  pd
+}
+
+#' @export
+partial_dependence.ranger <- function(fit, vars = colnames(data),
+  n = c(min(nrow(unique(data[, vars, drop = FALSE])), 25L), nrow(data)),
+  interaction = FALSE, uniform = TRUE, data, ...) {
+
+  target <- names(data)[!names(data) %in% fit$forest$independent.variable.names]
+
+  if (fit$treetype == "Classification") {
+    levels <- seq_len(length(unique(data[[target]])))
+    labels <- levels(data[[target]])
+  }
+
+  predict.fun = function(object, newdata) {
+    out = apply(predict(object, newdata, predict.all = TRUE)$predictions, 1,
+      function(x) {
+        if (object$treetype == "Classification") {
+          table(factor(x, levels, labels)) / length(x)
+        } else {
+          mean(x)
+        }
+      })
+
+    if (is.matrix(out))
+      t(out)
+    else
+      out
+  }
+
+  args <- list(
+    "data" = data,
+    "vars" = vars,
+    "n" = n,
+    "model" = fit,
+    "uniform" = uniform,
+    "predict.fun" = predict.fun,
+    ...
+  )
+  
+  if (length(vars) > 1L & !interaction)
+    pd <- rbindlist(sapply(vars, function(x) {
+      args$vars <- x
+      mp <- do.call("marginalPrediction", args)
+      if (fit$treetype == "Regression")
+        names(mp)[1] <- target
+      renameColumns(fit, mp)
+    }, simplify = FALSE), fill = TRUE)
+  else {
+    mp <- do.call("marginalPrediction", args)
+    if (fit$treetype == "Regression")
+      names(mp)[1] <- target
+    pd <- renameColumns(fit, mp)
+  }
+
+  attr(pd, "class") <- c("pd", "data.frame")
+  attr(pd, "interaction") <- interaction == TRUE
+  attr(pd, "target") <- if (fit$treetype == "Classification") levels(fit$predictions) else target
   attr(pd, "vars") <- vars
   pd
 }

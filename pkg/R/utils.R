@@ -2,11 +2,22 @@
 renameColumns <- function(fit, pd)
   UseMethod("renameColumns")
 
+renameColumns.ranger <- function(fit, pd) {
+  if (is.matrix(pd$prediction)) {
+    names(pd)[1] <- ""
+  }
+
+  if (ncol(pd$points) > 1L)
+    names(pd)[2] <- ""
+  
+  as.data.frame(do.call(cbind, pd), stringsAsFactors = FALSE, check.names = FALSE)
+}
+
 renameColumns.randomForest <- function(fit, pd) {
   if (is.matrix(pd$prediction)) {
     target <- colnames(fit$err.rate)[-1]
     colnames(pd$prediction) <- target
-    pd$prediction = as.data.frame(pd$prediction, check.names = FALSE)
+    pd$prediction <- as.data.frame(pd$prediction, check.names = FALSE)
     names(pd)[1] <- ""
   } else {
     if (!is.null(fit$terms)) {

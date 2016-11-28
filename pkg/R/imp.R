@@ -1,11 +1,11 @@
 #' Variable importance using random forests
 #'
-#' Computes local or aggregate variable importance for a set of predictors from a fitted random forest object from the party, randomForest, or randomForestSRC package
+#' Computes local or aggregate variable importance for a set of predictors from a fitted random forest object from the party, randomForest, randomForestSRC, or ranger package
 #'
 #' @importFrom stats predict
 #' @importFrom mmpf permutationImportance
 #'
-#' @param fit object of class 'RandomForest', 'randomForest', or 'rfsrc'
+#' @param fit object of class 'RandomForest', 'randomForest', 'rfsrc', or `ranger`
 #' @param vars character, variables to find the importance of
 #' @param interaction logcal, compute the joint and additive importance for observations (\code{type = "local"}) or variables \code{type = "aggregate"}
 #' @param nperm positive integer giving the number of times to permute the indicated variables (default 10)
@@ -99,7 +99,7 @@ variable_importance.rfsrc <- function(fit, vars,
     "y" = fit$yvar.names,
     "nperm" = nperm,
     "model" = fit,
-    "predict.fun" = function(object, newdata) predict(object, newdata)[["predicted"]],
+    "predict.fun" = function(object, newdata) if (is.factor(object$y)) predict(object, newdata)[["class"]] else predict(object, newdata)[["predicted"]],
     ...
   )
 
@@ -115,4 +115,32 @@ variable_importance.rfsrc <- function(fit, vars,
   attr(imp, "target") <- args$y
   attr(imp, "nperm") <- nperm
   imp
+}
+
+#' @export
+variable_importance.ranger <- function(fit, vars, interaction = FALSE, nperm = 100,
+  data, ...) {
+
+  args <- list(
+    "data" = data,
+    "vars" = vars,
+    "y" = names(data)[!names(data) %in% fit$forest$independent.variable.names],
+    "nperm" = nperm,
+    "model" = fit,
+    "predict.fun" = function(object, newdata) predict(object, newdata)[["predictions"]],
+    ...
+  )
+  
+  if (length(vars) > 1L & !interaction)
+    imp <- sapply(vars, function(x) {
+      args$vars <- x
+      do.call("permutationImportance", args)
+    }, simplify = FALSE)
+  else
+    imp <- do.call("permutationImportance", args)
+
+  attr(imp, "class") <- c("imp", class(imp))
+  attr(imp, "target") <- args$y
+  attr(imp, "nperm") <- nperm
+  imp  
 }

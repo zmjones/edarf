@@ -22,6 +22,7 @@ Suggests:
     party,
     randomForest,
     randomForestSRC,
+    ranger,
     testthat,
     rmarkdown,
     knitr

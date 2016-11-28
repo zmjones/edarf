@@ -7,7 +7,7 @@
 variable_importance(fit, vars, interaction, nperm, data)
 }
 \arguments{
-\item{fit}{object of class 'RandomForest', 'randomForest', or 'rfsrc'}
+\item{fit}{object of class 'RandomForest', 'randomForest', 'rfsrc', or `ranger`}
 
 \item{vars}{character, variables to find the importance of}
 
@@ -23,7 +23,7 @@ variable_importance(fit, vars, interaction, nperm, data)
 a named list of \code{vars} with the return from \code{permutationImportance} for each.
 }
 \description{
-Computes local or aggregate variable importance for a set of predictors from a fitted random forest object from the party, randomForest, or randomForestSRC package
+Computes local or aggregate variable importance for a set of predictors from a fitted random forest object from the party, randomForest, randomForestSRC, or ranger package
 }
 \examples{
 library(randomForest)
