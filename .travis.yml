@@ -2,7 +2,21 @@ language: r
 sudo: required
 cache: packages
 
+addons:
+  apt:
+    sources:
+     - ubuntu-toolchain-r-test
+    packages:
+      - gcc-4.9
+      - g++-4.9
+      - gfortran-4.9
+
 before_install:
+  - mkdir $HOME/bin
+  - ln -s $(which gcc-4.9) $HOME/bin/gcc
+  - ln -s $(which g++-4.9) $HOME/bin/g++
+  - ln -s $(which gfortran-4.9) $HOME/bin/gfortran
+  - export PATH=$HOME/bin:$PATH
   - cd pkg
 
 r_packages:
