@@ -25,7 +25,7 @@ fits_regr <- list(
   randomForest(df_regr[, -which(colnames(df_regr) == "y")], df_regr$y, proximity = TRUE),
   cforest(y ~ ., df_regr, controls = cforest_control(mtry = 1)),
   rfsrc(y ~ ., df_regr, proximity = "inbag"),
-  ranger(y ~ ., df_regr)
+  ranger(y ~ ., df_regr, write.forest = TRUE)
 )
 
 fits_classif <- list(
@@ -33,7 +33,7 @@ fits_classif <- list(
   randomForest(df_classif[, -which(colnames(df_classif) == "y")], df_classif$y, proximity = TRUE),
   cforest(y ~ ., df_classif, controls = cforest_control(mtry = 1)),
   rfsrc(y ~ ., df_classif, proximity = "inbag"),
-  ranger(y ~ ., df_classif)
+  ranger(y ~ ., df_classif, write.forest = TRUE)
 )
 
 fits_multi <- list(
