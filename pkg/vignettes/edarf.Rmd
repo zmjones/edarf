@@ -65,7 +65,7 @@ The joint permutation importance of multiple covariates can be computed by setti
 This matrix is too large to be visualized. `plot_prox` takes a principal components decomposition of this matrix using `prcomp`, and plots it using a biplot. Additional arguments allow other covariates to be mapped onto the size of the points, their color (shown), or their shape.
 
 ```{r, fig.width = 8, fig.height = 8}
-fit <- randomForest(Species ~ ., iris, proximity = TRUE)
+fit <- cforest(Species ~ ., iris, control = cforest_unbiased(mtry = 2))
 prox <- extract_proximity(fit)
 pca <- prcomp(prox, scale = TRUE)
 plot_prox(pca, color = iris$Species, color_label = "Species", size = 2)
@@ -74,9 +74,9 @@ plot_prox(pca, color = iris$Species, color_label = "Species", size = 2)
 The function `plot_pred` makes plots of predictions versus observations and has the additional feature of being able to "tag" outliers, and assign them labels.
 
 ```{r, fig.width = 8, fig.height = 5}
-fit <- randomForest(hp ~ ., mtcars)
-pred <- predict(fit, newdata = mtcars, OOB = TRUE)
-plot_pred(pred, mtcars$hp,
-  outlier_idx = which(abs(pred - mtcars$hp) > .5 * sd(mtcars$hp)),
-  labs = row.names(mtcars))
+fit <- cforest(Fertility ~ ., swiss)
+pred <- as.numeric(predict(fit, newdata = swiss))
+plot_pred(pred, swiss$Fertility,
+  outlier_idx = which((pred - swiss$Fertility)^2 > var(swiss$Fertility)),
+  labs = row.names(swiss))
 ```

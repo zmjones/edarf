@@ -23,7 +23,7 @@
 #' fit <- randomForest(Species ~ ., iris)
 #' variable_importance(fit, nperm = 2, data = iris)
 #' @export
-variable_importance <- function(fit, vars, interaction, nperm, data)
+variable_importance <- function(fit, vars, interaction, nperm, data, ...)
   UseMethod("variable_importance")
 #' @export
 variable_importance.randomForest <- function(fit, vars,

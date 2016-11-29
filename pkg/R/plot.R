@@ -231,7 +231,7 @@ plot_prox <- function(pca, dims = 1:2, labels = NULL,
 #' library(randomForest)
 #' library(edarf)
 #' fit <- randomForest(hp ~ ., mtcars)
-#' pred <- predict(fit, newdata = mtcars, OOB = TRUE)
+#' pred <- predict(fit, newdata = mtcars)
 #' plot_pred(pred, mtcars$hp,
 #'   outlier_idx = which(abs(pred - mtcars$hp) > .5 * sd(mtcars$hp)),
 #'   labs = row.names(mtcars))
@@ -249,13 +249,12 @@ plot_pred <- function(predicted, observed, perfect_line = TRUE,
   if (perfect_line)
     p <- p + geom_abline(aes_string(intercept = 0, slope = 1), colour = "blue")
   if (!is.null(outlier_idx)) {
-    out$ymax <- max(c(out$predicted))
     if (!is.integer(outlier_idx))
       stop("Invalid input for outlier_idx")
     if (is.null(labs))
       stop("Labels must be passed to label outliers")
     p <- p + geom_text(data = out[outlier_idx, ],
-      aes_string("observed", "predicted", label = "labs", ymax = "ymax"),
+      aes_string("observed", "predicted", label = "labs"),
       size = 3, hjust = 0, vjust = 0, parse = FALSE)
   }
   p + labs(x = xlab, y = ylab, title = title)

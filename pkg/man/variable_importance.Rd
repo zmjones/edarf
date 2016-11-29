@@ -4,7 +4,7 @@
 \alias{variable_importance}
 \title{Variable importance using random forests}
 \usage{
-variable_importance(fit, vars, interaction, nperm, data)
+variable_importance(fit, vars, interaction, nperm, data, ...)
 }
 \arguments{
 \item{fit}{object of class 'RandomForest', 'randomForest', 'rfsrc', or `ranger`}
