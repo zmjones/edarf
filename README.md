@@ -5,7 +5,7 @@
 
 Functions useful for exploratory data analysis using random forests.
 
-This package extends the functionality of random forests fit by [party](https://CRAN.R-project.org/package=party) (multivariate, regression, and classification), [randomForestSRC](https://CRAN.R-project.org/package=randomForestSRC) (regression, classification, and survival), and [randomForest](https://CRAN.R-project.org/package=randomForest) (regression and classification).
+This package extends the functionality of random forests fit by [party](https://CRAN.R-project.org/package=party) (multivariate, regression, and classification), [randomForestSRC](https://CRAN.R-project.org/package=randomForestSRC) (regression and classification,), [randomForest](https://CRAN.R-project.org/package=randomForest) (regression and classification), and [ranger](https://cran.r-project.org/package=ranger) (classification and regression).
 
 The subdirectory `pkg` contains the actual package. The package can be installed with [devtools](https://cran.r-project.org/package=devtools).
 

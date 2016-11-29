@@ -13,7 +13,7 @@ vignette: >
 knitr::opts_chunk$set(error = TRUE)
 ```
 
-This package allows you to compute the partial dependence of covariates, compute permutation importance, and case/observation-level distance between data points given a fitted random forest from the following packages (outcome variable types supported in parenthesis): [party](https://cran.r-project.org/package=party) (multivariate, regression, and classification), [randomForestSRC](https://cran.r-project.org/package=randomForestSRC) (regression, classification, and survival), and [randomForest](https://cran.r-project.org/package=randomForest) (regression and classification).
+This package allows you to compute the partial dependence of covariates, compute permutation importance, and case/observation-level distance between data points given a fitted random forest from the following packages (outcome variable types supported in parenthesis): [party](https://cran.r-project.org/package=party) (multivariate, regression, and classification), [randomForestSRC](https://cran.r-project.org/package=randomForestSRC) (regression, classification), [randomForest](https://cran.r-project.org/package=randomForest) (regression and classification), and [ranger](https://cran.r-project.org/package=ranger) (classification and regression).
 
 The function `partial_dependence` outputs a `data.frame` of class `pd`. By default all of the supported random forest classifiers will return probabilities.
 
