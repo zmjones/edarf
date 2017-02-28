@@ -57,4 +57,3 @@ Friedman, Jerome H. "Greedy function approximation: a gradient boosting machine.
 \seealso{
 \code{\link{plot_pd}} for plotting \code{partial_dependence}.
 }
-

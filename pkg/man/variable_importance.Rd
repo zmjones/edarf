@@ -37,4 +37,3 @@ Breiman, Leo. "Random forests." Machine learning 45.1 (2001): 5-32.
 \seealso{
 \code{\link{plot_imp}} for plotting the results of \code{variable_importance}.
 }
-

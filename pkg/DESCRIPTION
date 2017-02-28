@@ -28,5 +28,5 @@ Suggests:
     knitr
 LazyData: true
 BugReports: https://github.com/zmjones/edarf
-RoxygenNote: 5.0.1
+RoxygenNote: 6.0.1
 VignetteBuilder: knitr

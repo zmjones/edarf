@@ -42,4 +42,3 @@ plot_pred(pred, mtcars$hp,
   outlier_idx = which(abs(pred - mtcars$hp) > .5 * sd(mtcars$hp)),
   labs = row.names(mtcars))
 }
-

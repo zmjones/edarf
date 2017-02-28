@@ -65,4 +65,3 @@ https://github.com/vqv/ggbiplot
 
 Gabriel, "The biplot graphic display of matrices with application to principal component analysis," \emph{Biometrika}, 1971
 }
-

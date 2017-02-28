@@ -156,25 +156,14 @@ partial_dependence.ranger <- function(fit, vars = colnames(data),
 
   target <- names(data)[!names(data) %in% fit$forest$independent.variable.names]
 
-  if (fit$treetype == "Classification") {
-    levels <- seq_len(length(unique(data[[target]])))
-    labels <- levels(data[[target]])
-  }
-
   predict.fun = function(object, newdata) {
-    out = apply(predict(object, newdata, predict.all = TRUE)$predictions, 1,
-      function(x) {
-        if (object$treetype == "Classification") {
-          table(factor(x, levels, labels)) / length(x)
-        } else {
-          mean(x)
-        }
-      })
-
-    if (is.matrix(out))
-      t(out)
-    else
-      out
+    if (object$treetype != "Classification") {
+      predict(object, data = newdata)$predictions
+    } else {
+      t(apply(predict(object, data = newdata, predict.all = TRUE)$predictions, 1,
+        function(x) table(factor(x, seq_len(length(unique(data[[target]]))),
+          levels(data[[target]]))) / length(x)))
+      }
   }
 
   args <- list(

@@ -31,4 +31,3 @@ extract_proximity(fit)
 \seealso{
 \code{\link{plot_prox}} for plotting principal components of proximity matrices.
 }
-
