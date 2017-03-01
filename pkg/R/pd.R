@@ -65,11 +65,14 @@ partial_dependence.randomForest <- function(fit, vars = colnames(data),
     ...
   )
   
-  if (length(vars) > 1L & !interaction)
-    pd <- rbindlist(sapply(vars, function(x) {    
+  if (length(vars) > 1L & !interaction) {
+    pd <- rbindlist(sapply(vars, function(x) {
       args$vars <- x
       renameColumns(fit, do.call("marginalPrediction", args))
     }, simplify = FALSE), fill = TRUE)
+    setcolorder(pd, c(vars, colnames(pd)[!colnames(pd) %in% vars]))
+  }
+  
   else
     pd <- renameColumns(fit, do.call(marginalPrediction, args))
 
@@ -100,12 +103,13 @@ partial_dependence.RandomForest <- function(fit, vars = colnames(data),
     ...
   )
   
-  if (length(vars) > 1L & !interaction)
+  if (length(vars) > 1L & !interaction) {
     pd <- rbindlist(sapply(vars, function(x) {
       args$vars <- x
       renameColumns(fit, do.call("marginalPrediction", args))
     }, simplify = FALSE), fill = TRUE)
-  else
+    setcolorder(pd, c(vars, colnames(pd)[!colnames(pd) %in% vars]))
+  } else
     pd <- renameColumns(fit, do.call(marginalPrediction, args))
 
   attr(pd, "class") <- c("pd", "data.frame")
@@ -134,12 +138,13 @@ partial_dependence.rfsrc <- function(fit, vars = colnames(data),
     ...
   )
   
-  if (length(vars) > 1L & !interaction)
+  if (length(vars) > 1L & !interaction) {
     pd <- rbindlist(sapply(vars, function(x) {
       args$vars <- x
       renameColumns(fit, do.call("marginalPrediction", args))
     }, simplify = FALSE), fill = TRUE)
-  else
+    setcolorder(pd, c(vars, colnames(pd)[!colnames(pd) %in% vars]))
+  } else
     pd <- renameColumns(fit, do.call(marginalPrediction, args))
 
   attr(pd, "class") <- c("pd", "data.frame")
@@ -176,24 +181,24 @@ partial_dependence.ranger <- function(fit, vars = colnames(data),
     ...
   )
   
-  if (length(vars) > 1L & !interaction)
+  if (length(vars) > 1L & !interaction) {
     pd <- rbindlist(sapply(vars, function(x) {
       args$vars <- x
       mp <- do.call("marginalPrediction", args)
       if (fit$treetype == "Regression")
-        names(mp)[1] <- target
-      renameColumns(fit, mp)
+        names(mp)[ncol(mp)] <- target
+      mp
     }, simplify = FALSE), fill = TRUE)
-  else {
-    mp <- do.call("marginalPrediction", args)
+    setcolorder(pd, c(vars, colnames(pd)[!colnames(pd) %in% vars]))
+  } else {
+    pd <- do.call("marginalPrediction", args)
     if (fit$treetype == "Regression")
-      names(mp)[1] <- target
-    pd <- renameColumns(fit, mp)
+      names(pd)[ncol(pd)] <- target
   }
 
   attr(pd, "class") <- c("pd", "data.frame")
   attr(pd, "interaction") <- interaction == TRUE
-  attr(pd, "target") <- if (fit$treetype == "Classification") levels(fit$predictions) else target
+  attr(pd, "target") <- if (fit$treetype != "Classification") target else levels(fit$predictions)
   attr(pd, "vars") <- vars
   pd
 }

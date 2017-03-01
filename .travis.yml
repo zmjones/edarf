@@ -28,7 +28,7 @@ r_packages:
   - randomForestSRC
 
 r_github_packages:
-  - zmjones/mmpf
+  - zmjones/mmpf/pkg/
 
 notifications:
   email:
