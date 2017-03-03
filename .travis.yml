@@ -18,6 +18,7 @@ before_install:
   - ln -s $(which gfortran-4.9) $HOME/bin/gfortran
   - export PATH=$HOME/bin:$PATH
   - cd pkg
+  - Rscript -e 'devtools::install_github("zmjones/mmpf", subdir = "pkg")'
 
 r_packages:
   - testthat
