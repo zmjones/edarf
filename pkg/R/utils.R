@@ -1,12 +1,12 @@
 # extract target names from fit objects and rename columnns if needed
-renameColumns <- function(fit, pd)
+renameColumns = function(fit, pd)
   UseMethod("renameColumns")
 
-renameColumns.ranger <- function(fit, pd) {
+renameColumns.ranger = function(fit, pd) {
   pd
 }
 
-renameColumns.randomForest <- function(fit, pd) {
+renameColumns.randomForest = function(fit, pd) {
   if (fit$type == "regression" & any(grepl("formula", class(fit)))) {
     target = deparse(attr(fit$terms, "variables")[[2]])
   } else if (fit$type == "classification") {
@@ -19,11 +19,11 @@ renameColumns.randomForest <- function(fit, pd) {
   pd
 }
 
-renameColumns.RandomForest <- function(fit, pd) {
-  target <- colnames(fit@responses@variables)
+renameColumns.RandomForest = function(fit, pd) {
+  target = colnames(fit@responses@variables)
   if (ncol(fit@responses@variables) > 1L |
         (ncol(fit@responses@variables) == 1L & is.factor(fit@responses@variables[, 1]))) {
-    target <- gsub(paste0(target, "\\.", collapse = "|"), "",
+    target = gsub(paste0(target, "\\.", collapse = "|"), "",
       colnames(fit@responses@predict_trafo))
   }
 
@@ -31,7 +31,7 @@ renameColumns.RandomForest <- function(fit, pd) {
   pd
 }
 
-renameColumns.rfsrc <- function(fit, pd) {
+renameColumns.rfsrc = function(fit, pd) {
   if (is.factor(fit$yvar)) {
     target = levels(fit$yvar)
   } else {

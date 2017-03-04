@@ -22,7 +22,7 @@ Plot variable importance from random forests
 \examples{
 library(randomForest)
 data(iris)
-fit <- randomForest(Species ~ ., iris)
-imp <- variable_importance(fit, nperm = 2, data = iris)
+fit = randomForest(Species ~ ., iris)
+imp = variable_importance(fit, nperm = 2, data = iris)
 plot_imp(imp)
 }

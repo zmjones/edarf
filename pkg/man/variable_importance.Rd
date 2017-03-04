@@ -28,7 +28,7 @@ Computes local or aggregate variable importance for a set of predictors from a f
 \examples{
 library(randomForest)
 data(iris)
-fit <- randomForest(Species ~ ., iris)
+fit = randomForest(Species ~ ., iris)
 variable_importance(fit, nperm = 2, data = iris)
 }
 \references{
