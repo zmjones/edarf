@@ -3,7 +3,6 @@ renameColumns <- function(fit, pd)
   UseMethod("renameColumns")
 
 renameColumns.ranger <- function(fit, pd) {
-  setnames(pd, colnames(pd), )
   pd
 }
 

@@ -3,7 +3,7 @@
 #' Calculates the partial dependence of the response on an arbitrary dimensional set of predictors
 #' from a fitted random forest object from the party, randomForest, randomForestSRC, or ranger packages
 #'
-#' @importFrom data.table rbindlist
+#' @importFrom data.table rbindlist setcolorder
 #' @importFrom stats predict
 #' @importFrom mmpf marginalPrediction
 #' 
