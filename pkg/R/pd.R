@@ -68,6 +68,8 @@ partial_dependence.randomForest = function(fit, vars = colnames(data),
   if (length(vars) > 1L & !interaction) {
     pd = rbindlist(sapply(vars, function(x) {
       args$vars = x
+      if ("points" %in% names(list(...)))
+        args$points = points[x]
       renameColumns(fit, do.call("marginalPrediction", args))
     }, simplify = FALSE), fill = TRUE)
     setcolorder(pd, c(vars, colnames(pd)[!colnames(pd) %in% vars]))
@@ -106,6 +108,8 @@ partial_dependence.RandomForest = function(fit, vars = colnames(data),
   if (length(vars) > 1L & !interaction) {
     pd = rbindlist(sapply(vars, function(x) {
       args$vars = x
+      if ("points" %in% names(list(...)))
+        args$points = points[x]
       renameColumns(fit, do.call("marginalPrediction", args))
     }, simplify = FALSE), fill = TRUE)
     setcolorder(pd, c(vars, colnames(pd)[!colnames(pd) %in% vars]))
@@ -141,6 +145,8 @@ partial_dependence.rfsrc = function(fit, vars = colnames(data),
   if (length(vars) > 1L & !interaction) {
     pd = rbindlist(sapply(vars, function(x) {
       args$vars = x
+      if ("points" %in% names(list(...)))
+        args$points = points[x]
       renameColumns(fit, do.call("marginalPrediction", args))
     }, simplify = FALSE), fill = TRUE)
     setcolorder(pd, c(vars, colnames(pd)[!colnames(pd) %in% vars]))
@@ -184,6 +190,8 @@ partial_dependence.ranger = function(fit, vars = colnames(data),
   if (length(vars) > 1L & !interaction) {
     pd = rbindlist(sapply(vars, function(x) {
       args$vars = x
+      if ("points" %in% names(list(...)))
+        args$points = points[x]
       mp = do.call("marginalPrediction", args)
       if (fit$treetype == "Regression")
         names(mp)[ncol(mp)] = target
