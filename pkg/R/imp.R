@@ -9,7 +9,7 @@
 #' @param vars character, variables to find the importance of
 #' @param interaction logcal, compute the joint and additive importance for observations (\code{type = "local"}) or variables \code{type = "aggregate"}
 #' @param nperm positive integer giving the number of times to permute the indicated variables (default 10)
-#' @param data optional (unless using randomForest) data.frame with which to calculate importance
+#' @param data optional (unless using 'randomForest' or 'ranger'') data.frame which contains the covariates and the outcome only.
 #' @param ... additional arguments to be passed to \code{permutationImportance}.
 #'
 #' @return a named list of \code{vars} with the return from \code{permutationImportance} for each.
@@ -124,7 +124,7 @@ variable_importance.ranger = function(fit, vars, interaction = FALSE, nperm = 10
   args = list(
     "data" = data,
     "vars" = vars,
-    "y" = names(data)[!names(data) %in% fit$forest$independent.variable.names],
+    "y" = strsplit(strsplit(as.character(fit$call), "formula")[[2]], " ~")[[1]][[1]],
     "nperm" = nperm,
     "model" = fit,
     "predict.fun" = function(object, newdata) predict(object, newdata)[["predictions"]],

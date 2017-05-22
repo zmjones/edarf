@@ -18,7 +18,7 @@ partial_dependence(fit, vars, n, interaction, uniform, data, ...)
 \item{uniform}{logical, indicates whether a uniform or random grid is to be construct
 partial dependence calculation}
 
-\item{data}{the data.frame used to fit the model, only needed for 'randomForest'}
+\item{data}{the data.frame used to fit the model. must only include the covariates in the model. only needed for 'randomForest' and 'ranger.'}
 
 \item{...}{additional arguments to be passed to \code{marginalPrediction}}
 }

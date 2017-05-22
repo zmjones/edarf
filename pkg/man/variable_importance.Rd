@@ -15,7 +15,7 @@ variable_importance(fit, vars, interaction, nperm, data, ...)
 
 \item{nperm}{positive integer giving the number of times to permute the indicated variables (default 10)}
 
-\item{data}{optional (unless using randomForest) data.frame with which to calculate importance}
+\item{data}{optional (unless using 'randomForest' or 'ranger'') data.frame which contains the covariates and the outcome only.}
 
 \item{...}{additional arguments to be passed to \code{permutationImportance}.}
 }
