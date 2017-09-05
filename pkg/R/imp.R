@@ -7,7 +7,7 @@
 #'
 #' @param fit object of class 'RandomForest', 'randomForest', 'rfsrc', or `ranger`
 #' @param vars character, variables to find the importance of
-#' @param interaction logcal, compute the joint and additive importance for observations (\code{type = "local"}) or variables \code{type = "aggregate"}
+#' @param interaction logcal, compute the importance for all the \code{vars} jointly of for them separately.
 #' @param nperm positive integer giving the number of times to permute the indicated variables (default 10)
 #' @param data optional (unless using 'randomForest' or 'ranger'') data.frame which contains the covariates and the outcome only.
 #' @param ... additional arguments to be passed to \code{permutationImportance}.

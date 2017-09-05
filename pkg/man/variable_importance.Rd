@@ -11,7 +11,7 @@ variable_importance(fit, vars, interaction, nperm, data, ...)
 
 \item{vars}{character, variables to find the importance of}
 
-\item{interaction}{logcal, compute the joint and additive importance for observations (\code{type = "local"}) or variables \code{type = "aggregate"}}
+\item{interaction}{logcal, compute the importance for all the \code{vars} jointly of for them separately.}
 
 \item{nperm}{positive integer giving the number of times to permute the indicated variables (default 10)}
 
